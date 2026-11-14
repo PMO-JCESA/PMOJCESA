@@ -509,6 +509,30 @@ optgroup{background:var(--surface);color:var(--muted);font-style:normal}
 .kc.link{cursor:pointer;transition:border-color .15s}
 .kc.link:hover{border-color:var(--line2)}
 
+/* ===== v14: nova tarefa completa, em cada bucket ===== */
+.nt-r1{display:grid;grid-template-columns:minmax(220px,2.2fr) minmax(150px,1.2fr) minmax(150px,1.2fr) minmax(130px,1fr) minmax(130px,1fr);gap:10px 12px;align-items:start}
+.nt-r2{display:grid;grid-template-columns:minmax(140px,.8fr) minmax(140px,.8fr) minmax(150px,.9fr) minmax(280px,3fr);gap:10px 12px;align-items:start}
+.nt-r3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:start}
+.nt-panel{background:var(--surface3);border:1px solid var(--line);border-radius:12px;padding:10px 12px;min-width:0}
+.nt-panel h5{margin:0 0 8px;font-size:12.5px;color:#fff;display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.nt-panel h5 small{color:var(--muted);font-weight:600}
+.nt-panel .alist{margin:8px 0}
+.nt-panel .addrow{display:flex;gap:6px}
+.nt-panel .addrow input{flex:1;min-width:0}
+.nt-panel textarea,.nt-desc textarea{width:100%;resize:vertical}
+.nt-li{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);word-break:break-word}
+.nt-form .nt-acts{justify-content:flex-end}
+@media (max-width:1100px){.nt-r1,.nt-r2{grid-template-columns:1fr 1fr}.nt-r3{grid-template-columns:1fr}}
+
+/* ===== v15: busca ao digitar ===== */
+.ac{position:relative}
+.ac-list{position:absolute;z-index:60;left:0;right:0;top:100%;margin:4px 0 0;padding:4px;list-style:none;background:var(--surface2);border:1px solid var(--line2);border-radius:10px;box-shadow:0 14px 34px rgba(0,0,0,.5);max-height:250px;overflow:auto}
+.ac-list li{padding:7px 10px;border-radius:8px;cursor:pointer;display:flex;flex-direction:column;gap:1px}
+.ac-list li b{font-size:13px;color:#fff}
+.ac-list li small{color:var(--muted);font-size:11.5px}
+.ac-list li.on,.ac-list li[data-v]:hover{background:color-mix(in srgb,var(--cherry) 28%,var(--surface2))}
+.ac-list li.vazio{cursor:default;color:var(--muted);font-size:12.5px}
+
 /* ===== v10: cadastros da Base ===== */
 .subnav{display:flex;gap:4px;flex-wrap:wrap;border-bottom:1px solid var(--line);margin-bottom:18px}
 .subnav a{padding:10px 14px;color:var(--muted);text-decoration:none;font-weight:700;border-bottom:3px solid transparent;margin-bottom:-1px}
@@ -2081,7 +2105,7 @@ function faseHtml(r, f){
           <span>${esc(b.nome)}</span>
           <span style="display:flex;gap:6px;align-items:center">
             <span class="cnt">${cards.length}</span>
-            ${b.key === "backlog" ? `<button class="mini" data-add="${f.key}" title="Nova tarefa">+</button>` : ""}
+            ${b.key !== "atraso" ? `<button class="mini" data-add="${f.key}" data-add-b="${b.key}" title="Nova tarefa em ${esc(b.nome)}">+</button>` : ""}
           </span>
         </div>
         <div class="col-b">${cards.map(cardHtml).join("")}</div>
@@ -2100,25 +2124,72 @@ function faseHtml(r, f){
     </section>`;
 }
 let novoForm = null;
+const NT_ANDAMENTO_PADRAO = {backlog: "Aguardando", execucao: "Em andamento", cancelado: "Aguardando", concluido: "Concluído"};
+function ntExtrasHtml(){
+  const d = novoForm, tot = d.ativ.length, feitas = d.ativ.filter(a => a.feito).length;
+  const pct = tot ? Math.round(feitas / tot * 100) : 0;
+  return `
+    <div class="nt-panel">
+      <h5>Atividades <small>${tot ? pct + "% (" + feitas + "/" + tot + ")" : "micro atividades do card"}</small></h5>
+      <div class="prog sm"><i style="width:${d.bucket === "concluido" ? 100 : pct}%"></i></div>
+      <ul class="alist">${d.ativ.map(a => `
+        <li class="${a.feito ? "feito" : ""}">
+          <button type="button" class="bullet ${a.feito ? "on" : ""}" data-nt-act="ativ-toggle" data-aid="${esc(a.id)}" title="Marcar como feita"></button>
+          <span class="txt">${esc(a.texto)}</span>
+          <button type="button" class="del" data-nt-act="ativ-del" data-aid="${esc(a.id)}" title="Remover">✕</button>
+        </li>`).join("")}</ul>
+      <div class="addrow"><input type="text" data-nt-ativ-input placeholder="Nova atividade…" aria-label="Nova atividade"><button type="button" class="btn primary" data-nt-act="ativ-add" title="Incluir atividade">+</button></div>
+    </div>
+    <div class="nt-panel">
+      <h5>Anexos <small>${d.anexos.length ? d.anexos.length + " arquivo(s)" : "nenhum"}</small></h5>
+      <input type="file" multiple data-nt-anx>
+      ${d.anexos.map(a => `<div class="nt-li"><span>${esc(a.nome)} <small class="note" style="margin:0">${a.tam ? Math.round(a.tam / 1024) + " KB" : ""}${a.dataUrl ? "" : " · sem conteúdo salvo (arquivo grande)"}</small></span><button type="button" class="del" data-nt-act="anx-del" data-aid="${esc(a.id)}" title="Remover">✕</button></div>`).join("")}
+    </div>
+    <div class="nt-panel">
+      <h5>Comunicação <small>${d.com.length ? d.com.length + " mensagem(ns)" : "nenhuma"}</small></h5>
+      ${d.com.map(m => `<div class="msg"><b>${esc(m.autor)}</b> <button type="button" class="del" data-nt-act="com-del" data-aid="${esc(m.id)}" title="Remover" style="float:right">✕</button><br>${esc(m.texto)}</div>`).join("")}
+      <textarea data-nt-com placeholder="Escreva uma mensagem para o time…" rows="2"></textarea>
+      <div style="display:flex;justify-content:flex-end;margin-top:6px"><button type="button" class="btn sm" data-nt-act="com-add">Adicionar mensagem</button></div>
+    </div>`;
+}
+function ntApoioHtml(){
+  const d = novoForm;
+  return (d.apoio.length ? `<div class="chips-p" style="margin:6px 0 0">${d.apoio.map(e => `<span>${esc(nomeDe(e))}<button type="button" data-nt-act="apoio-rm" data-email="${esc(e)}" title="Remover">✕</button></span>`).join("")}</div>` : "");
+}
+function ntFimRealTxt(andamento){
+  return novoForm.bucket === "concluido" || andamento === "Concluído" ? dataBR(hojeISO()) + " (automático)" : "Automático ao concluir";
+}
 function novaTarefaFormHtml(f){
+  const d = novoForm, bk = BUCKETS.find(b => b.key === d.bucket) || BUCKETS[0];
+  const andPadrao = NT_ANDAMENTO_PADRAO[d.bucket] || "Em andamento";
   return `
     <form class="nt-form" data-nt="${f.key}" autocomplete="off">
-      <div class="nt-head"><b>Nova tarefa em ${esc(f.nome)}</b><span class="note" style="margin:0">A tarefa entra na coluna Backlog. Atividades, anexos e comunicação ficam nos detalhes do card.</span></div>
-      <div class="nt-row">
+      <div class="nt-head"><b>Nova tarefa em ${esc(f.nome)} · ${esc(bk.nome)}</b><span class="note" style="margin:0">A tarefa entra na coluna ${esc(bk.nome)}. Atividades, anexos e comunicação já podem ser lançados aqui.</span></div>
+      <div class="nt-r1">
         <div class="fld"><label>Nome da tarefa *</label><input type="text" name="nome" placeholder="O que precisa ser feito?" required></div>
         <div class="fld"><label>Responsável</label><select name="responsavel">${pessoasOptions("")}</select></div>
+        <div class="fld"><label>Apoio</label>
+          ${acHtml("apoio-nt", {placeholder: "Digite para adicionar apoio…"})}
+          <div data-nt-apchips>${ntApoioHtml()}</div></div>
         <div class="fld"><label>Prioridade</label><select name="prioridade">${PRIORIDADES.map(p => `<option ${p === "Em linha" ? "selected" : ""}>${esc(p)}</option>`).join("")}</select></div>
+        <div class="fld"><label>Andamento</label><select name="andamento" data-nt-and>${ANDAMENTOS.map(a => `<option ${a === andPadrao ? "selected" : ""}>${esc(a)}</option>`).join("")}</select></div>
+      </div>
+      <div class="nt-r2">
         <div class="fld"><label>Início</label><input type="date" name="inicio" value="${hojeISO()}"></div>
         <div class="fld"><label>Fim previsto</label><input type="date" name="fimPrevisto"></div>
+        <div class="fld"><label>Fim real</label><input type="text" class="ro" readonly data-nt-fimreal value="${esc(ntFimRealTxt(andPadrao))}"></div>
+        <div class="fld nt-desc"><label>Descrição da tarefa</label><textarea name="descricao" rows="2" placeholder="Detalhes, critério de aceite, observações…"></textarea></div>
       </div>
-      <div class="nt-row2">
-        <div class="fld"><label>Descrição (opcional)</label><input type="text" name="descricao" placeholder="Detalhes, critério de aceite, observações…"></div>
-        <div class="nt-acts">
-          <button type="button" class="btn" data-nt-fechar>Fechar</button>
-          <button type="submit" class="btn primary">Criar tarefa</button>
-        </div>
+      <div class="nt-r3" data-nt-extras>${ntExtrasHtml()}</div>
+      <div class="nt-acts">
+        <button type="button" class="btn" data-nt-fechar>Fechar</button>
+        <button type="submit" class="btn primary">Criar tarefa</button>
       </div>
     </form>`;
+}
+function ntRefresh(form){
+  const ex = form.querySelector("[data-nt-extras]"); if (ex) ex.innerHTML = ntExtrasHtml();
+  const ap = form.querySelector("[data-nt-apchips]"); if (ap) ap.innerHTML = ntApoioHtml();
 }
 let pVisao = "kanban";
 const BUCKET_COR = {backlog: "#C9CFDB", execucao: "#3FA9C0", atraso: "#ED174F", cancelado: "#8A8A89", concluido: "#5DB075"};
@@ -2223,7 +2294,8 @@ $("v-gestao-projeto").addEventListener("click", e => {
   if (add) {
     if (bloqueado()) return;
     const k = add.dataset.add;
-    novoForm = novoForm && novoForm.fase === k ? null : {fase: k};
+    const bk = add.dataset.addB || "backlog";
+    novoForm = novoForm && novoForm.fase === k && novoForm.bucket === bk ? null : {fase: k, bucket: bk, apoio: [], ativ: [], anexos: [], com: []};
     fasesFechadas.delete(k);
     renderGestaoProjeto(currentProjId());
     const inp = document.querySelector(`.nt-form[data-nt="${k}"] input[name="nome"]`);
@@ -2246,24 +2318,84 @@ $("v-gestao-projeto").addEventListener("submit", e => {
   const form = e.target.closest(".nt-form");
   if (!form) return;
   e.preventDefault();
-  if (bloqueado()) return;
+  if (bloqueado() || !novoForm) return;
   const r = achar(currentProjId());
   const fd = new FormData(form);
   const nome = String(fd.get("nome") || "").trim();
   if (!nome) { toast("Informe o nome da tarefa."); return; }
   const inicio = parseData(fd.get("inicio")), fim = parseData(fd.get("fimPrevisto"));
   if (toDate(inicio) && toDate(fim) && toDate(fim) < toDate(inicio)) { toast("O fim previsto não pode ser antes do início."); return; }
+  const resp = String(fd.get("responsavel") || "");
+  const apoio = novoForm.apoio.filter(x => x !== resp);
   const novaT = normalizarTarefa({
-    fase: form.dataset.nt, nome, responsavel: fd.get("responsavel") || "", prioridade: fd.get("prioridade"),
-    inicio, fimPrevisto: fim, descricao: String(fd.get("descricao") || "").trim()
+    fase: form.dataset.nt, nome, bucket: novoForm.bucket, responsavel: resp, apoio, prioridade: fd.get("prioridade"),
+    andamento: fd.get("andamento"), inicio, fimPrevisto: fim, descricao: String(fd.get("descricao") || "").trim(),
+    atividades: novoForm.ativ, anexos: novoForm.anexos,
+    comunicacao: novoForm.com.map(m => ({id: m.id, autor: m.autor, texto: m.texto, ts: m.ts}))
   });
+  if (novaT.bucket === "concluido" || novaT.andamento === "Concluído") { novaT.bucket = "concluido"; novaT.andamento = "Concluído"; novaT.fimReal = hojeISO(); }
+  else if (novaT.bucket === "cancelado") novaT.fimReal = "";
   r.tarefas.push(novaT);
   if (novaT.responsavel) notificarAtribuicao(novaT, novaT.responsavel, "responsável", r);
+  novaT.apoio.forEach(em => notificarAtribuicao(novaT, em, "apoio", r));
+  const bk = novoForm.bucket, fs = novoForm.fase;
+  novoForm = {fase: fs, bucket: bk, apoio: [], ativ: [], anexos: [], com: []};
   salvar();
   renderGestaoProjeto(r.ID);
-  toast(`Tarefa "${nome}" criada no Backlog. Preencha outra ou clique em Fechar.`);
-  const inp = document.querySelector(`.nt-form[data-nt="${form.dataset.nt}"] input[name="nome"]`);
+  toast(`Tarefa "${nome}" criada em ${bucketNome(novaT.bucket)}. Preencha outra ou clique em Fechar.`);
+  const inp = document.querySelector(`.nt-form[data-nt="${fs}"] input[name="nome"]`);
   if (inp) inp.focus({preventScroll: true});
+});
+/* Interações do formulário de nova tarefa (rascunho em novoForm) */
+function ntAddAtiv(form){
+  const inp = form.querySelector("[data-nt-ativ-input]");
+  const texto = inp.value.trim();
+  if (!texto) return;
+  novoForm.ativ.push({id: uid(), texto, feito: false});
+  ntRefresh(form);
+  const n = form.querySelector("[data-nt-ativ-input]"); if (n) n.focus();
+}
+$("v-gestao-projeto").addEventListener("click", e => {
+  const btn = e.target.closest("[data-nt-act]");
+  const form = e.target.closest(".nt-form");
+  if (!btn || !form || !novoForm) return;
+  const act = btn.dataset.ntAct, aid = btn.dataset.aid;
+  if (act === "ativ-add") { ntAddAtiv(form); return; }
+  if (act === "ativ-toggle") { const a = novoForm.ativ.find(x => x.id === aid); if (a) a.feito = !a.feito; }
+  else if (act === "ativ-del") novoForm.ativ = novoForm.ativ.filter(x => x.id !== aid);
+  else if (act === "apoio-rm") novoForm.apoio = novoForm.apoio.filter(x => x !== btn.dataset.email);
+  else if (act === "anx-del") novoForm.anexos = novoForm.anexos.filter(x => x.id !== aid);
+  else if (act === "com-del") novoForm.com = novoForm.com.filter(x => x.id !== aid);
+  else if (act === "com-add") {
+    const ta = form.querySelector("[data-nt-com]"); const texto = ta.value.trim();
+    if (!texto) return;
+    novoForm.com.push({id: uid(), autor: autor || "Você", texto, ts: new Date().toISOString()});
+  }
+  ntRefresh(form);
+});
+$("v-gestao-projeto").addEventListener("keydown", e => {
+  if (e.key === "Enter" && e.target.matches("[data-nt-ativ-input]")) { e.preventDefault(); ntAddAtiv(e.target.closest(".nt-form")); }
+});
+$("v-gestao-projeto").addEventListener("change", async e => {
+  const form = e.target.closest(".nt-form");
+  if (!form || !novoForm) return;
+  if (e.target.matches("[data-nt-apoio-add]")) {
+    const v = e.target.value;
+    const resp = form.querySelector('[name="responsavel"]').value;
+    if (v && v !== resp && !novoForm.apoio.includes(v)) novoForm.apoio.push(v);
+    e.target.value = "";
+    ntRefresh(form);
+  } else if (e.target.matches("[data-nt-anx]")) {
+    for (const file of e.target.files) {
+      const grande = file.size > ANEXO_MAX_BYTES;
+      const dataUrl = grande ? "" : await lerArquivo(file);
+      novoForm.anexos.push({id: uid(), nome: file.name, tam: file.size, tipo: file.type, dataUrl});
+    }
+    if (!document.body.contains(form)) return;
+    ntRefresh(form);
+  } else if (e.target.matches("[data-nt-and]")) {
+    const fr = form.querySelector("[data-nt-fimreal]"); if (fr) fr.value = ntFimRealTxt(e.target.value);
+  }
 });
 $("v-gestao-projeto").addEventListener("change", e => {
   if (!podeEditar()) return;
@@ -2690,14 +2822,120 @@ function pessoasAuto(){
   });
   return [...m.values()].sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
 }
+/* ================= BUSCA AO DIGITAR (autocomplete) ================= */
+const acNorm = s => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+function acHtml(kind, o = {}){
+  return `<div class="ac" data-ac="${kind}"><input type="text" class="ac-in" ${o.name ? `name="${esc(o.name)}"` : ""} value="${esc(o.value || "")}" data-last="${esc(o.value || "")}" placeholder="${esc(o.placeholder || "Digite para buscar…")}" autocomplete="off" role="combobox" aria-expanded="false"><ul class="ac-list" role="listbox" hidden></ul></div>`;
+}
+function acFonte(kind){
+  if (kind === "solic") {
+    const m = new Map();
+    cadastros.gerentes.forEach(g => m.set(acNorm(g.nome), {v: g.nome, label: g.nome, sub: ["Gerente de projeto", g.email].filter(Boolean).join(" · ")}));
+    cadastros.solicitantes.forEach(x => {
+      const k = acNorm(x.nome), sub = ["Solicitante", x.departamento, x.email].filter(Boolean).join(" · ");
+      if (m.has(k)) m.get(k).sub += " · " + sub; else m.set(k, {v: x.nome, label: x.nome, sub});
+    });
+    return [...m.values()];
+  }
+  let ja = [];
+  if (kind === "apoio-nt" && novoForm) {
+    ja = novoForm.apoio.slice();
+    const f = document.querySelector(".nt-form [name=responsavel]"); if (f && f.value) ja.push(f.value);
+  } else if (kind === "apoio-dr" && drawerCtx) {
+    const t = acharTarefa(achar(drawerCtx.pid), drawerCtx.tid);
+    if (t) ja = [...t.apoio, t.responsavel].filter(Boolean);
+  }
+  return emailsEquipe().filter(e => !ja.includes(e)).map(e => ({v: e, label: nomeCompletoDe(e), sub: e}));
+}
+function acMatches(kind, q){
+  const toks = acNorm(q).split(/\s+/).filter(Boolean);
+  if (!toks.length) return [];
+  return acFonte(kind).filter(it => { const h = acNorm(it.label + " " + it.sub); return toks.every(t => h.includes(t)); })
+    .sort((a, b) => (acNorm(b.label).startsWith(toks[0]) ? 1 : 0) - (acNorm(a.label).startsWith(toks[0]) ? 1 : 0) || a.label.localeCompare(b.label, "pt-BR")).slice(0, 8);
+}
+function acRender(ac){
+  const inp = ac.querySelector(".ac-in"), ul = ac.querySelector(".ac-list");
+  const q = inp.value.trim();
+  const items = q ? acMatches(ac.dataset.ac, q) : [];
+  if (!q) { acClose(ac); return; }
+  ul.innerHTML = items.length
+    ? items.map((it, i) => `<li role="option" data-i="${i}" data-v="${esc(it.v)}" class="${i === 0 ? "on" : ""}"><b>${esc(it.label)}</b><small>${esc(it.sub)}</small></li>`).join("")
+    : `<li class="vazio">Ninguém encontrado para "${esc(q)}"</li>`;
+  ul.hidden = false; inp.setAttribute("aria-expanded", "true");
+}
+function acClose(ac){
+  const ul = ac.querySelector(".ac-list"); if (ul) { ul.hidden = true; ul.innerHTML = ""; }
+  const inp = ac.querySelector(".ac-in"); if (inp) inp.setAttribute("aria-expanded", "false");
+}
+function acPick(ac, v){
+  const kind = ac.dataset.ac, inp = ac.querySelector(".ac-in");
+  if (kind === "solic") {
+    inp.value = v; inp.dataset.last = v; acClose(ac);
+    inp.dispatchEvent(new Event("change", {bubbles: true}));
+    return;
+  }
+  inp.value = ""; acClose(ac);
+  if (kind === "apoio-nt") {
+    const form = ac.closest(".nt-form");
+    if (!form || !novoForm) return;
+    const resp = form.querySelector("[name=responsavel]").value;
+    if (v !== resp && !novoForm.apoio.includes(v)) novoForm.apoio.push(v);
+    ntRefresh(form); inp.focus();
+  } else if (kind === "apoio-dr") {
+    if (!drawerCtx) return;
+    const t = acharTarefa(achar(drawerCtx.pid), drawerCtx.tid);
+    if (!t || !podeEditar() || !podeEditarTarefa(t)) { bloqueado(); return; }
+    if (applyField(t, "apoio-add", v)) { depoisAlterar(); const n = document.querySelector('[data-ac="apoio-dr"] .ac-in'); if (n) n.focus(); }
+  }
+}
+document.addEventListener("input", e => { const ac = e.target.closest && e.target.closest(".ac"); if (ac && e.target.matches(".ac-in")) acRender(ac); });
+document.addEventListener("keydown", e => {
+  const inp = e.target.closest && e.target.closest(".ac-in");
+  if (!inp) return;
+  const ac = inp.closest(".ac"), ul = ac.querySelector(".ac-list"), lis = [...ul.querySelectorAll("li[data-v]")];
+  const k = e.key;
+  if ((k === "ArrowDown" || k === "ArrowUp") && lis.length) {
+    e.preventDefault();
+    let i = lis.findIndex(l => l.classList.contains("on")); lis.forEach(l => l.classList.remove("on"));
+    i = k === "ArrowDown" ? (i + 1) % lis.length : (i - 1 + lis.length) % lis.length;
+    lis[i].classList.add("on"); lis[i].scrollIntoView({block: "nearest"});
+  } else if (k === "Enter") {
+    e.preventDefault(); e.stopPropagation();
+    const on = lis.find(l => l.classList.contains("on")) || lis[0];
+    if (on) acPick(ac, on.dataset.v);
+  } else if (k === "Escape" && !ul.hidden) { e.stopPropagation(); acClose(ac); }
+}, true);
+document.addEventListener("mousedown", e => {
+  const li = e.target.closest && e.target.closest(".ac-list li[data-v]");
+  if (li) { e.preventDefault(); acPick(li.closest(".ac"), li.dataset.v); return; }
+  document.querySelectorAll(".ac").forEach(ac => { if (!ac.contains(e.target)) acClose(ac); });
+});
+document.addEventListener("focusout", e => {
+  const inp = e.target.closest && e.target.closest(".ac-in");
+  if (!inp) return;
+  const ac = inp.closest(".ac");
+  setTimeout(() => {
+    if (document.activeElement === inp) return;
+    acClose(ac);
+    if (ac.dataset.ac === "solic") {
+      const v = inp.value.trim();
+      if (v && !acFonte("solic").some(it => it.v === v)) {
+        if (v !== inp.dataset.last) toast("Escolha o solicitante na lista que aparece ao digitar.");
+        inp.value = inp.dataset.last;
+      } else if (v !== inp.dataset.last) { inp.dataset.last = v; inp.dispatchEvent(new Event("change", {bubbles: true})); }
+    } else inp.value = "";
+  }, 120);
+});
+
 function emailsEquipe(){
   return [...new Set([...pessoas.map(e => e.toLowerCase()), ...pessoasAuto().map(p => p.email)])];
 }
 function pessoasOptions(atual){
   const lista = emailsEquipe();
   if (atual && !lista.includes(atual)) lista.push(atual);
+  const cont = {}; lista.forEach(e => { const n = nomeDe(e); cont[n] = (cont[n] || 0) + 1; });
   return `<option value="">— selecione —</option>` + lista.map(e =>
-    `<option value="${esc(e)}" ${e === atual ? "selected" : ""}>${esc(nomeDe(e))} (${esc(e)})</option>`).join("");
+    `<option value="${esc(e)}" title="${esc(e)}" ${e === atual ? "selected" : ""}>${esc(nomeDe(e))}${cont[nomeDe(e)] > 1 ? " (" + esc(e) + ")" : ""}</option>`).join("");
 }
 function renderDrawer(){
   if (!drawerCtx) return;
@@ -2723,8 +2961,8 @@ function renderDrawer(){
         <div class="fld"><label>Coluna atual</label><input type="text" class="ro" readonly value="${esc(bucketNome(ef))}"></div>
         <div class="fld"><label>Responsável</label>
           <select data-f="responsavel">${pessoasOptions(t.responsavel)}</select></div>
-        <div class="fld"><label>Apoio (adicionar)</label>
-          <select data-f="apoio-add"><option value="">— adicionar pessoa —</option>${emailsEquipe().filter(e => !t.apoio.includes(e)).map(e => `<option value="${esc(e)}">${esc(nomeDe(e))} (${esc(e)})</option>`).join("")}</select></div>
+        <div class="fld"><label>Apoio (digite para adicionar quantos precisar)</label>
+          ${acHtml("apoio-dr", {placeholder: "Digite o nome ou e-mail…"})}</div>
         <div class="fld full">
           ${t.apoio.length ? `<div class="chips-p">${t.apoio.map(e => `<span>${esc(nomeDe(e))}<button data-act="rm-apoio" data-email="${esc(e)}" title="Remover">✕</button></span>`).join("")}</div>` : `<p class="note" style="margin:0">Sem apoio cadastrado.</p>`}
         </div>
@@ -2786,7 +3024,7 @@ function renderDrawer(){
       <div style="display:flex;justify-content:flex-end;margin-top:6px"><button class="btn primary" data-act="com-send">Enviar</button></div>
     </div>`;
   if (podeEditarTarefa(t) && !podeEditar()) {
-    $("drBody").querySelectorAll("[data-f='responsavel'], [data-f='apoio-add']").forEach(el => el.disabled = true);
+    $("drBody").querySelectorAll("[data-f='responsavel'], .ac-in").forEach(el => el.disabled = true);
     $("drBody").querySelectorAll("[data-act='excluir'], [data-act='rm-apoio']").forEach(el => el.hidden = true);
     $("drPid").textContent += " · sua tarefa";
   }
@@ -2963,6 +3201,7 @@ function campoInput(c, valor){
   const v = esc(valor);
   if (c === "Fase") return faseSelectHtml(valor, `name="Fase"`);
   if (LISTAS[c]) return listaSelectHtml(c, valor, `name="${esc(c)}"`);
+  if (c === "Solicitante") return acHtml("solic", {name: "Solicitante", value: valor, placeholder: "Digite o nome para buscar…"});
   if (CAD_CAMPO[c]) return cadSelectHtml(CAD_CAMPO[c], valor, `name="${esc(c)}"`);
   if (c === "Status") return `<select name="Status">${STATUS_OPTS.map(s => `<option ${s===valor?"selected":""}>${esc(s)}</option>`).join("")}</select>`;
   if (c === "ID") return `<input type="text" value="${v}" readonly class="ro">`;
