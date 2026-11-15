@@ -818,12 +818,12 @@ body.resp .tcard.minha{box-shadow:0 0 0 2px var(--green) inset}
 /* ================= CONFIGURAÇÃO ================= */
 /* Colunas do arquivo original (ordem do SEED) */
 const SEED_COLS = ["Status","ID","Título","Fase","Responsável TI","Analista Funcional","Gestão do Projeto","Status Report","Inicio","Fim","Categoria","Frente","Benefício estratégico","Departamento","Nome do Programa","Solicitante","Valor Orçado R$","Realizado R$","Modificado por"];
-const COLS = ["Status","ID","Título","Fase","Responsável TI","Analista Funcional","Inicio","Fim","Categoria","Frente","Benefício estratégico","Departamento","Nome do Programa","Solicitante","Valor Orçado R$","Realizado R$","Modificado por"];
+const COLS = ["Status","ID","Título","Fase","Responsável TI","Analista Funcional","Inicio","Fim","Categoria","Frente","Benefício estratégico","Departamento","Nome do Programa","Solicitante","Valor Orçado R$","Realizado R$"];
 const STATUS_OPTS = ["0.Novo/Aguardando","1.Em linha","2.Alerta","3.Atrasado","4.Paralisado","5.Concluído"];
 const TEXT_WIDE = ["Título","Analista Funcional","Benefício estratégico","Nome do Programa","Departamento","Solicitante"];
 const GROUPS = [
   {titulo:"Identificação", campos:["Fase","Categoria","Frente","Benefício estratégico","Departamento","Nome do Programa"]},
-  {titulo:"Equipe", campos:["Responsável TI","Analista Funcional","Solicitante","Modificado por"]},
+  {titulo:"Equipe", campos:["Responsável TI","Analista Funcional","Solicitante"]},
   {titulo:"Cronograma", campos:["Inicio","Fim"]},
   {titulo:"Financeiro", campos:["Valor Orçado R$","Realizado R$"]}
 ];
@@ -1517,7 +1517,7 @@ function renderEmails(){
   const lista = vis.filter(m => m.status === emFiltro);
   $("v-emails").innerHTML = `
     <div class="page-h">
-      <div><span class="eyebrow">Comunicação</span><h1>E-mails automáticos</h1><p>O sistema monta os e-mails pelas regras e deixa na fila. Cada um abre pronto no Outlook para enviar.</p></div>
+      <div><span class="eyebrow">Comunicação</span><h1>E-mails automáticos</h1><p>Os e-mails são enviados automaticamente pelos fluxos do Power Automate. Esta aba é só o registro.</p></div>
       <div class="acts"><button class="btn" data-em="verificar">Verificar prazos agora</button></div>
     </div>
     ${perfil() === "admin" ? `
@@ -1548,8 +1548,6 @@ function renderEmails(){
         <details><summary>Ver mensagem</summary><pre class="em-corpo">${esc(m.corpo)}</pre></details>
         <div class="em-acts">
           ${m.status === "pendente" ? `
-            ${m.para.length ? `<button class="btn primary sm" data-em="abrir">Abrir no Outlook</button>` : ""}
-            <button class="btn sm" data-em="copiar">Copiar texto</button>
             <button class="btn sm" data-em="enviado">Marcar como enviado</button>
             <button class="btn sm danger" data-em="descartar">Descartar</button>` : `
             <button class="btn sm" data-em="pendente">Voltar para pendentes</button>`}
@@ -1575,15 +1573,7 @@ $("v-emails").addEventListener("click", e => {
   const card = b.closest("[data-em-id]");
   const m = emails.find(x => x.id === card.dataset.emId);
   if (!m) return;
-  if (acao === "abrir") {
-    const a = document.createElement("a"); a.href = mailtoDe(m); document.body.appendChild(a); a.click(); a.remove();
-    m.status = "enviado"; m.enviadoEm = new Date().toISOString();
-    toast("E-mail aberto no Outlook e marcado como enviado. Se não enviou, volte-o para pendentes.");
-  } else if (acao === "copiar") {
-    const txt = `Para: ${m.para.join("; ")}\nAssunto: ${m.assunto}\n\n${m.corpo}`;
-    (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(() => toast("Texto copiado."), () => toast("Não foi possível copiar automaticamente."));
-    return;
-  } else if (acao === "enviado") { m.status = "enviado"; m.enviadoEm = new Date().toISOString(); }
+  if (acao === "enviado") { m.status = "enviado"; m.enviadoEm = new Date().toISOString(); }
   else if (acao === "descartar") { m.status = "descartado"; }
   else if (acao === "pendente") { m.status = "pendente"; m.enviadoEm = ""; }
   salvarFila(); renderEmails();
@@ -3185,7 +3175,6 @@ function renderProjeto(id){
           <dt>Avanço</dt><dd>${p == null ? "sem tarefas" : p + "%"}</dd>
           <dt>Início</dt><dd>${campoView(r, "Inicio")}</dd>
           <dt>Fim</dt><dd>${campoView(r, "Fim")}</dd>
-          <dt>Modificado por</dt><dd>${dash(r["Modificado por"])}</dd>
         </dl>
       </div>
       ${grupos}
