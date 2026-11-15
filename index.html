@@ -84,6 +84,15 @@
 :root.claro .legend li:hover,:root.claro .tu-menu a:hover,:root.claro .tu-menu button:hover{background:rgba(12,27,56,.05)}
 :root.claro .lg-p:hover{border-color:rgba(12,27,56,.35)}
 .mini:hover{color:#fff}
+.dd{position:relative;display:inline-block}
+.dd-seta{font-size:10px;margin-left:2px}
+.dd-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:40;min-width:250px;background:var(--surface);border:1px solid var(--line2);border-radius:11px;padding:6px;box-shadow:0 16px 34px rgba(0,0,0,.32);display:grid;gap:2px}
+.dd-menu[hidden]{display:none}
+.sr-tools .dd-menu{left:0;right:auto}
+.dd-menu button{font:inherit;text-align:left;background:none;border:none;color:var(--text);padding:9px 11px;border-radius:8px;cursor:pointer}
+.dd-menu button:hover{background:var(--surface2)}
+.dd-menu b{display:block;font-size:13px;color:var(--hi)}
+.dd-menu small{display:block;color:var(--muted);font-size:11.5px;margin-top:1px}
 .col.over-nao{outline:2px dashed var(--cherry);outline-offset:-2px;background:color-mix(in srgb,var(--cherry) 8%,transparent);cursor:not-allowed}
 .tema-btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 .login-card{position:relative}
@@ -758,6 +767,7 @@ body.resp .tcard.minha{box-shadow:0 0 0 2px var(--green) inset}
         <option value="vencido">Prazo vencido</option>
         <option value="proximo">Vence em até 30 dias</option>
       </select>
+      <button class="btn" id="btnExpLista" title="Exporta para Excel os projetos que estão na tela, com os filtros aplicados">Exportar Excel</button>
       <span class="count" id="contador"></span>
     </div>
     <p class="note">Clique em uma linha para abrir a ficha do projeto. Use “Gestão do projeto” para abrir o kanban.</p>
@@ -799,6 +809,7 @@ body.resp .tcard.minha{box-shadow:0 0 0 2px var(--green) inset}
     <div class="toolbar">
       <input type="search" id="cBusca" placeholder="Buscar projeto, responsável ou área…" aria-label="Buscar concluídos">
       <select id="cOrdenar" aria-label="Ordenar"><option value="fim">Mais recentes primeiro</option><option value="nome">Nome</option><option value="id">ID</option></select>
+      <button class="btn" id="btnExpConc" title="Exporta para Excel os projetos concluídos que estão na tela">Exportar Excel</button>
       <span class="count" id="cContador"></span>
     </div>
     <div class="pgrid" id="cGrid"></div>
@@ -1892,7 +1903,7 @@ function renderHome(){
   $("v-home").innerHTML = `
     <div class="page-h">
       <div><span class="eyebrow">Portfólio de TI</span><h1>Visão geral</h1><p>Atualizado em ${esc(hojeTxt)}</p></div>
-      <div class="acts"><span data-tema-slot>${temaBtnHtml()}</span><a class="btn" href="#/lista">Ver lista</a><a class="btn primary" href="#/gestao">Abrir gestão</a></div>
+      <div class="acts" data-noexport><span data-tema-slot>${temaBtnHtml()}</span>${ddDownloadHtml("home-exp", "btn")}${perfil() === "admin" ? `<button class="btn" data-home-exp="outlook">Enviar no Outlook</button>` : ""}<a class="btn" href="#/lista">Ver lista</a><a class="btn primary" href="#/gestao">Abrir gestão</a></div>
     </div>
     <div class="kpis5">
       ${kc("Em andamento", ativos.length, `de ${total} projetos`, "var(--st1)")}
@@ -1981,8 +1992,7 @@ function renderChips(){
     renderLista();
   }));
 }
-function renderLista(){
-  renderChips();
+function listaFiltrada(){
   const q = $("busca").value.trim().toLowerCase();
   const st = $("filtroStatus").value;
   const pz = $("filtroPrazo").value;
@@ -1996,6 +2006,11 @@ function renderLista(){
       return String(a[sortKey]).localeCompare(String(b[sortKey]), "pt-BR", {numeric:true}) * sortDir;
     });
   }
+  return list;
+}
+function renderLista(){
+  renderChips();
+  const list = listaFiltrada();
   $("cabLista").innerHTML = COLS_TABELA.map(c => {
     if (c === "Prazo" || c === "Gestão") return `<th>${c}</th>`;
     const seta = sortKey === c ? `<span class="arr">${sortDir>0?"▲":"▼"}</span>` : "";
@@ -2075,14 +2090,17 @@ function ganttHtml(linhas, opts = {}){
 const legenda = itens => `<div class="leg">${itens.map(([cor, txt]) => `<span><i style="background:${cor}"></i>${esc(txt)}</span>`).join("")}<span><i class="hoje"></i>Hoje</span></div>`;
 
 /* ================= PROJETOS CONCLUÍDOS ================= */
-function renderConcluidos(){
+function concluidosFiltrados(){
   const q = $("cBusca").value.trim().toLowerCase();
   const o = $("cOrdenar").value;
-  const list = rows.filter(isConcluido)
+  return rows.filter(isConcluido)
     .filter(r => !q || (r["Título"] + " " + r["Responsável TI"] + " " + r.Frente).toLowerCase().includes(q))
     .sort((a, b) => o === "nome" ? a["Título"].localeCompare(b["Título"], "pt-BR")
       : o === "id" ? (parseInt(a.ID, 10) || 0) - (parseInt(b.ID, 10) || 0)
       : (toDate(b.Fim) ? b.Fim : "0000").localeCompare(toDate(a.Fim) ? a.Fim : "0000"));
+}
+function renderConcluidos(){
+  const list = concluidosFiltrados();
   $("cGrid").innerHTML = list.length ? list.map(r => {
     const ts = r.tarefas.filter(t => efetivo(t) !== "cancelado");
     const feitas = ts.filter(t => efetivo(t) === "concluido").length;
@@ -2458,7 +2476,7 @@ $("v-gestao-projeto").addEventListener("click", e => {
   if (sr) {
     const r = achar(currentProjId());
     if (sr.dataset.sr === "pdf" || sr.dataset.sr === "png") exportarReport(r, sr.dataset.sr);
-    else if (sr.dataset.sr === "outlook") abrirEmailStatusReport(r);
+    else if (sr.dataset.sr === "outlook") enviarComPdf("report", r).then(ok => { if (ok) { registrar(r, "Status report preparado para envio pelo Outlook (PDF anexado)"); salvar(); } });
     else if (sr.dataset.sr === "editar") { if (!bloqueado()) abrirEdicaoReport(r); }
     else if (sr.dataset.sr === "auto") {
       if (bloqueado()) return;
@@ -2843,8 +2861,7 @@ function reportViewHtml(r){
   const d = dadosReport(r);
   return `
     <div class="sr-tools">
-      <button class="btn primary" data-sr="pdf">Baixar PDF</button>
-      <button class="btn" data-sr="png">Baixar PNG</button>
+      ${ddDownloadHtml("sr", "btn primary")}
       <button class="btn navy" data-sr="editar">Preencher / editar manualmente</button>
       ${d.manuais.length ? `<button class="btn" data-sr="auto">Voltar aos dados dos cards</button>` : ""}
       <span class="note" style="margin:0">${d.manuais.length
@@ -2855,7 +2872,7 @@ function reportViewHtml(r){
     ${perfil() === "admin" || perfil() === "gp" ? `
     <div class="sr-envio">
       <button class="btn primary" data-sr="outlook">Enviar no Outlook</button>
-      <span class="note" style="margin:0">Abre um e-mail novo com o resumo e a análise deste status report. Só falta adicionar os destinatários e enviar. Para mandar o relatório completo, use Baixar PDF e anexe.</span>
+      <span class="note" style="margin:0">Prepara um e-mail com a análise deste status report e o PDF anexado. Só falta adicionar os destinatários e enviar.</span>
     </div>` : ""}`;
 }
 function emailStatusReport(r){
@@ -2874,7 +2891,7 @@ function emailStatusReport(r){
     : "O projeto segue dentro do planejado.";
   const lista = (titulo, itens, vazio) => `${titulo}\n${itens.length ? itens.map(x => "• " + x).join("\n") : "• " + vazio}`;
   const blocos = [
-    `Olá,\n\nSegue o status report do projeto ${r["Título"]} (#${r.ID}), atualizado em ${hoje}.`,
+    `Olá,\n\nSegue o status report do projeto ${r["Título"]} (#${r.ID}), atualizado em ${hoje}. O relatório completo está em anexo (PDF).`,
     `RESUMO\n• Status geral: ${d.statusGeral} | Cronograma: ${d.cronograma} | Orçamento: ${d.orcamento}${d.orcValor && d.orcamento !== "Não informado" ? " (" + d.orcValor + ")" : ""} | Qualidade: ${d.qualidade}\n• Avanço: ${d.avanco == null ? "sem tarefas" : d.avanco + "%"} · Fase atual: ${fase}${r.Fase ? " (" + r.Fase + ")" : ""}\n• Período: ${r.Inicio ? dataBR(r.Inicio) : "—"} a ${r.Fim ? dataBR(r.Fim) : "—"}${pz && pz.texto ? " · " + pz.texto : ""}`,
     `ANÁLISE\n${veredito}\n${d.situacao}${d.desvio && d.desvio !== "Sem desvios registrados." ? "\n" + d.desvio : ""}${proxSemana.length ? `\nVencem nos próximos 7 dias: ${proxSemana.slice(0, 4).map(t => t.nome + " (" + dataBR(t.fimPrevisto) + ")").join(", ")}${proxSemana.length > 4 ? "…" : ""}.` : ""}`,
     lista("ENTREGAS RECENTES", d.entregas, "Nenhuma entrega nos últimos 30 dias."),
@@ -2882,7 +2899,7 @@ function emailStatusReport(r){
     lista("PONTOS DE ATENÇÃO", d.riscos.map(x => `${x.risco}: impacto ${String(x.impacto).toLowerCase()}. ${x.acao}`), "Nenhum risco ou ponto de atenção no momento."),
     d.equipe ? `Equipe: ${d.equipe}` : "",
     `Acompanhe o projeto: ${linkProjeto(r)}`,
-    `Atenciosamente,\n${sessao && sessao.perfil === "gp" ? sessao.nome : (autor || "")}`
+    `Atenciosamente,\n${sessao && sessao.perfil === "gp" ? sessao.nome : (autor && autor !== "Administrador" ? autor : "Equipe de Projetos de TI")}`
   ].filter(Boolean);
   return {assunto: `[Status Report] ${r["Título"]} (#${r.ID}) · ${hoje}`, corpo: blocos.join("\n\n")};
 }
@@ -2939,23 +2956,327 @@ function baixarBlob(blob, nome){
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }
 const nomeReport = r => `Status_Report_${r.ID}_${slugArq(r["Título"])}_${hojeISO()}`;
+async function pdfDoReport(){
+  const canvas = await capturarReport();
+  await carregarScript(JSPDF_URL);
+  const pdf = new window.jspdf.jsPDF({orientation: "landscape", unit: "mm", format: "a4"});
+  pdf.addImage(canvas.toDataURL("image/jpeg", 0.95), "JPEG", 0, 0, 297, 210);
+  return pdf;
+}
 async function exportarReport(r, tipo){
   try {
     toast(tipo === "pdf" ? "Gerando PDF…" : "Gerando PNG…");
-    const canvas = await capturarReport();
     if (tipo === "png") {
+      const canvas = await capturarReport();
       canvas.toBlob(b => baixarBlob(b, nomeReport(r) + ".png"), "image/png");
     } else {
-      await carregarScript(JSPDF_URL);
-      const pdf = new window.jspdf.jsPDF({orientation: "landscape", unit: "mm", format: "a4"});
-      pdf.addImage(canvas.toDataURL("image/jpeg", 0.95), "JPEG", 0, 0, 297, 210);
-      pdf.save(nomeReport(r) + ".pdf");
+      (await pdfDoReport()).save(nomeReport(r) + ".pdf");
     }
     toast("Arquivo gerado.");
   } catch (err) {
     toast("Não foi possível gerar o arquivo: " + err.message);
   }
 }
+
+/* ================= MENU DOWNLOAD ================= */
+function ddDownloadHtml(attr, cls){
+  return `<div class="dd"><button type="button" class="${cls}" data-dd aria-haspopup="true">Download <span class="dd-seta">▾</span></button>
+    <div class="dd-menu" hidden>
+      <button type="button" data-${attr}="pdf"><b>PDF</b><small>Documento A4, bom para enviar e imprimir</small></button>
+      <button type="button" data-${attr}="png"><b>PNG</b><small>Imagem, boa para colar em apresentações</small></button>
+    </div></div>`;
+}
+document.addEventListener("click", e => {
+  const bt = e.target.closest("[data-dd]");
+  const aberto = bt && bt.nextElementSibling;
+  document.querySelectorAll(".dd-menu").forEach(m => { if (m !== aberto) m.hidden = true; });
+  if (aberto) aberto.hidden = !aberto.hidden;
+  else if (e.target.closest(".dd-menu button")) e.target.closest(".dd-menu").hidden = true;
+});
+
+/* ================= EXPORTAR LISTAS (Excel) E HOME (PDF/PNG) ================= */
+const XLSX_URL = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+const EXP_CAB = ["Status","ID","Título","Fase","Responsável TI","Analista Funcional","Início","Fim","Categoria","Frente","Benefício estratégico","Departamento","Nome do Programa","Solicitante","Valor Orçado R$","Realizado R$","Prazo","Avanço %","Tarefas","Tarefas em atraso","Link do projeto"];
+const EXP_DATAS = ["Início","Fim"], EXP_MOEDA = ["Valor Orçado R$","Realizado R$"];
+function linhaExport(r){
+  const p = progProjeto(r), pz = prazo(r);
+  const moeda = v => String(v || "").trim() ? parseMoeda(v) : "";
+  return [r.Status, /^\d+$/.test(r.ID) ? +r.ID : r.ID, r["Título"], r.Fase, r["Responsável TI"], r["Analista Funcional"],
+    toDate(r.Inicio) ? r.Inicio : "", toDate(r.Fim) ? r.Fim : "", r.Categoria, r.Frente, r["Benefício estratégico"], r.Departamento,
+    r["Nome do Programa"], r.Solicitante, moeda(r["Valor Orçado R$"]), moeda(r["Realizado R$"]), pz ? pz.texto : "",
+    p == null ? "" : p, r.tarefas.filter(t => efetivo(t) !== "cancelado").length, r.tarefas.filter(t => efetivo(t) === "atraso").length, linkProjeto(r)];
+}
+const serialExcel = iso => (Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10)) - Date.UTC(1899, 11, 30)) / 864e5;
+function csvDe(linhas){
+  const q = v => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  return "\ufeff" + linhas.map(l => l.map(q).join(";")).join("\n");
+}
+async function exportarExcel(base, aba, lista, filtros){
+  const linhas = [EXP_CAB, ...lista.map(linhaExport)];
+  const nome = `${base}_${hojeISO()}`;
+  try {
+    toast("Gerando Excel…");
+    await carregarScript(XLSX_URL);
+    const X = window.XLSX;
+    const ws = X.utils.aoa_to_sheet(linhas);
+    lista.forEach((r, i) => EXP_CAB.forEach((c, j) => {
+      const ref = X.utils.encode_cell({r: i + 1, c: j});
+      const cel = ws[ref];
+      if (!cel) return;
+      if (EXP_DATAS.includes(c) && /^\d{4}-\d{2}-\d{2}$/.test(cel.v)) ws[ref] = {t: "n", v: serialExcel(cel.v), z: "dd/mm/yyyy"};
+      else if (EXP_MOEDA.includes(c) && typeof cel.v === "number") cel.z = '"R$" #,##0.00';
+      else if (c === "Link do projeto" && cel.v) cel.l = {Target: cel.v};
+    }));
+    ws["!cols"] = EXP_CAB.map((c, j) => ({wch: Math.min(48, Math.max(c.length + 2, ...linhas.slice(1).map(l => String(l[j] ?? "").length + 1)))}));
+    ws["!autofilter"] = {ref: ws["!ref"]};
+    const wb = X.utils.book_new();
+    X.utils.book_append_sheet(wb, ws, aba);
+    const info = X.utils.aoa_to_sheet([
+      ["Projetos TI · JCE SA Brazil", ""],
+      ["Lista", aba],
+      ["Exportado em", new Date().toLocaleString("pt-BR")],
+      ["Exportado por", sessao ? sessao.nome : ""],
+      ["Filtros aplicados", filtros || "nenhum"],
+      ["Projetos", lista.length]
+    ]);
+    info["!cols"] = [{wch: 20}, {wch: 70}];
+    X.utils.book_append_sheet(wb, info, "Sobre");
+    X.writeFile(wb, nome + ".xlsx");
+    toast(`Excel gerado com ${lista.length} projeto(s).`);
+  } catch (err) {
+    baixarBlob(new Blob([csvDe(linhas)], {type: "text/csv;charset=utf-8"}), nome + ".csv");
+    toast("Não foi possível gerar o Excel (" + err.message + "). Baixei em CSV, que também abre no Excel.");
+  }
+}
+function filtrosListaTxt(){
+  const f = [];
+  if ($("busca").value.trim()) f.push(`busca "${$("busca").value.trim()}"`);
+  if ($("filtroStatus").value) f.push("status " + $("filtroStatus").value);
+  if ($("filtroPrazo").value) f.push("prazo: " + $("filtroPrazo").selectedOptions[0].textContent);
+  if (sortKey) f.push(`ordenado por ${sortKey} (${sortDir > 0 ? "crescente" : "decrescente"})`);
+  return f.join("; ");
+}
+$("btnExpLista").addEventListener("click", () => exportarExcel("projetos_ti_lista", "Projetos", listaFiltrada(), filtrosListaTxt()));
+$("btnExpConc").addEventListener("click", () => exportarExcel("projetos_ti_concluidos", "Concluídos", concluidosFiltrados(),
+  [$("cBusca").value.trim() && `busca "${$("cBusca").value.trim()}"`, "ordem: " + $("cOrdenar").selectedOptions[0].textContent].filter(Boolean).join("; ")));
+
+/* Captura de tela: converte cores modernas (color-mix) para RGB só na cópia usada pela captura */
+const corCtx = (() => { const c = document.createElement("canvas"); c.width = c.height = 1; return c.getContext("2d", {willReadFrequently: true}); })();
+function corRgb(c){
+  corCtx.clearRect(0, 0, 1, 1);
+  corCtx.fillStyle = "#000";
+  corCtx.fillStyle = c;
+  corCtx.fillRect(0, 0, 1, 1);
+  const [r, g, b, a] = corCtx.getImageData(0, 0, 1, 1).data;
+  return `rgba(${r},${g},${b},${+(a / 255).toFixed(3)})`;
+}
+const COR_MODERNA = /(?:color|oklab|oklch|lab|lch)\([^()]*\)/g;
+const CORES_PROPS = ["color","background-color","background-image","border-top-color","border-right-color","border-bottom-color","border-left-color","outline-color","box-shadow","fill","stroke","text-decoration-color","-webkit-text-fill-color","-webkit-text-stroke-color","caret-color","column-rule-color","text-emphasis-color"];
+async function capturarElemento(el){
+  await carregarScript(H2C_URL);
+  if (document.fonts && document.fonts.ready) await document.fonts.ready;
+  const fixos = [];
+  [el, ...el.querySelectorAll("*")].forEach(o => {
+    const cs = getComputedStyle(o), m = {};
+    CORES_PROPS.forEach(p => { const v = cs.getPropertyValue(p); if (v && /(?:color|oklab|oklch|lab|lch)\(/.test(v)) m[p] = v.replace(COR_MODERNA, corRgb); });
+    if (Object.keys(m).length) { o.setAttribute("data-cap-i", fixos.length); fixos.push(m); }
+  });
+  const fundo = getComputedStyle(document.body).backgroundColor;
+  try {
+    return await window.html2canvas(el, {
+      scale: 2, backgroundColor: fundo, useCORS: true, logging: false,
+      width: el.scrollWidth, height: el.scrollHeight, windowWidth: document.documentElement.clientWidth, scrollX: 0, scrollY: -window.scrollY,
+      ignoreElements: n => n.hasAttribute && n.hasAttribute("data-noexport"),
+      onclone: doc => {
+        const st = doc.createElement("style");
+        st.textContent = "*,*::before,*::after{animation:none !important;transition:none !important}";
+        doc.head.appendChild(st);
+        doc.querySelectorAll("[data-cap-i]").forEach(n => {
+          const m = fixos[+n.getAttribute("data-cap-i")];
+          if (m) Object.entries(m).forEach(([p, v]) => n.style.setProperty(p, v, "important"));
+        });
+      }
+    });
+  } finally {
+    el.querySelectorAll("[data-cap-i]").forEach(n => n.removeAttribute("data-cap-i"));
+    el.removeAttribute("data-cap-i");
+  }
+}
+const nomeHome = () => `projetos_ti_visao_geral_${hojeISO()}`;
+async function pdfDaHome(){
+  const canvas = await capturarElemento($("v-home"));
+  await carregarScript(JSPDF_URL);
+  const pdf = new window.jspdf.jsPDF({orientation: "landscape", unit: "mm", format: "a4"});
+  const [r, g, b] = corRgb(getComputedStyle(document.body).backgroundColor).match(/\d+/g).map(Number);
+  pdf.setFillColor(r, g, b);
+  pdf.rect(0, 0, 297, 210, "F");
+  const m = 8, lw = 297 - 2 * m, lh = 210 - 2 * m;
+  const k = Math.min(lw / canvas.width, lh / canvas.height);
+  const w = canvas.width * k, h = canvas.height * k;
+  pdf.addImage(canvas.toDataURL("image/jpeg", 0.93), "JPEG", (297 - w) / 2, m, w, h);
+  return pdf;
+}
+async function exportarHome(tipo){
+  try {
+    toast(tipo === "pdf" ? "Gerando PDF…" : "Gerando PNG…");
+    if (tipo === "png") {
+      const canvas = await capturarElemento($("v-home"));
+      canvas.toBlob(b => baixarBlob(b, nomeHome() + ".png"), "image/png");
+    } else {
+      (await pdfDaHome()).save(nomeHome() + ".pdf");
+    }
+    toast("Arquivo gerado.");
+  } catch (err) {
+    toast("Não foi possível gerar o arquivo: " + err.message);
+  }
+}
+function emailHome(){
+  const hoje = dataBR(hojeISO());
+  const ativos = rows.filter(emAndamento);
+  const concl = rows.filter(isConcluido).length;
+  const avg = media(ativos.filter(r => progProjeto(r) != null).map(progProjeto));
+  const tarefas = rows.flatMap(r => r.tarefas.map(t => ({t, r})));
+  const tAtraso = tarefas.filter(x => efetivo(x.t) === "atraso").sort((a, b) => (a.t.fimPrevisto || "").localeCompare(b.t.fimPrevisto || ""));
+  const vencidos = rows.map(r => ({r, p: prazo(r)})).filter(x => x.p && x.p.tipo === "vencido").sort((a, b) => a.p.dias - b.p.dias);
+  const pct = n => rows.length ? Math.round(n / rows.length * 100) + "%" : "0%";
+  const status = DONUT_ORDEM.map(s => ({l: statusLabel(s), n: rows.filter(r => r.Status === s).length})).filter(x => x.n);
+  const fases = FASES_MACRO.map(f => ({l: f.nome, n: ativos.filter(r => faseMacro(r.Fase) === f.key).length}));
+  const areas = agrupar(ativos, r => r.Frente || "Sem área").map(g => `${g.label}: ${g.arr.length}`);
+  const lim = new Date(HOJE.getTime() + 30 * 864e5);
+  const dentro = iso => { const d = toDate(iso); return d && d >= HOJE && d <= lim; };
+  const proximos = [
+    ...ativos.filter(r => dentro(r.Fim)).map(r => ({data: r.Fim, txt: `${r["Título"]} (fim do projeto)`})),
+    ...tarefas.filter(x => ["backlog","execucao"].includes(efetivo(x.t)) && dentro(x.t.fimPrevisto)).map(x => ({data: x.t.fimPrevisto, txt: `${x.t.nome} (tarefa · ${x.r["Título"]})`}))
+  ].sort((a, b) => a.data.localeCompare(b.data));
+  const alerta = rows.filter(r => /^2\./.test(r.Status)).length, atrasado = rows.filter(r => /^3\./.test(r.Status)).length, paralis = rows.filter(isParalisado).length;
+  const analise = [];
+  if (vencidos.length) analise.push(`${vencidos.length === 1 ? "1 projeto em andamento está" : vencidos.length + " projetos em andamento estão"} com o prazo final vencido e ${vencidos.length === 1 ? "precisa" : "precisam"} de replanejamento.`);
+  if (alerta || atrasado) analise.push(`${alerta} projeto(s) em Alerta e ${atrasado} Atrasado(s) pedem acompanhamento próximo.`);
+  if (tAtraso.length) analise.push(`${tAtraso.length} tarefa(s) estão com o fim previsto vencido.`);
+  if (paralis) analise.push(`${paralis} projeto(s) estão paralisados.`);
+  if (!analise.length) analise.push("O portfólio segue dentro do planejado, sem prazos vencidos.");
+  const lista = (titulo, itens, vazio, max = 6) => `${titulo}\n${itens.length ? itens.slice(0, max).map(x => "• " + x).join("\n") + (itens.length > max ? `\n• e mais ${itens.length - max}` : "") : "• " + vazio}`;
+  const corpo = [
+    `Olá,\n\nSegue a visão geral do portfólio de projetos de TI, atualizada em ${hoje}. O painel completo está em anexo (PDF).`,
+    `RESUMO\n• ${rows.length} projetos: ${ativos.length} em andamento, ${concl} concluídos e ${paralis} paralisados\n• Avanço médio dos projetos com tarefas: ${avg == null ? "sem tarefas cadastradas" : avg + "%"}\n• Prazos vencidos: ${vencidos.length} projeto(s) · Tarefas em atraso: ${tAtraso.length}`,
+    `ANÁLISE\n${analise.join("\n")}`,
+    lista("STATUS DO PORTFÓLIO", status.map(x => `${x.l}: ${x.n} (${pct(x.n)})`), "Nenhum projeto.", 10),
+    lista("EM ANDAMENTO POR FASE", fases.map(x => `${x.l}: ${x.n}`), "Nenhum projeto em andamento.", 10),
+    lista("EM ANDAMENTO POR ÁREA", areas, "Nenhum projeto em andamento.", 10),
+    lista("PONTOS DE ATENÇÃO", [...vencidos.map(x => `${x.r["Título"]} (#${x.r.ID}): ${x.p.texto.toLowerCase()}`), ...tAtraso.map(x => `${x.t.nome} (tarefa · ${x.r["Título"]}): em atraso desde ${dataBR(x.t.fimPrevisto)}`)], "Nenhum ponto de atenção."),
+    lista("PRÓXIMOS 30 DIAS", proximos.map(x => `${dataBR(x.data)} · ${x.txt}`), "Nenhuma entrega prevista."),
+    `Acompanhe no sistema: ${urlSistema()}#/home`,
+    `Atenciosamente,\n${autor && autor !== "Administrador" ? autor : "Equipe de Projetos de TI"}`
+  ];
+  return {assunto: `[Projetos TI] Visão geral do portfólio · ${hoje}`, corpo: corpo.join("\n\n")};
+}
+const linkify = s => s.replace(/((?:https?|file):\/\/[^\s<]+)/g, '<a href="$1" style="color:#ED174F">$1</a>');
+function corpoHtml(texto){
+  const blocos = texto.split("\n\n").map(b => {
+    let html = "", lista = [];
+    const fecha = () => { if (lista.length) { html += `<ul style="margin:2px 0 12px 20px;padding:0">${lista.map(x => `<li style="margin:2px 0">${linkify(esc(x))}</li>`).join("")}</ul>`; lista = []; } };
+    b.split("\n").forEach((l, i) => {
+      if (l.startsWith("• ")) { lista.push(l.slice(2)); return; }
+      fecha();
+      if (i === 0 && /^[A-ZÀ-Ý0-9 ]{4,}$/.test(l)) html += `<p style="margin:16px 0 4px;font-weight:bold;color:#0C1B38;letter-spacing:.05em;font-size:12.5px;border-bottom:2px solid #ED174F;padding-bottom:3px;display:inline-block">${esc(l)}</p>`;
+      else html += `<p style="margin:0 0 6px">${linkify(esc(l))}</p>`;
+    });
+    fecha();
+    return html;
+  }).join("");
+  return `<div style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;color:#1B2740;line-height:1.5">${blocos}</div>`;
+}
+const b64Utf8 = s => btoa(unescape(encodeURIComponent(s)));
+const quebra76 = s => s.replace(/.{1,76}/g, "$&\r\n").replace(/\r\n$/, "");
+function assuntoMime(t){
+  const partes = [];
+  for (let i = 0; i < t.length; i += 28) partes.push(`=?UTF-8?B?${b64Utf8(t.slice(i, i + 28))}?=`);
+  return partes.join("\r\n ");
+}
+const nomeAscii = n => n.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w.\- ]/g, "_");
+function emlRascunho(assunto, html, anexo){
+  const bd = "=_pti_" + uid();
+  const nome = nomeAscii(anexo.nome);
+  return [
+    "X-Unsent: 1", `Subject: ${assuntoMime(assunto)}`, "MIME-Version: 1.0", `Content-Type: multipart/mixed; boundary="${bd}"`, "",
+    `--${bd}`, 'Content-Type: text/html; charset="utf-8"', "Content-Transfer-Encoding: base64", "", quebra76(b64Utf8(`<html><body>${html}</body></html>`)),
+    `--${bd}`, `Content-Type: application/pdf; name="${nome}"`, `Content-Disposition: attachment; filename="${nome}"`, "Content-Transfer-Encoding: base64", "", quebra76(anexo.base64),
+    `--${bd}--`, ""
+  ].join("\r\n");
+}
+async function spTokenMail(){
+  const app = await spMsal();
+  const conta = spConta(app);
+  if (!conta) throw new Error("sem conta Microsoft");
+  return (await app.acquireTokenSilent({scopes: ["Mail.ReadWrite"], account: conta})).accessToken;
+}
+async function spVerificarMail(){
+  try { await spTokenMail(); spSt.mailOk = true; } catch (e) { spSt.mailOk = false; }
+}
+async function spRascunhoGraph(assunto, html, anexo){
+  const tk = await spTokenMail();
+  const resp = await fetch(GRAPH + "/me/messages", {method: "POST", headers: {Authorization: "Bearer " + tk, "Content-Type": "application/json"},
+    body: JSON.stringify({subject: assunto, body: {contentType: "HTML", content: html},
+      attachments: [{"@odata.type": "#microsoft.graph.fileAttachment", name: anexo.nome, contentType: "application/pdf", contentBytes: anexo.base64}]})});
+  const j = await resp.json().catch(() => null);
+  if (!resp.ok || !j || !j.webLink) throw new Error(resp.status + " " + ((j && j.error && j.error.message) || ""));
+  return j.webLink;
+}
+async function enviarComPdf(tipo, r){
+  const online = spLigado() && spSt.mailOk;
+  const janela = online ? window.open("about:blank", "_blank") : null;
+  try {
+    toast("Preparando o e-mail com o PDF anexado…");
+    const m = tipo === "report" ? emailStatusReport(r) : emailHome();
+    const pdf = tipo === "report" ? await pdfDoReport() : await pdfDaHome();
+    const base = tipo === "report" ? nomeReport(r) : nomeHome();
+    const anexo = {nome: base + ".pdf", base64: pdf.output("datauristring").split(",")[1]};
+    const html = corpoHtml(m.corpo);
+    if (online) {
+      try {
+        const link = await spRascunhoGraph(m.assunto, html, anexo);
+        if (janela && !janela.closed) janela.location.href = link; else window.open(link, "_blank");
+        toast("Rascunho criado no seu Outlook com o PDF anexado. Adicione os destinatários e envie.");
+        return true;
+      } catch (e) {
+        if (janela) janela.close();
+        spLog("aviso", "Não foi possível criar o rascunho direto no Outlook (" + e.message + "). Usei o arquivo de e-mail.");
+      }
+    }
+    baixarBlob(new Blob([emlRascunho(m.assunto, html, anexo)], {type: "message/rfc822"}), base + ".eml");
+    toast("E-mail pronto com o PDF anexado. Abra o arquivo .eml que foi baixado: ele abre no Outlook como rascunho. Só falta adicionar os destinatários e enviar.");
+    return true;
+  } catch (err) {
+    if (janela) janela.close();
+    toast("Não foi possível preparar o e-mail: " + err.message);
+    return false;
+  }
+}
+function abrirMailto(m, dica){
+  const enc = t => encodeURIComponent(String(t).replace(/\n/g, "\r\n"));
+  let corpo = m.corpo, cortado = false;
+  let url = `mailto:?subject=${enc(m.assunto)}&body=${enc(corpo)}`;
+  while (url.length > 7500 && corpo.length > 400) {
+    corpo = corpo.slice(0, Math.floor(corpo.length * 0.85)).replace(/\s+\S*$/, "") + "\n\n(continua: veja no sistema)";
+    url = `mailto:?subject=${enc(m.assunto)}&body=${enc(corpo)}`;
+    cortado = true;
+  }
+  const a = document.createElement("a");
+  a.href = url;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  const txt = `Assunto: ${m.assunto}\n\n${m.corpo}`;
+  (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(
+    () => toast(cortado ? "E-mail aberto no Outlook. O texto era longo; o texto completo foi copiado, cole no e-mail se quiser." : "E-mail aberto no Outlook. " + dica + " (O texto também foi copiado.)"),
+    () => toast("E-mail aberto no Outlook. " + dica));
+}
+$("v-home").addEventListener("click", e => {
+  const b = e.target.closest("[data-home-exp]");
+  if (!b) return;
+  if (b.dataset.homeExp === "outlook") { if (perfil() === "admin") enviarComPdf("home"); return; }
+  exportarHome(b.dataset.homeExp);
+});
 
 /* Edição manual */
 let repCtx = null;
@@ -4392,6 +4713,7 @@ async function spConectar(){
     await spCarregar();
     spSt.on = true;
     spEstado("ok");
+    spVerificarMail();
     spRedesenhar();
   } catch (e) {
     spSt.on = false;
