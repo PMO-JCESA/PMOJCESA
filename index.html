@@ -577,6 +577,8 @@ body.ro .tcard, body.ro .pcard{cursor:pointer}
 .lg-perfis{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
 .lg-p{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;padding:14px 8px 12px;border:1px solid var(--line2);border-radius:12px;background:var(--surface3);cursor:pointer;transition:border-color .15s,background .15s}
 .lg-p input{position:absolute;opacity:0;pointer-events:none}
+.lg-p.lg-off{opacity:.35;cursor:not-allowed;filter:grayscale(1)}
+.sr-envio{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:16px 0 4px;padding:14px 16px;border:1px solid var(--line2);border-radius:12px;background:var(--surface)}
 .fld .lg-perfis .lg-p{display:flex;flex-direction:column;align-items:center;margin:0;font-size:13px;font-weight:600;color:var(--text)}
 .lg-p b,.lg-p small{display:block}
 .lg-p b{color:#fff;font-size:13px;line-height:1.2}
@@ -664,7 +666,8 @@ body.resp .tcard.minha{box-shadow:0 0 0 2px var(--green) inset}
       </div>
       <div class="fld" data-lg="email"><label>E-mail</label><input type="email" name="email" placeholder="nome.sobrenome@jcesa.com.br" list="lgEmails"><datalist id="lgEmails"></datalist></div>
       <div class="fld" data-lg="senha"><label>Senha</label><input type="password" name="senha" placeholder="Digite a senha"></div>
-      <p class="note lg-info" data-lg="viewer">Acesso livre, somente para visualizar a Gestão. Nada pode ser alterado.</p>
+      <p class="note lg-info" data-lg="viewer">Somente para visualizar a Gestão. Nada pode ser alterado.</p>
+      <p class="note lg-info" id="lgSoAdmin" hidden>Gerente de Projeto, Responsável de tarefa e Visualizador ficam liberados depois de entrar com Microsoft.</p>
       <p class="lg-erro" id="lgErro"></p>
       <button class="btn primary" type="submit">Entrar</button>
     </form>
@@ -1430,7 +1433,17 @@ function mostrarLogin(){
   ajustarLogin();
   setTimeout(() => { const s = $("loginForm").querySelector("[name=senha]"); if (s && !s.closest("[hidden]")) s.focus(); }, 50);
 }
+const loginLiberado = p => p === "admin" || spLigado();
+let sessaoEspera = null;
 function ajustarLogin(){
+  const f = $("loginForm");
+  f.querySelectorAll('input[name=perfil]').forEach(i => {
+    const livre = loginLiberado(i.value);
+    i.disabled = !livre;
+    i.closest(".lg-p").classList.toggle("lg-off", !livre);
+  });
+  if (!loginLiberado(f.perfil.value)) f.querySelector('input[name=perfil][value=admin]').checked = true;
+  $("lgSoAdmin").hidden = spLigado();
   const p = $("loginForm").perfil.value;
   $("loginForm").querySelector('[data-lg="email"]').hidden = !(p === "gp" || p === "resp");
   $("lgEmails").innerHTML = (p === "resp" ? emailsEquipe().map(e => `<option value="${esc(e)}">${esc(nomeCompletoDe(e))}</option>`)
@@ -1452,6 +1465,7 @@ $("loginForm").addEventListener("submit", e => {
   const f = e.target, p = f.perfil.value, senha = f.senha.value;
   const email = f.email.value.trim().toLowerCase();
   const erro = msg => { $("lgErro").textContent = msg; };
+  if (!loginLiberado(p)) return erro("Entre com Microsoft primeiro (botão acima) para usar este perfil.");
   let nova;
   if (p === "admin") {
     if (!senhaAdminOk(senha)) return erro("Senha incorreta.");
@@ -1470,6 +1484,9 @@ $("loginForm").addEventListener("submit", e => {
   } else {
     nova = {perfil: "viewer", nome: "Visualizador", email: ""};
   }
+  entrarNoApp(nova, true);
+});
+function entrarNoApp(nova, inicio){
   sessao = nova;
   try { sessionStorage.setItem(SESSAO_KEY, JSON.stringify(sessao)); } catch (err) {}
   $("login").hidden = true;
@@ -1477,8 +1494,9 @@ $("loginForm").addEventListener("submit", e => {
   aplicarPerfil();
   verificarRotinas();
   atualizarBadgeEmails();
-  if (location.hash === viewInicial()) route(); else location.hash = viewInicial();
-});
+  if (inicio) { if (location.hash === viewInicial()) route(); else location.hash = viewInicial(); }
+  else if (!location.hash) location.hash = viewInicial(); else route();
+}
 document.addEventListener("click", e => {
   if (e.target.closest("[data-sair]")) { sair(); return; }
   const menu = document.querySelector(".tu-menu");
@@ -2360,6 +2378,7 @@ $("v-gestao-projeto").addEventListener("click", e => {
   if (sr) {
     const r = achar(currentProjId());
     if (sr.dataset.sr === "pdf" || sr.dataset.sr === "png") exportarReport(r, sr.dataset.sr);
+    else if (sr.dataset.sr === "outlook") abrirEmailStatusReport(r);
     else if (sr.dataset.sr === "editar") { if (!bloqueado()) abrirEdicaoReport(r); }
     else if (sr.dataset.sr === "auto") {
       if (bloqueado()) return;
@@ -2749,7 +2768,64 @@ function reportViewHtml(r){
         ? `${d.manuais.length} campo(s) preenchido(s) manualmente. O restante vem dos cards e do cadastro do projeto.`
         : "Todas as informações vêm dos cards do kanban e do cadastro do projeto."}</span>
     </div>
-    <div class="sr-wrap">${srSheetHtml(r, d)}</div>`;
+    <div class="sr-wrap">${srSheetHtml(r, d)}</div>
+    ${perfil() === "admin" || perfil() === "gp" ? `
+    <div class="sr-envio">
+      <button class="btn primary" data-sr="outlook">Enviar no Outlook</button>
+      <span class="note" style="margin:0">Abre um e-mail novo com o resumo e a análise deste status report. Só falta adicionar os destinatários e enviar. Para mandar o relatório completo, use Baixar PDF e anexe.</span>
+    </div>` : ""}`;
+}
+function emailStatusReport(r){
+  const d = dadosReport(r);
+  const hoje = dataBR(hojeISO());
+  const fase = faseNome(faseMacro(r.Fase));
+  const pz = prazo(r);
+  const atrasadas = r.tarefas.filter(t => efetivo(t) === "atraso");
+  const proxSemana = r.tarefas.filter(t => ["backlog","execucao"].includes(efetivo(t)) && toDate(t.fimPrevisto) && (toDate(t.fimPrevisto) - HOJE) / 864e5 <= 7);
+  const veredito = d.cronograma === "Atrasado"
+    ? "O projeto está com o prazo final vencido e precisa de replanejamento do cronograma."
+    : atrasadas.length
+    ? `O projeto avança, mas ${atrasadas.length === 1 ? "há 1 tarefa atrasada" : `há ${atrasadas.length} tarefas atrasadas`} que ${atrasadas.length === 1 ? "exige" : "exigem"} atenção.`
+    : d.statusGeral && /alerta|atras|paralis/i.test(d.statusGeral)
+    ? `O projeto está com status "${d.statusGeral}" e merece acompanhamento próximo.`
+    : "O projeto segue dentro do planejado.";
+  const lista = (titulo, itens, vazio) => `${titulo}\n${itens.length ? itens.map(x => "• " + x).join("\n") : "• " + vazio}`;
+  const blocos = [
+    `Olá,\n\nSegue o status report do projeto ${r["Título"]} (#${r.ID}), atualizado em ${hoje}.`,
+    `RESUMO\n• Status geral: ${d.statusGeral} | Cronograma: ${d.cronograma} | Orçamento: ${d.orcamento}${d.orcValor && d.orcamento !== "Não informado" ? " (" + d.orcValor + ")" : ""} | Qualidade: ${d.qualidade}\n• Avanço: ${d.avanco == null ? "sem tarefas" : d.avanco + "%"} · Fase atual: ${fase}${r.Fase ? " (" + r.Fase + ")" : ""}\n• Período: ${r.Inicio ? dataBR(r.Inicio) : "—"} a ${r.Fim ? dataBR(r.Fim) : "—"}${pz && pz.texto ? " · " + pz.texto : ""}`,
+    `ANÁLISE\n${veredito}\n${d.situacao}${d.desvio && d.desvio !== "Sem desvios registrados." ? "\n" + d.desvio : ""}${proxSemana.length ? `\nVencem nos próximos 7 dias: ${proxSemana.slice(0, 4).map(t => t.nome + " (" + dataBR(t.fimPrevisto) + ")").join(", ")}${proxSemana.length > 4 ? "…" : ""}.` : ""}`,
+    lista("ENTREGAS RECENTES", d.entregas, "Nenhuma entrega nos últimos 30 dias."),
+    lista("PRÓXIMOS PASSOS", d.passos, "Nenhum passo pendente cadastrado."),
+    lista("PONTOS DE ATENÇÃO", d.riscos.map(x => `${x.risco}: impacto ${String(x.impacto).toLowerCase()}. ${x.acao}`), "Nenhum risco ou ponto de atenção no momento."),
+    d.equipe ? `Equipe: ${d.equipe}` : "",
+    `Acompanhe o projeto: ${linkProjeto(r)}`,
+    `Atenciosamente,\n${sessao && sessao.perfil === "gp" ? sessao.nome : (autor || "")}`
+  ].filter(Boolean);
+  return {assunto: `[Status Report] ${r["Título"]} (#${r.ID}) · ${hoje}`, corpo: blocos.join("\n\n")};
+}
+function abrirEmailStatusReport(r){
+  const m = emailStatusReport(r);
+  const enc = t => encodeURIComponent(String(t).replace(/\n/g, "\r\n"));
+  let corpo = m.corpo;
+  const maxUrl = 7500;
+  let url = `mailto:?subject=${enc(m.assunto)}&body=${enc(corpo)}`;
+  let cortado = false;
+  while (url.length > maxUrl && corpo.length > 400) {
+    corpo = corpo.slice(0, Math.floor(corpo.length * 0.85)).replace(/\s+\S*$/, "") + "\n\n(continua: veja o status report completo no sistema)";
+    url = `mailto:?subject=${enc(m.assunto)}&body=${enc(corpo)}`;
+    cortado = true;
+  }
+  const a = document.createElement("a");
+  a.href = url;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  const txt = `Assunto: ${m.assunto}\n\n${m.corpo}`;
+  (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(
+    () => toast(cortado ? "E-mail aberto no Outlook. O texto era longo; o texto completo foi copiado, cole no e-mail se quiser." : "E-mail aberto no Outlook. Adicione os destinatários e envie. (O texto também foi copiado.)"),
+    () => toast("E-mail aberto no Outlook. Adicione os destinatários e envie."));
+  registrar(r, "Status report aberto no Outlook para envio");
+  salvar();
 }
 
 /* Exportar PDF / PNG */
@@ -4217,6 +4293,11 @@ function spAvisarSemAcesso(){
 
 /* ---------- Conexão, recarga e importação ---------- */
 function spRedesenhar(){
+  if (sessaoEspera) {
+    const s = sessaoEspera;
+    if (spLigado()) { sessaoEspera = null; entrarNoApp(s, false); return; }
+    if (spSt.estado !== "conectando") { sessaoEspera = null; try { sessionStorage.removeItem(SESSAO_KEY); } catch (e) {} }
+  }
   if (!$("login").hidden) { mostrarLogin(); return; }
   if (!sessao) return;
   aplicarPerfil();
@@ -4323,6 +4404,7 @@ function spPintar(){
     ? `<span class="sp-dot sv"></span><span>${esc(spSt.msg || "Conectando ao SharePoint…")}</span>`
     : `<span class="sp-dot ${cls}"></span><span>${e === "erro" ? esc(spSt.msg) : "Os dados ficam no SharePoint. Entre com a sua conta da empresa."}</span><button type="button" class="btn sm" data-sp="entrar">Entrar com Microsoft</button>`;
   if ($("spPainel") && !$("spPainel").hidden) spPainelRender();
+  if (!$("login").hidden && typeof ajustarLogin === "function") ajustarLogin();
   if (typeof aplicarPerfil === "function" && sessao && $("login").hidden) document.body.classList.toggle("ro", !podeEditar());
 }
 function spDiagnostico(){
@@ -4400,9 +4482,9 @@ async function spIniciar(){
     history.replaceState(null, "", location.pathname + (volta || location.hash || ""));
     if (sessao) route();
   }
-  if (!app) return;
+  if (!app) { spRedesenhar(); return; }
   if (app.getAllAccounts().length) await spConectar();
-  else spEstado(spSt.estado === "erro" ? "erro" : "desligado", spSt.msg);
+  else { spEstado(spSt.estado === "erro" ? "erro" : "desligado", spSt.msg); spRedesenhar(); }
 }
 
 /* ================= INICIALIZAÇÃO ================= */
@@ -4417,7 +4499,11 @@ $("filtroStatus").addEventListener("change", renderLista);
 $("filtroPrazo").addEventListener("change", renderLista);
 $("gBusca").addEventListener("input", renderGestaoLista);
 ["gMostrar","gAgrupar","gOrdenar"].forEach(id => $(id).addEventListener("change", renderGestaoLista));
-if (sessao) {
+if (sessao && sessao.perfil !== "admin") {
+  sessaoEspera = sessao;
+  sessao = null;
+  mostrarLogin();
+} else if (sessao) {
   $("login").hidden = true;
   aplicarPerfil();
   verificarRotinas();
