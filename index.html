@@ -796,6 +796,10 @@ body.resp .tcard.minha{box-shadow:0 0 0 2px var(--green) inset}
 body:not(.ro) .sr-wrap [data-sr-edit]{cursor:pointer}
 body:not(.ro) .sr-wrap .sr-un[data-sr-edit]:hover{outline:1.5px dashed #4697A8;outline-offset:2px;border-radius:4px}
 body:not(.ro) .sr-wrap .sr-f[data-sr-edit]:hover,body:not(.ro) .sr-wrap .sr-av[data-sr-edit]:hover{outline:2px dashed #4697A8;outline-offset:2px}
+.sr-fases-ed{display:grid;gap:8px}
+.sr-fase-ed{display:grid;grid-template-columns:minmax(140px,1fr) 120px 170px;gap:8px;align-items:center}
+.sr-fase-ed b{font-size:13px;color:var(--hi)}
+@media (max-width:560px){.sr-fase-ed{grid-template-columns:1fr 1fr}.sr-fase-ed b{grid-column:1/-1}}
 </style>
 </head>
 <body>
@@ -3264,8 +3268,31 @@ $("v-gestao-projeto").addEventListener("drop", e => {
 const H2C_URL = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
 const JSPDF_URL = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
 const SR_STATUS_OPTS = ["Em linha","Alerta","Atrasado","Crítico","Concluído","Paralisado","Não iniciado"];
-const SR_CAMPOS = ["avanco","statusGeral","cronograma","orcamento","orcValor","qualidade","situacao","desvio","marcos","riscos","passos","entregas","equipe", ...FASES_MACRO.map(f => "fase_" + f.key)];
+const SR_CAMPOS = ["avanco","statusGeral","cronograma","orcamento","orcValor","qualidade","situacao","desvio","marcos","riscos","passos","entregas","equipe", ...FASES_MACRO.map(f => "fase_" + f.key), ...FASES_MACRO.map(f => "fst_" + f.key), "hTitulo", "hPrograma", "hInicio", "hFim", "hResp", "hFase", "hArea", "hData", "hAnalista", "hSolicitante"];
 /* Avanço de cada fase: informado à mão no report, ou calculado pelos cards */
+/* Situação de cada fase no report (rótulo do quadro) */
+const SR_FST = [["ok", "Concluída"], ["now", "Fase atual"], ["prox", "Próxima"], ["seg", "A seguir"]];
+/* Cabeçalho e rodapé: [campo manual, rótulo, valor automático] */
+const SR_CAB = [
+  ["hTitulo", "Título no report", r => r["Título"]],
+  ["hPrograma", "Programa", r => r["Nome do Programa"]],
+  ["hInicio", "Início do período", r => dataBR(r.Inicio)],
+  ["hFim", "Fim do período", r => dataBR(r.Fim)],
+  ["hResp", "Responsável TI", r => r["Responsável TI"]],
+  ["hFase", "Fase (cabeçalho)", r => r.Fase],
+  ["hArea", "Área", r => r.Frente],
+  ["hData", "Data do report", r => dataBR(hojeISO())],
+  ["hAnalista", "Analista funcional", r => r["Analista Funcional"]],
+  ["hSolicitante", "Solicitante", r => r.Solicitante]
+];
+/* Situação automática da fase: pela fase do projeto; fase com 100% informado à mão conta como concluída */
+function srFaseStAuto(r, d, i, key){
+  const idxAtual = FASES_MACRO.findIndex(f => f.key === faseMacro(r.Fase));
+  if (r.Status.startsWith("5.") || i < idxAtual) return "ok";
+  if (i === idxAtual) return "now";
+  if (d && d.fasesAv && d.fasesAv[key] === 100) return "ok";
+  return i === idxAtual + 1 ? "prox" : "seg";
+}
 const progFaseRel = (r, d, key) => (d && d.fasesAv && d.fasesAv[key] != null) ? d.fasesAv[key] : progFase(r, key);
 function srCor(txt){
   const s = String(txt || "").toLowerCase();
@@ -3344,6 +3371,10 @@ function dadosReport(r){
   if (m.riscos) d.riscos = srLinhas(m.riscos, 4).map(([risco, impacto, acao, status]) => ({risco, impacto: impacto || "—", acao, status: status || "—"}));
   if (m.passos) d.passos = srLinhas(m.passos, 1).map(x => x[0]);
   if (m.entregas) d.entregas = srLinhas(m.entregas, 1).map(x => x[0]);
+  d.fasesSt = {};
+  FASES_MACRO.forEach(f => { const v = m["fst_" + f.key]; if (SR_FST.some(x => x[0] === v)) d.fasesSt[f.key] = v; });
+  d.h = {};
+  SR_CAB.forEach(([k, , auto]) => { d.h[k] = m[k] ? m[k] : (auto(r) || "—"); });
   d.manuais = SR_CAMPOS.filter(k => m[k] !== undefined && m[k] !== "");
   d.avancoManual = d.manuais.includes("avanco") || !!d.avancoMedia;
   return d;
@@ -3365,8 +3396,9 @@ function srSheetHtml(r, d){
   const atual = faseMacro(r.Fase);
   const idxAtual = FASES_MACRO.findIndex(f => f.key === atual);
   const fases = FASES_MACRO.map((f, i) => {
-    const cls = r.Status.startsWith("5.") || i < idxAtual ? "ok" : i === idxAtual ? "now" : "";
-    const rot = cls === "ok" ? "Concluída" : cls === "now" ? "Fase atual" : i === idxAtual + 1 ? "Próxima" : "A seguir";
+    const st = d.fasesSt[f.key] || srFaseStAuto(r, d, i, f.key);
+    const cls = st === "ok" ? "ok" : st === "now" ? "now" : "";
+    const rot = SR_FST.find(x => x[0] === st)[1];
     const pf = progFaseRel(r, d, f.key);
     return `<div class="sr-f ${cls}" data-sr-edit="fase_${f.key}"><small>${rot}</small><div class="sr-fr"><b>${esc(f.nome)}</b><span>${pf == null ? "—" : pf + "%"}</span></div></div>`;
   }).join("");
@@ -3397,17 +3429,17 @@ function srSheetHtml(r, d){
       <div class="sr-div"></div>
       <div class="sr-tt">
         <div class="sr-eyebrow">Status Report · Projeto #${esc(r.ID)}</div>
-        <h1>${esc(srCorta(r["Título"], 60))}</h1>
+        <h1>${esc(srCorta(d.h.hTitulo, 60))}</h1>
         <div class="sr-sub">
-          <span>Programa <b>${esc(r["Nome do Programa"] || "—")}</b></span>
-          <span>Período <b>${esc(dataBR(r.Inicio))} a ${esc(dataBR(r.Fim))}</b></span>
-          <span>Responsável TI <b>${esc(r["Responsável TI"] || "—")}</b></span>
+          <span>Programa <b>${esc(d.h.hPrograma)}</b></span>
+          <span>Período <b>${esc(d.h.hInicio)} a ${esc(d.h.hFim)}</b></span>
+          <span>Responsável TI <b>${esc(d.h.hResp)}</b></span>
         </div>
       </div>
       <div class="sr-meta">
-        <div>Data do report <b>${hojeTxt}</b></div>
-        <div>Fase <b>${esc(r.Fase || "—")}</b></div>
-        <div>Área <b>${esc(r.Frente || "—")}</b></div>
+        <div>Data do report <b>${esc(d.h.hData)}</b></div>
+        <div>Fase <b>${esc(d.h.hFase)}</b></div>
+        <div>Área <b>${esc(d.h.hArea)}</b></div>
       </div>
     </header>
     <main class="sr-bd">
@@ -3454,7 +3486,7 @@ function srSheetHtml(r, d){
       </div>
     </main>
     <footer class="sr-ft">
-      <div><b>Analista funcional:</b> ${esc(r["Analista Funcional"] || "—")} · <b>Solicitante:</b> ${esc(r.Solicitante || "—")} · <b>Equipe:</b> ${esc(srCorta(d.equipe || "—", 120))}</div>
+      <div><b>Analista funcional:</b> ${esc(d.h.hAnalista)} · <b>Solicitante:</b> ${esc(d.h.hSolicitante)} · <b>Equipe:</b> ${esc(srCorta(d.equipe || "—", 120))}</div>
       <div class="sr-slogan">Juntos, somos um!</div>
     </footer>
   </div>`;
@@ -4045,9 +4077,11 @@ function renderEdicaoReport(r, m){
       </div>
     </div>
     <div class="dr-sec">
-      <h4>Avanço por fase (%)</h4>
+      <h4>Fases: avanço (%) e situação</h4>
       <p class="note">Deixe vazio para usar o avanço calculado pelos cards. Ao preencher qualquer fase, o avanço global passa a ser a média das 5 fases (fase vazia usa o valor dos cards; sem cards, conta 0%).</p>
-      <div class="fgrid">${FASES_MACRO.map(f => { const pf = progFase(r, f.key); return `<div class="fld"><label>${esc(f.nome)}</label><input type="text" name="fase_${f.key}" data-sr-fase data-auto="${pf == null ? "" : pf}" inputmode="numeric" value="${esc(m["fase_" + f.key] || "")}" placeholder="Automático: ${pf == null ? "sem cards" : pf + "%"}"></div>`; }).join("")}</div>
+      <div class="sr-fases-ed">${FASES_MACRO.map((f, i) => { const pf = progFase(r, f.key); const stAuto = SR_FST.find(x => x[0] === srFaseStAuto(r, null, i, f.key))[1]; return `<div class="sr-fase-ed"><b>${esc(f.nome)}</b>
+        <input type="text" name="fase_${f.key}" data-sr-fase data-auto="${pf == null ? "" : pf}" inputmode="numeric" value="${esc(m["fase_" + f.key] || "")}" placeholder="Auto: ${pf == null ? "sem cards" : pf + "%"}" aria-label="Avanço de ${esc(f.nome)} (%)">
+        <select name="fst_${f.key}" aria-label="Situação de ${esc(f.nome)}"><option value="">Auto: ${esc(stAuto)}</option>${SR_FST.map(([v, t]) => `<option value="${v}" ${m["fst_" + f.key] === v ? "selected" : ""}>${t}</option>`).join("")}</select></div>`; }).join("")}</div>
     </div>
     <div class="dr-sec">
       <h4>Resumo executivo</h4>
@@ -4073,8 +4107,10 @@ function renderEdicaoReport(r, m){
       ${ta("entregas", "Um por linha", 3)}
     </div>
     <div class="dr-sec">
-      <h4>Rodapé</h4>
-      <div class="fld"><label>Equipe</label><input type="text" name="equipe" value="${esc(m.equipe || "")}" placeholder="${esc(a.equipe || "Nomes separados por vírgula")}"></div>
+      <h4>Cabeçalho e rodapé</h4>
+      <p class="note">Vazio usa o cadastro do projeto. O que você preencher aqui vale só para o status report.</p>
+      <div class="fgrid">${SR_CAB.map(([k, rot, auto]) => `<div class="fld"><label>${esc(rot)}</label><input type="text" name="${k}" value="${esc(m[k] || "")}" placeholder="${esc(auto(r) || "—")}"></div>`).join("")}
+      <div class="fld full"><label>Equipe</label><input type="text" name="equipe" value="${esc(m.equipe || "")}" placeholder="${esc(a.equipe || "Nomes separados por vírgula")}"></div></div>
     </div>
     <div class="formbar" style="margin-top:0">
       <button type="button" class="btn" data-rd="cancelar">Cancelar</button>
