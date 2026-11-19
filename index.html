@@ -771,6 +771,13 @@ body.resp .tcard.minha{box-shadow:0 0 0 2px var(--green) inset}
 .dep-txt{flex:1;min-width:0}.dep-txt small{color:var(--muted)}
 .dep-add{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .dep-add select{flex:1;min-width:220px}
+.nt-panel.nt-dep{grid-column:1/-1}
+.dep-btn{display:inline-flex;align-items:center;gap:3px;flex:none;background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:8px;padding:3px 6px;cursor:pointer;font:700 11px inherit}
+.dep-btn:hover,.dep-btn.on{border-color:#4697A8;color:var(--hi)}
+.dep-btn.tem{color:#4697A8;border-color:#4697A8}
+.dep-btn.pend{color:#ED174F;border-color:#ED174F}
+.alist li.ativ-dep-box{display:block;padding:8px 10px 10px 36px;background:var(--surface3)}
+.ativ-aguarda{display:block;color:#ED174F;font-size:11px;font-weight:700}
 </style>
 </head>
 <body>
@@ -1191,11 +1198,11 @@ function normalizarTarefa(t){
     fimPrevisto: parseData(t.fimPrevisto || ""),
     fimReal: parseData(t.fimReal || ""),
     descricao: String(t.descricao || ""),
-    atividades: Array.isArray(t.atividades) ? t.atividades.map(a => ({id: a.id || uid(), texto: String(a.texto || ""), feito: !!a.feito})) : [],
+    atividades: Array.isArray(t.atividades) ? t.atividades.map(a => ({id: a.id || uid(), texto: String(a.texto || ""), feito: !!a.feito, dependencias: normDeps(a.dependencias)})) : [],
     anexos: Array.isArray(t.anexos) ? t.anexos : [],
     comunicacao: Array.isArray(t.comunicacao) ? t.comunicacao.map(normalizarMsg) : [],
     numero: String(t.numero || ""),
-    dependencias: Array.isArray(t.dependencias) ? t.dependencias.filter(d => d && d.tarefa).map(d => ({tarefa: String(d.tarefa), atividade: String(d.atividade || "")})) : [],
+    dependencias: normDeps(t.dependencias),
     criadoEm: t.criadoEm || new Date().toISOString(),
     ...(t._sp ? {_sp: String(t._sp)} : {})
   };
@@ -1219,26 +1226,86 @@ function numerarTarefas(r){
     if (!t.numero || t.numero.split(".")[0] !== String(n)) t.numero = proximoNumeroCard(r, t.fase, t);
   });
 }
-const projDaTarefa = t => rows.find(r => r.tarefas.includes(t));
-/* Dependências ainda não cumpridas: card inteiro (precisa estar concluído) ou atividade (precisa estar feita) */
-function depPendentes(t){
-  const r = projDaTarefa(t); if (!r) return [];
-  return (t.dependencias || []).map(d => {
-    const alvo = r.tarefas.find(x => x.id === d.tarefa);
-    if (!alvo) return null;
-    if (!d.atividade) return efetivo(alvo) === "concluido" ? null : {texto: `${alvo.numero || ""} ${alvo.nome}`.trim()};
-    const i = alvo.atividades.findIndex(a => a.id === d.atividade);
-    if (i < 0) return null;
-    const at = alvo.atividades[i];
-    return at.feito ? null : {texto: `${alvo.numero || ""}.${i + 1} ${at.texto}`.trim()};
-  }).filter(Boolean);
+function normDeps(x){
+  return Array.isArray(x) ? x.filter(d => d && d.tarefa).map(d => ({tarefa: String(d.tarefa), atividade: String(d.atividade || "")})) : [];
 }
-/* Verdadeiro se "a" depende, direta ou indiretamente, de "alvo" (evita ciclos) */
-function dependeDe(a, alvo, vistos = new Set()){
-  if (!a || vistos.has(a.id)) return false;
-  vistos.add(a.id);
-  const r = projDaTarefa(a); if (!r) return false;
-  return (a.dependencias || []).some(d => d.tarefa === alvo.id || dependeDe(r.tarefas.find(x => x.id === d.tarefa), alvo, vistos));
+const projDaTarefa = t => rows.find(r => r.tarefas.includes(t));
+/* "dono" é a tarefa onde a dependência foi cadastrada (no formulário de criação, um rascunho com id "__self__") */
+const acharDono = (r, tid, dono) => dono && dono.id === tid ? dono : r.tarefas.find(x => x.id === tid);
+function infoDep(r, d, dono){
+  const alvo = acharDono(r, d.tarefa, dono);
+  if (!alvo) return null;
+  if (!d.atividade) return {texto: `${alvo.numero || ""} ${alvo.nome}`.trim(), cumprida: efetivo(alvo) === "concluido", escopo: "card inteiro"};
+  const i = alvo.atividades.findIndex(a => a.id === d.atividade);
+  if (i < 0) return null;
+  const at = alvo.atividades[i];
+  return {texto: `${alvo.numero || ""}.${i + 1} ${at.texto}`.trim(), cumprida: !!at.feito, escopo: "atividade"};
+}
+const pendentesDe = (r, deps, dono) => r ? (deps || []).map(d => infoDep(r, d, dono)).filter(x => x && !x.cumprida) : [];
+/* Dependências do card ainda não cumpridas */
+function depPendentes(t){ return pendentesDe(projDaTarefa(t), t.dependencias, t); }
+/* Ciclo: o novo vínculo origem -> alvo fecha um círculo se o alvo já chega (direta ou indiretamente) na origem */
+function alcanca(r, de, para, dono, vistos = new Set()){
+  const k = de.t + "|" + de.a;
+  if (vistos.has(k)) return false;
+  vistos.add(k);
+  if (de.t === para.t && (de.a === para.a || (para.a && !de.a))) return true;
+  const tk = acharDono(r, de.t, dono);
+  if (!tk) return false;
+  const deps = de.a ? ((tk.atividades.find(a => a.id === de.a) || {}).dependencias || []) : (tk.dependencias || []);
+  return deps.some(d => alcanca(r, {t: d.tarefa, a: d.atividade || ""}, para, dono, vistos));
+}
+const criaCiclo = (r, origem, alvo, dono) => alcanca(r, alvo, origem, dono);
+/* Opções do seletor: outros cards (card inteiro ou atividade) e, para atividades, as demais atividades do mesmo card */
+function opcoesDep(r, dono, aidExcluir){
+  let proprias = "";
+  if (aidExcluir !== undefined) {
+    const it = dono.atividades.map((a, i) => a.id === aidExcluir ? "" : `<option value="${esc(dono.id)}|${esc(a.id)}">${esc((dono.numero || "") + "." + (i + 1))} ${esc(a.texto)}</option>`).join("");
+    if (it) proprias = `<optgroup label="Este card">${it}</optgroup>`;
+  }
+  return proprias + r.tarefas.filter(x => x.id !== dono.id).map(x => `<optgroup label="${esc((x.numero ? x.numero + " " : "") + x.nome)}"><option value="${esc(x.id)}|">Card inteiro</option>${x.atividades.map((a, i) => `<option value="${esc(x.id)}|${esc(a.id)}">${esc((x.numero || "") + "." + (i + 1))} ${esc(a.texto)}</option>`).join("")}</optgroup>`).join("");
+}
+/* Lista de dependências com situação; rmAttrs(i) devolve os atributos do botão de remover (ou "" sem botão) */
+function depItensHtml(r, deps, dono, rmAttrs){
+  const itens = (deps || []).map((d, i) => {
+    const inf = infoDep(r, d, dono);
+    if (!inf) return "";
+    const rm = rmAttrs(i);
+    return `<div class="dep-item ${inf.cumprida ? "ok" : "pend"}"><span class="dep-st">${inf.cumprida ? "Cumprida" : "Pendente"}</span><span class="dep-txt"><b>${esc(inf.texto)}</b> <small>${inf.escopo}</small></span>${rm ? `<button type="button" class="del" ${rm} title="Remover">✕</button>` : ""}</div>`;
+  }).join("");
+  return itens ? `<div class="dep-lista">${itens}</div>` : `<p class="note" style="margin:0 0 8px">Nenhuma dependência.</p>`;
+}
+/* Valida e grava um novo vínculo em "lista" (array de dependências). Devolve a lista nova ou null */
+function addDep(r, lista, valor, dono, origem){
+  const [tid, aid] = String(valor || "").split("|");
+  if (!tid) { toast("Escolha um card ou uma atividade."); return null; }
+  if (origem.a && tid === dono.id && !aid) { toast("Uma atividade não pode depender do próprio card."); return null; }
+  if (tid === origem.t && (aid || "") === origem.a) { toast("Uma atividade não pode depender dela mesma."); return null; }
+  if ((lista || []).some(d => d.tarefa === tid && (d.atividade || "") === (aid || ""))) { toast("Essa dependência já existe."); return null; }
+  if (criaCiclo(r, origem, {t: tid, a: aid || ""}, dono)) { toast("Essa dependência criaria um ciclo: um item ficaria esperando pelo outro."); return null; }
+  return (lista || []).concat([{tarefa: tid, atividade: aid || ""}]);
+}
+const ICO_DEP = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`;
+/* Linha de atividade com número, botão de dependência e, se aberto, o editor de dependências */
+function ativLinhasHtml(r, dono, ativs, attr, aberta, podeEd){
+  return ativs.map((a, i) => {
+    const pend = pendentesDe(r, a.dependencias, dono);
+    const nDeps = (a.dependencias || []).length;
+    const linha = `
+          <li class="${a.feito ? "feito" : ""}">
+            <button type="button" class="bullet ${a.feito ? "on" : ""}" ${attr}="ativ-toggle" data-aid="${esc(a.id)}" title="${pend.length ? "Aguardando dependência" : "Marcar como feita"}"></button>
+            <span class="txt">${dono.numero ? `<b class="anum">${esc(dono.numero)}.${i + 1}</b> ` : ""}${esc(a.texto)}${pend.length ? `<small class="ativ-aguarda">aguardando ${esc(pend.map(x => x.texto.split(" ")[0]).join(", "))}</small>` : ""}</span>
+            <button type="button" class="dep-btn ${pend.length ? "pend" : nDeps ? "tem" : ""}${aberta === a.id ? " on" : ""}" ${attr}="ativ-dep" data-aid="${esc(a.id)}" title="Dependências desta atividade">${ICO_DEP}${nDeps ? `<span>${nDeps}</span>` : ""}</button>
+            ${podeEd ? `<button type="button" class="del" ${attr}="ativ-del" data-aid="${esc(a.id)}" title="Remover">✕</button>` : ""}
+          </li>`;
+    if (aberta !== a.id) return linha;
+    return linha + `
+          <li class="ativ-dep-box">
+            <div class="note" style="margin:0 0 6px">A atividade <b>${esc((dono.numero || "") + "." + (i + 1))}</b> só pode ser marcada como feita depois de:</div>
+            ${depItensHtml(r, a.dependencias, dono, k => podeEd ? `${attr}="ativ-dep-rm" data-aid="${esc(a.id)}" data-idx="${k}"` : "")}
+            ${podeEd ? `<div class="dep-add"><select data-ativ-depsel="${esc(a.id)}"><option value="">Escolha o card ou a atividade…</option>${opcoesDep(r, dono, a.id)}</select><button type="button" class="btn sm" ${attr}="ativ-dep-add" data-aid="${esc(a.id)}">Adicionar</button></div>` : ""}
+          </li>`;
+  }).join("");
 }
 function normalizar(d){
   const r = {};
@@ -2162,14 +2229,14 @@ function ganttHtml(linhas, opts = {}){
     const pg = Math.round(l.prog ?? 0);
     if (a && b && b >= a) {
       const x1 = xd(a), w = Math.max(6, xd(new Date(b.getTime() + 864e5)) - x1);
-      return `<div class="g-bar ${l.tipo === "grupo" ? "g-sum" : ""}" style="left:${x1}px;width:${w}px;--c:${cor}" ${l.attrs || ""} title="${esc(l.label)} · ${dataBR(isoOf(a))} a ${dataBR(isoOf(b))} · ${pg}%"><i style="width:${pg}%"></i><span>${pg}%</span></div>`;
+      return `<div class="g-bar ${l.tipo === "grupo" ? "g-sum" : ""}" style="left:${x1}px;width:${w}px;--c:${cor}" ${l.attrs || ""} title="${esc((l.num ? l.num + " " : "") + l.label)} · ${dataBR(isoOf(a))} a ${dataBR(isoOf(b))} · ${pg}%"><i style="width:${pg}%"></i><span>${pg}%</span></div>`;
     }
     const um = b || a;
     if (um) return `<div class="g-mile" style="left:${xd(um)}px;--c:${cor}" ${l.attrs || ""} title="${esc(l.label)} · ${dataBR(isoOf(um))}"></div><span class="g-nodate" style="left:${xd(um) + 12}px" ${l.attrs || ""}>${b ? "sem início" : "sem fim previsto"}</span>`;
     return `<span class="g-nodate" style="left:10px" ${l.attrs || ""}>sem datas${l.attrs && l.attrs.includes("data-tid") ? " · clique para definir" : ""}</span>`;
   };
   const corpo = linhas.map((l, i) => `
-    <div class="g-lab g-sticky ${l.tipo === "grupo" ? "g-grp" : ""}" style="grid-row:${i + 2}" ${l.attrs || ""}><b>${esc(l.label)}</b>${l.sub ? `<small>${esc(l.sub)}</small>` : ""}</div>
+    <div class="g-lab g-sticky ${l.tipo === "grupo" ? "g-grp" : ""}" style="grid-row:${i + 2}" ${l.attrs || ""}><b>${l.num ? `<span class="tc-num">${esc(l.num)}</span> ` : ""}${esc(l.label)}</b>${l.sub ? `<small>${esc(l.sub)}</small>` : ""}</div>
     <div class="g-track ${l.tipo === "grupo" ? "g-grp" : ""}" style="grid-row:${i + 2}">${barra(l)}</div>`).join("");
   return `<div class="gantt-wrap"><div class="gantt" style="grid-template-columns:${opts.labW || 280}px ${W}px">
     <div class="g-corner g-sticky">${esc(opts.titulo || "")}</div>
@@ -2428,19 +2495,25 @@ function faseHtml(r, f){
 }
 let novoForm = null;
 const NT_ANDAMENTO_PADRAO = {backlog: "Aguardando", execucao: "Em andamento", cancelado: "Aguardando", concluido: "Concluído"};
+/* Rascunho do card em criação: número previsto e atividades do formulário */
+function ntDono(r){
+  return {id: "__self__", numero: proximoNumeroCard(r, novoForm.fase), nome: "Este card", atividades: novoForm.ativ, dependencias: novoForm.deps || [], bucket: "backlog", fimPrevisto: ""};
+}
 function ntExtrasHtml(){
   const d = novoForm, tot = d.ativ.length, feitas = d.ativ.filter(a => a.feito).length;
   const pct = tot ? Math.round(feitas / tot * 100) : 0;
+  const r = achar(currentProjId());
+  const dono = ntDono(r);
   return `
+    <div class="nt-panel nt-dep">
+      <h5>Dependências do card <small>${(d.deps || []).length ? (d.deps || []).length + " dependência(s)" : "o card só vai para Em execução quando estas estiverem cumpridas"}</small></h5>
+      ${depItensHtml(r, d.deps || [], dono, i => `data-nt-act="dep-rm" data-idx="${i}"`)}
+      <div class="dep-add"><select data-nt-depsel><option value="">Escolha o card ou a atividade…</option>${opcoesDep(r, dono)}</select><button type="button" class="btn sm" data-nt-act="dep-add">Adicionar dependência</button></div>
+    </div>
     <div class="nt-panel">
       <h5>Atividades <small>${tot ? pct + "% (" + feitas + "/" + tot + ")" : "micro atividades do card"}</small></h5>
       <div class="prog sm"><i style="width:${d.bucket === "concluido" ? 100 : pct}%"></i></div>
-      <ul class="alist">${d.ativ.map(a => `
-        <li class="${a.feito ? "feito" : ""}">
-          <button type="button" class="bullet ${a.feito ? "on" : ""}" data-nt-act="ativ-toggle" data-aid="${esc(a.id)}" title="Marcar como feita"></button>
-          <span class="txt">${esc(a.texto)}</span>
-          <button type="button" class="del" data-nt-act="ativ-del" data-aid="${esc(a.id)}" title="Remover">✕</button>
-        </li>`).join("")}</ul>
+      <ul class="alist">${ativLinhasHtml(r, dono, d.ativ, "data-nt-act", d.depAid || "", true)}</ul>
       <div class="addrow"><input type="text" data-nt-ativ-input placeholder="Nova atividade…" aria-label="Nova atividade"><button type="button" class="btn primary" data-nt-act="ativ-add" title="Incluir atividade">+</button></div>
     </div>
     <div class="nt-panel">
@@ -2793,10 +2866,11 @@ function renderGestaoProjeto(id){
     FASES_MACRO.forEach(f => {
       const ts = r.tarefas.filter(t => t.fase === f.key);
       if (!ts.length) return;
-      linhas.push({tipo: "grupo", label: f.nome, sub: `${ts.length} tarefa(s)`, itens: ts.map(t => ({ini: t.inicio, fim: t.fimPrevisto})), prog: progLista(ts) ?? 0, cor: "var(--teal-l)"});
-      ts.slice().sort((a,b) => (a.inicio || a.fimPrevisto || "9999").localeCompare(b.inicio || b.fimPrevisto || "9999")).forEach(t => {
+      linhas.push({tipo: "grupo", num: String(NUM_FASE[f.key] || ""), label: f.nome, sub: `${ts.length} tarefa(s)`, itens: ts.map(t => ({ini: t.inicio, fim: t.fimPrevisto})), prog: progLista(ts) ?? 0, cor: "var(--teal-l)"});
+      const nSeq = t => parseInt(String(t.numero || "").split(".")[1], 10) || 9999;
+      ts.slice().sort((a,b) => nSeq(a) - nSeq(b) || (a.inicio || a.fimPrevisto || "9999").localeCompare(b.inicio || b.fimPrevisto || "9999")).forEach(t => {
         const ef = efetivo(t);
-        linhas.push({tipo: "item", label: t.nome, sub: `${bucketNome(ef)}${t.responsavel ? " · " + nomeDe(t.responsavel) : ""}`, ini: t.inicio, fim: t.fimPrevisto, prog: progTarefa(t), cor: BUCKET_COR[ef], attrs: `data-tid="${esc(t.id)}"`});
+        linhas.push({tipo: "item", num: t.numero, label: t.nome, sub: `${bucketNome(ef)}${t.responsavel ? " · " + nomeDe(t.responsavel) : ""}`, ini: t.inicio, fim: t.fimPrevisto, prog: progTarefa(t), cor: BUCKET_COR[ef], attrs: `data-tid="${esc(t.id)}"`});
       });
     });
     corpo = `<div class="card" style="padding:16px">
@@ -2886,7 +2960,7 @@ $("v-gestao-projeto").addEventListener("click", e => {
     if (bloqueado()) return;
     const k = add.dataset.add;
     const bk = add.dataset.addB || "backlog";
-    novoForm = novoForm && novoForm.fase === k && novoForm.bucket === bk ? null : {fase: k, bucket: bk, apoio: [], ativ: [], anexos: [], com: []};
+    novoForm = novoForm && novoForm.fase === k && novoForm.bucket === bk ? null : {fase: k, bucket: bk, apoio: [], ativ: [], anexos: [], com: [], deps: [], depAid: ""};
     fasesFechadas.delete(k);
     renderGestaoProjeto(currentProjId());
     const inp = document.querySelector(`.nt-form[data-nt="${k}"] input[name="nome"]`);
@@ -2921,17 +2995,18 @@ $("v-gestao-projeto").addEventListener("submit", e => {
   const novaT = normalizarTarefa({
     fase: form.dataset.nt, nome, bucket: novoForm.bucket, responsavel: resp, apoio, prioridade: fd.get("prioridade"),
     andamento: fd.get("andamento"), inicio, fimPrevisto: fim, descricao: String(fd.get("descricao") || "").trim(),
-    atividades: novoForm.ativ, anexos: novoForm.anexos,
+    atividades: novoForm.ativ, anexos: novoForm.anexos, dependencias: novoForm.deps || [],
     comunicacao: novoForm.com.map(m => ({id: m.id, autor: m.autor, texto: m.texto, ts: m.ts, para: m.para || [], envio: m.envio || {estado: "local"}}))
   });
   if (novaT.bucket === "concluido" || novaT.andamento === "Concluído") { novaT.bucket = "concluido"; novaT.andamento = "Concluído"; novaT.fimReal = hojeISO(); }
   else if (novaT.bucket === "cancelado") novaT.fimReal = "";
   novaT.numero = proximoNumeroCard(r, novaT.fase);
+  novaT.atividades.forEach(a => a.dependencias.forEach(d => { if (d.tarefa === "__self__") d.tarefa = novaT.id; }));
   r.tarefas.push(novaT);
   if (novaT.responsavel) notificarAtribuicao(novaT, novaT.responsavel, "responsável", r);
   novaT.apoio.forEach(em => notificarAtribuicao(novaT, em, "apoio", r));
   const bk = novoForm.bucket, fs = novoForm.fase;
-  novoForm = {fase: fs, bucket: bk, apoio: [], ativ: [], anexos: [], com: []};
+  novoForm = {fase: fs, bucket: bk, apoio: [], ativ: [], anexos: [], com: [], deps: [], depAid: ""};
   ncmp = {para: [], texto: ""};
   salvar();
   renderGestaoProjeto(r.ID);
@@ -2944,7 +3019,7 @@ function ntAddAtiv(form){
   const inp = form.querySelector("[data-nt-ativ-input]");
   const texto = inp.value.trim();
   if (!texto) return;
-  novoForm.ativ.push({id: uid(), texto, feito: false});
+  novoForm.ativ.push({id: uid(), texto, feito: false, dependencias: []});
   ntRefresh(form);
   const n = form.querySelector("[data-nt-ativ-input]"); if (n) n.focus();
 }
@@ -2954,8 +3029,33 @@ $("v-gestao-projeto").addEventListener("click", e => {
   if (!btn || !form || !novoForm) return;
   const act = btn.dataset.ntAct, aid = btn.dataset.aid;
   if (act === "ativ-add") { ntAddAtiv(form); return; }
-  if (act === "ativ-toggle") { const a = novoForm.ativ.find(x => x.id === aid); if (a) a.feito = !a.feito; }
-  else if (act === "ativ-del") novoForm.ativ = novoForm.ativ.filter(x => x.id !== aid);
+  const rNt = achar(currentProjId()), dNt = ntDono(rNt);
+  if (act === "ativ-toggle") {
+    const a = novoForm.ativ.find(x => x.id === aid); if (!a) return;
+    const pend = pendentesDe(rNt, a.dependencias, dNt);
+    if (!a.feito && pend.length) { toast(`Esta atividade depende de ${pend.map(x => x.texto).join(", ")}, ainda não concluído.`); return; }
+    a.feito = !a.feito;
+  }
+  else if (act === "ativ-del") {
+    novoForm.ativ = novoForm.ativ.filter(x => x.id !== aid);
+    novoForm.ativ.forEach(x => { x.dependencias = (x.dependencias || []).filter(dp => !(dp.tarefa === "__self__" && dp.atividade === aid)); });
+  }
+  else if (act === "ativ-dep") novoForm.depAid = novoForm.depAid === aid ? "" : aid;
+  else if (act === "ativ-dep-add") {
+    const a = novoForm.ativ.find(x => x.id === aid); if (!a) return;
+    const sel = form.querySelector(`[data-ativ-depsel="${aid}"]`);
+    const nova = addDep(rNt, a.dependencias, sel ? sel.value : "", dNt, {t: "__self__", a: aid});
+    if (!nova) return;
+    a.dependencias = nova;
+  }
+  else if (act === "ativ-dep-rm") { const a = novoForm.ativ.find(x => x.id === aid); if (a) a.dependencias = (a.dependencias || []).filter((_, i) => i !== +btn.dataset.idx); }
+  else if (act === "dep-add") {
+    const sel = form.querySelector("[data-nt-depsel]");
+    const nova = addDep(rNt, novoForm.deps || [], sel ? sel.value : "", dNt, {t: "__self__", a: ""});
+    if (!nova) return;
+    novoForm.deps = nova;
+  }
+  else if (act === "dep-rm") novoForm.deps = (novoForm.deps || []).filter((_, i) => i !== +btn.dataset.idx);
   else if (act === "apoio-rm") novoForm.apoio = novoForm.apoio.filter(x => x !== btn.dataset.email);
   else if (act === "anx-del") novoForm.anexos = novoForm.anexos.filter(x => x.id !== aid);
   else if (act === "com-del") novoForm.com = novoForm.com.filter(x => x.id !== aid);
@@ -4053,29 +4153,13 @@ function pessoasOptions(atual){
     `<option value="${esc(e)}" title="${esc(e)}" ${e === atual ? "selected" : ""}>${esc(nomeCompletoDe(e))}${cont[acNorm(nomeCompletoDe(e))] > 1 ? " (" + esc(e) + ")" : ""}</option>`).join("")
     + (semEmail.length ? `<optgroup label="Sem e-mail no cadastro (complete em Base para poder selecionar)">` + semEmail.map(n => `<option disabled>${esc(n)}</option>`).join("") + `</optgroup>` : "");
 }
-function depsDrawerHtml(r, t){
-  const itens = (t.dependencias || []).map((d, i) => {
-    const alvo = r.tarefas.find(x => x.id === d.tarefa);
-    if (!alvo) return "";
-    const ai = d.atividade ? alvo.atividades.findIndex(a => a.id === d.atividade) : -1;
-    if (d.atividade && ai < 0) return "";
-    const at = ai >= 0 ? alvo.atividades[ai] : null;
-    const cumprida = at ? at.feito : efetivo(alvo) === "concluido";
-    const rot = at ? `${alvo.numero || ""}.${ai + 1} ${at.texto}` : `${alvo.numero || ""} ${alvo.nome}`;
-    const escopo = at ? "atividade" : "card inteiro";
-    return `<div class="dep-item ${cumprida ? "ok" : "pend"}"><span class="dep-st">${cumprida ? "Cumprida" : "Pendente"}</span><span class="dep-txt"><b>${esc(rot.trim())}</b> <small>${escopo}</small></span>${podeEditarTarefa(t) ? `<button class="del" data-act="dep-rm" data-idx="${i}" title="Remover">✕</button>` : ""}</div>`;
-  }).join("");
-  return itens ? `<div class="dep-lista">${itens}</div>` : `<p class="note" style="margin:0 0 10px">Nenhuma dependência.</p>`;
-}
-function opcoesDepHtml(r, t){
-  return r.tarefas.filter(x => x.id !== t.id).map(x => `<optgroup label="${esc((x.numero ? x.numero + " " : "") + x.nome)}"><option value="${esc(x.id)}|">Card inteiro</option>${x.atividades.map((a, i) => `<option value="${esc(x.id)}|${esc(a.id)}">${esc((x.numero || "") + "." + (i + 1))} ${esc(a.texto)}</option>`).join("")}</optgroup>`).join("");
-}
+let drwDepAid = "";
 function renderDrawer(){
   if (!drawerCtx) return;
   const r = achar(drawerCtx.pid);
   const t = acharTarefa(r, drawerCtx.tid);
   if (!t) { closeDrawer(); return; }
-  if (drwCmp.tid !== t.id) drwCmp = {tid: t.id, para: csPadrao(t), texto: ""};
+  if (drwCmp.tid !== t.id) { drwCmp = {tid: t.id, para: csPadrao(t), texto: ""}; drwDepAid = ""; }
   const ef = efetivo(t);
   const pr = progTarefa(t);
   const feitas = t.atividades.filter(a => a.feito).length;
@@ -4118,8 +4202,8 @@ function renderDrawer(){
     <div class="dr-sec">
       <h4>Dependências</h4>
       <p class="note">Este card só vai para Em execução depois que as dependências abaixo forem concluídas (card inteiro) ou feitas (atividade).</p>
-      ${depsDrawerHtml(r, t)}
-      ${podeEditarTarefa(t) ? `<div class="dep-add"><select data-dep-sel><option value="">Escolha o card ou a atividade…</option>${opcoesDepHtml(r, t)}</select><button class="btn sm" data-act="dep-add">Adicionar dependência</button></div>` : ""}
+      ${depItensHtml(r, t.dependencias, t, i => podeEditarTarefa(t) ? `data-act="dep-rm" data-idx="${i}"` : "")}
+      ${podeEditarTarefa(t) ? `<div class="dep-add"><select data-dep-sel><option value="">Escolha o card ou a atividade…</option>${opcoesDep(r, t)}</select><button class="btn sm" data-act="dep-add">Adicionar dependência</button></div>` : ""}
     </div>
 
     <div class="dr-sec">
@@ -4131,12 +4215,7 @@ function renderDrawer(){
       <h4>Atividades · ${t.atividades.length ? pr + "% concluído (" + feitas + "/" + t.atividades.length + ")" : "adicione micro atividades"}</h4>
       <div class="prog" style="margin-bottom:10px"><i style="width:${pr}%"></i></div>
       <ul class="alist">
-        ${t.atividades.map((a, ai) => `
-          <li class="${a.feito ? "feito" : ""}">
-            <button class="bullet ${a.feito ? "on" : ""}" data-act="ativ-toggle" data-aid="${esc(a.id)}" title="Marcar como feita"></button>
-            <span class="txt">${t.numero ? `<b class="anum">${esc(t.numero)}.${ai + 1}</b> ` : ""}${esc(a.texto)}</span>
-            <button class="del" data-act="ativ-del" data-aid="${esc(a.id)}" title="Remover">✕</button>
-          </li>`).join("")}
+        ${ativLinhasHtml(r, t, t.atividades, "data-act", drwDepAid, podeEditarTarefa(t))}
       </ul>
       <div class="addrow">
         <input type="text" data-f="nova-ativ" placeholder="Nova atividade…" aria-label="Nova atividade">
@@ -4258,8 +4337,24 @@ $("drawer").addEventListener("click", e => {
     closeDrawer();
     return;
   }
-  else if (act === "ativ-toggle") { const a = t.atividades.find(x => x.id === btn.dataset.aid); if (a) a.feito = !a.feito; }
+  else if (act === "ativ-toggle") {
+    const a = t.atividades.find(x => x.id === btn.dataset.aid);
+    if (!a) return;
+    const pend = pendentesDe(r, a.dependencias, t);
+    if (!a.feito && pend.length) { toast(`Esta atividade depende de ${pend.map(x => x.texto).join(", ")}, ainda não concluído.`); return; }
+    a.feito = !a.feito;
+  }
   else if (act === "ativ-del") { t.atividades = t.atividades.filter(x => x.id !== btn.dataset.aid); }
+  else if (act === "ativ-dep") { drwDepAid = drwDepAid === btn.dataset.aid ? "" : btn.dataset.aid; renderDrawer(); return; }
+  else if (act === "ativ-dep-add") {
+    const a = t.atividades.find(x => x.id === btn.dataset.aid); if (!a) return;
+    const sel = $("drBody").querySelector(`[data-ativ-depsel="${btn.dataset.aid}"]`);
+    const nova = addDep(r, a.dependencias, sel ? sel.value : "", t, {t: t.id, a: a.id});
+    if (!nova) return;
+    a.dependencias = nova;
+    registrar(r, `Atividade "${a.texto}" (${t.nome}) passou a ter dependência`);
+  }
+  else if (act === "ativ-dep-rm") { const a = t.atividades.find(x => x.id === btn.dataset.aid); if (a) a.dependencias = (a.dependencias || []).filter((_, i) => i !== +btn.dataset.idx); }
   else if (act === "ativ-add") {
     const input = $("drBody").querySelector('[data-f="nova-ativ"]');
     const texto = input.value.trim();
@@ -4269,14 +4364,11 @@ $("drawer").addEventListener("click", e => {
   else if (act === "anx-del") { t.anexos = t.anexos.filter(x => x.id !== btn.dataset.aid); }
   else if (act === "dep-add") {
     const sel = $("drBody").querySelector("[data-dep-sel]");
-    const [tid, aid] = String(sel ? sel.value : "").split("|");
-    if (!tid) { toast("Escolha um card ou uma atividade."); return; }
-    const alvo = r.tarefas.find(x => x.id === tid);
-    if (!alvo) return;
-    if (dependeDe(alvo, t)) { toast("Essa dependência criaria um ciclo: os dois cards dependeriam um do outro."); return; }
-    if ((t.dependencias || []).some(d => d.tarefa === tid && (d.atividade || "") === (aid || ""))) { toast("Essa dependência já existe."); return; }
-    t.dependencias = (t.dependencias || []).concat([{tarefa: tid, atividade: aid || ""}]);
-    registrar(r, `Tarefa "${t.nome}" passou a depender de ${alvo.numero || ""} ${alvo.nome}${aid ? " (atividade)" : ""}`);
+    const nova = addDep(r, t.dependencias, sel ? sel.value : "", t, {t: t.id, a: ""});
+    if (!nova) return;
+    t.dependencias = nova;
+    const ult = infoDep(r, nova[nova.length - 1], t);
+    registrar(r, `Tarefa "${t.nome}" passou a depender de ${ult ? ult.texto : "outro item"}`);
   }
   else if (act === "dep-rm") { t.dependencias = (t.dependencias || []).filter((_, i) => i !== +btn.dataset.idx); }
   else if (act === "rm-apoio") { t.apoio = t.apoio.filter(x => x !== btn.dataset.email); }
