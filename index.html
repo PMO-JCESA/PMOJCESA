@@ -250,7 +250,7 @@ table.editgrid input,table.editgrid select{width:100%;min-width:130px;padding:6p
 table.editgrid input.id{min-width:64px;width:70px;color:var(--muted)}
 table.editgrid input.wide{min-width:260px}
 table.editgrid input.url{min-width:220px}
-.ro{color:var(--muted) !important;background:transparent !important}
+input.ro,textarea.ro,select.ro{color:var(--muted) !important;background:transparent !important}
 .del{color:#FF7A9A;border:none;background:none;cursor:pointer;font-size:15px;padding:2px 6px;border-radius:6px}
 .del:hover{background:color-mix(in srgb,var(--cherry) 15%,transparent)}
 
@@ -833,6 +833,7 @@ body.resp .tcard.minha{box-shadow:0 0 0 2px var(--green) inset}
       <button class="btn primary" id="btnNovo">+ Novo projeto</button>
       <button class="btn" id="btnExpCsv">Exportar CSV</button>
       <button class="btn" id="btnExpJson">Exportar JSON</button>
+      <button class="btn" id="btnExpReports" title="Gera um .zip com uma página inicial e um arquivo HTML de status report para cada projeto">Exportar status reports (HTML)</button>
       <button class="btn" id="btnImp">Importar JSON</button>
       <button class="btn danger" id="btnRestaurar">Restaurar dados originais</button>
       <input type="file" id="arqImp" accept="application/json,.json" hidden>
@@ -1451,8 +1452,17 @@ const corAvatar = n => { let h = 0; for (const ch of String(n || "")) h = (h * 3
 const avatarHtml = (nome, size = 28) => `<span class="av" style="width:${size}px;height:${size}px;font-size:${Math.round(size * 0.4)}px;background:${corAvatar(nome)}" title="${esc(nome || "")}">${esc(iniciais(nome))}</span>`;
 const nomeCompletoDe = email => {
   const x = [...cadastros.gerentes, ...cadastros.solicitantes].find(c => c.email && c.email.toLowerCase() === String(email || "").toLowerCase());
-  return x ? x.nome : nomeDe(email);
+  if (x) return x.nome;
+  const u = spUsuariosSite().find(u => u.email === String(email || "").toLowerCase());
+  return u && u.nome ? u.nome : nomeDe(email);
 };
+/* Pessoas com acesso ao site do SharePoint (lista de usuários do site) */
+function spUsuariosSite(){
+  if (typeof spSt === "undefined" || !spSt.usuOk || !spSt.usuPorId) return [];
+  const m = new Map();
+  spSt.usuPorId.forEach(u => { const e = (u.email || "").toLowerCase(); if (e.includes("@") && !/sharepoint|^app@|#ext#/.test(e) && u.nome) m.set(e, {email: e, nome: u.nome}); });
+  return [...m.values()];
+}
 const PERFIL_ICONE = {
   admin: '<svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg>',
   gp: '<svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/><path d="M3 13h18"/></svg>',
@@ -3278,6 +3288,116 @@ $("v-home").addEventListener("click", e => {
   exportarHome(b.dataset.homeExp);
 });
 
+/* ================= EXPORTAR STATUS REPORTS EM HTML (pacote .zip) ================= */
+const JSZIP_URL = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
+const PAC_COR = {"0": "#7D879C", "1": "#2B8DA3", "2": "#C07F2A", "3": "#ED174F", "4": "#77777A", "5": "#3E8E57"};
+const pacCor = st => PAC_COR[String(st || "").charAt(0)] || "#7D879C";
+const pacArq = r => String(r.ID).replace(/[^\w.-]/g, "_") + ".html";
+const PAC_FONTE = '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">';
+function pacCssReport(){
+  const regras = [];
+  [...document.styleSheets].forEach(ss => { let rs = []; try { rs = [...ss.cssRules]; } catch (e) {} rs.forEach(r => {
+    if (r.selectorText && /\.sr-/.test(r.selectorText) && !/\.sr-(tools|wrap|envio)\b/.test(r.selectorText)) regras.push(r.cssText);
+  }); });
+  return regras.join("\n");
+}
+function pacPaginaReport(r, css, icone, hoje){
+  return `<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Status Report · #${esc(r.ID)} ${esc(r["Título"])}</title>${icone ? `<link rel="icon" href="${esc(icone)}">` : ""}${PAC_FONTE}
+<style>
+body{margin:0;background:#E9EDF3;font-family:"Manrope",Arial,sans-serif;color:#1B2740}
+.bar{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:12px 22px;background:#0C1B38;color:#E9EDF5;font-size:13px}
+.bar a{color:#fff;text-decoration:none;font-weight:700}.bar a:hover{text-decoration:underline}
+.bar span{color:#A3AEC4}.bar button{margin-left:auto;font:inherit;font-weight:700;background:#ED174F;color:#fff;border:none;border-radius:8px;padding:8px 14px;cursor:pointer}
+.wrap{padding:24px 16px 40px}.fit{width:fit-content;margin:0 auto}
+${css}
+@media print{.bar{display:none}body{background:#fff}.wrap{padding:0}.fit{zoom:1 !important}.sr-sheet{box-shadow:none !important}@page{size:A4 landscape;margin:0}}
+</style></head><body>
+<div class="bar"><a href="../index.html">← Todos os status reports</a><span>Projeto #${esc(r.ID)} · atualizado em ${esc(hoje)}</span><button onclick="print()">Imprimir / salvar PDF</button></div>
+<div class="wrap"><div class="fit" id="fit">${srSheetHtml(r, dadosReport(r))}</div></div>
+<script>(function(){var f=document.getElementById("fit"),s=f.firstElementChild;function a(){f.style.zoom=1;var z=Math.min(1,(window.innerWidth-32)/s.offsetWidth);f.style.zoom=z>0?z:1}addEventListener("resize",a);a()})();<\/script>
+</body></html>`;
+}
+function pacPaginaIndice(lista, icone, hoje){
+  const ativos = lista.filter(emAndamento), parados = lista.filter(isParalisado), concl = lista.filter(isConcluido);
+  const venc = ativos.filter(r => prazo(r)?.tipo === "vencido").length;
+  const avg = media(ativos.filter(r => progProjeto(r) != null).map(progProjeto));
+  const ordem = s => ({"3": 0, "2": 1, "1": 2, "0": 3})[String(s).charAt(0)] ?? 4;
+  const cartao = r => {
+    const p = dadosReport(r).avanco, pz = prazo(r);
+    return `<a class="card" href="reports/${esc(pacArq(r))}" data-busca="${esc(semAcento([r.ID, r["Título"], r["Responsável TI"], r.Frente, r.Fase, r.Status, r.Departamento].join(" ")))}" style="--c:${pacCor(r.Status)}">
+      <div class="top"><span class="id">#${esc(r.ID)} · ${esc(r.Frente || "—")}</span><span class="st">${esc(statusLabel(r.Status) || "—")}</span></div>
+      <h3>${esc(r["Título"])}</h3>
+      <div class="meta"><b>${esc(r["Responsável TI"] || "Sem responsável")}</b> · ${esc(r.Fase || "—")}</div>
+      <div class="av"><i style="width:${p == null ? 0 : p}%"></i></div>
+      <div class="ft"><span>${p == null ? "Sem tarefas" : p + "% de avanço"}</span>${pz ? `<span class="pz ${pz.tipo === "vencido" ? "v" : "p"}">${esc(pz.texto)}</span>` : r.Fim ? `<span>Fim ${esc(dataBR(r.Fim))}</span>` : ""}</div>
+      <div class="go">Abrir status report →</div></a>`;
+  };
+  const secao = (titulo, arr) => arr.length ? `<section><h2>${titulo} <small>${arr.length}</small></h2><div class="grid">${arr.map(cartao).join("")}</div></section>` : "";
+  const kpi = (v, l, c) => `<div class="kpi" style="--c:${c}"><b>${v}</b><span>${l}</span></div>`;
+  return `<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Status Reports · Projetos TI · JCE SA Brazil</title>${icone ? `<link rel="icon" href="${esc(icone)}">` : ""}${PAC_FONTE}
+<style>
+*{box-sizing:border-box}body{margin:0;background:#F3F5F9;font-family:"Manrope",Arial,sans-serif;color:#1B2740;font-size:14px}
+header{background:#0C1B38;color:#E9EDF5;padding:26px 32px 24px;border-bottom:4px solid #ED174F}
+.hd{max-width:1280px;margin:0 auto;display:flex;align-items:center;gap:26px;flex-wrap:wrap}
+.hd img{height:40px}.hd .t{border-left:1px solid rgba(255,255,255,.2);padding-left:24px}
+.eb{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#ED174F;font-weight:800}
+h1{margin:4px 0 2px;font-size:26px;font-weight:800;color:#fff}.hd p{margin:0;color:#A3AEC4;font-size:13px}
+main{max-width:1280px;margin:0 auto;padding:24px 32px 48px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:20px}
+.kpi{background:#fff;border:1px solid #E1E6EF;border-left:4px solid var(--c);border-radius:12px;padding:14px 16px}
+.kpi b{display:block;font-size:26px;font-weight:800;color:#0C1B38}.kpi span{color:#5B6780;font-size:12px;text-transform:uppercase;letter-spacing:.08em;font-weight:700}
+.busca{width:100%;max-width:420px;font:inherit;padding:10px 14px;border:1px solid #CDD5E2;border-radius:10px;background:#fff;margin-bottom:8px}
+h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:#0C1B38;margin:26px 0 12px;font-weight:800}h2 small{color:#5B6780;font-weight:700;margin-left:6px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(285px,1fr));gap:14px}
+.card{display:flex;flex-direction:column;gap:8px;background:#fff;border:1px solid #E1E6EF;border-left:4px solid var(--c);border-radius:14px;padding:16px 18px;text-decoration:none;color:inherit;transition:transform .15s,box-shadow .15s}
+.card:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(12,27,56,.12)}
+.top{display:flex;justify-content:space-between;gap:8px;align-items:center}.id{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#5B6780;font-weight:700}
+.st{font-size:11.5px;font-weight:800;color:var(--c);background:color-mix(in srgb,var(--c) 12%,#fff);border:1px solid color-mix(in srgb,var(--c) 35%,#fff);border-radius:999px;padding:2px 10px;white-space:nowrap}
+h3{margin:0;font-size:16px;font-weight:800;color:#0C1B38;line-height:1.25}.meta{font-size:12.5px;color:#5B6780}.meta b{color:#1B2740}
+.av{height:6px;background:#E8EDF5;border-radius:99px;overflow:hidden}.av i{display:block;height:100%;background:#2B8DA3;border-radius:99px}
+.ft{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:#5B6780;flex-wrap:wrap}
+.pz{font-weight:800;border-radius:999px;padding:1px 8px}.pz.v{color:#C90F40;background:#FDE7ED}.pz.p{color:#A87436;background:#F8EEDF}
+.go{margin-top:auto;font-size:12.5px;font-weight:800;color:#ED174F}
+.vazio{color:#5B6780;margin-top:18px}footer{text-align:center;color:#5B6780;font-size:12px;padding:20px}footer b{color:#ED174F}
+</style></head><body>
+<header><div class="hd"><img src="${LOGO_NEG}" alt="JCE SA Brazil"><div class="t"><div class="eb">Tecnologia da Informação</div><h1>Status Reports dos Projetos</h1><p>Atualizado em ${esc(hoje)} · ${lista.length} projeto(s)</p></div></div></header>
+<main>
+<div class="kpis">${kpi(ativos.length, "Em andamento", "#2B8DA3")}${kpi(concl.length, "Concluídos", "#3E8E57")}${kpi(parados.length, "Paralisados", "#77777A")}${kpi(venc, "Prazos vencidos", "#ED174F")}${kpi(avg == null ? "—" : avg + "%", "Avanço médio", "#C07F2A")}</div>
+<input class="busca" id="busca" type="search" placeholder="Buscar projeto, responsável, área ou status…" aria-label="Buscar">
+${secao("Em andamento", ativos.slice().sort((a, b) => ordem(a.Status) - ordem(b.Status) || a["Título"].localeCompare(b["Título"], "pt-BR")))}
+${secao("Paralisados", parados.slice().sort((a, b) => a["Título"].localeCompare(b["Título"], "pt-BR")))}
+${secao("Concluídos", concl.slice().sort((a, b) => a["Título"].localeCompare(b["Título"], "pt-BR")))}
+<p class="vazio" id="vazio" hidden>Nenhum projeto encontrado.</p>
+</main>
+<footer>Projetos TI · JCE SA Brazil · <b>Juntos, somos um!</b></footer>
+<script>(function(){var b=document.getElementById("busca"),n=function(s){return s.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase()};b.addEventListener("input",function(){var q=n(b.value.trim()).split(/\s+/).filter(Boolean),vis=0;document.querySelectorAll(".card").forEach(function(c){var ok=q.every(function(t){return c.dataset.busca.indexOf(t)>=0});c.hidden=!ok;if(ok)vis++});document.querySelectorAll("section").forEach(function(s){s.hidden=!s.querySelector(".card:not([hidden])")});document.getElementById("vazio").hidden=vis>0})})();<\/script>
+</body></html>`;
+}
+async function exportarPacoteReports(){
+  if (perfil() !== "admin") { toast("Só o Administrador pode exportar os status reports."); return; }
+  if (!rows.length) { toast("Não há projetos para exportar."); return; }
+  try {
+    toast(`Gerando ${rows.length} status report(s)…`);
+    await carregarScript(JSZIP_URL);
+    const hoje = dataBR(hojeISO());
+    const icone = (document.querySelector('link[rel="icon"]') || {}).href || "";
+    const css = pacCssReport();
+    const zip = new window.JSZip();
+    zip.file("index.html", pacPaginaIndice(rows, icone, hoje));
+    rows.forEach(r => zip.file("reports/" + pacArq(r), pacPaginaReport(r, css, icone, hoje)));
+    const blob = await zip.generateAsync({type: "blob", compression: "DEFLATE"});
+    baixarBlob(blob, `status_reports_${hojeISO()}.zip`);
+    toast(`Pacote gerado: página inicial e ${rows.length} status report(s). Descompacte e suba a pasta no site da diretoria.`);
+  } catch (err) {
+    toast("Não foi possível gerar o pacote: " + err.message);
+  }
+}
+$("btnExpReports").addEventListener("click", exportarPacoteReports);
+
 /* Edição manual */
 let repCtx = null;
 function abrirEdicaoReport(r){
@@ -3386,12 +3506,18 @@ function closeDrawer(){
   drawerCtx = null;
   if ($("drawer")) $("drawer").hidden = true;
 }
+function emailDoCadastro(c){
+  if (c.email) return c.email.toLowerCase();
+  const n = acNorm(c.nome).trim(); if (!n) return "";
+  const u = spUsuariosSite().find(u => acNorm(u.nome).trim() === n);
+  return u ? u.email : "";
+}
 function pessoasAuto(){
   const m = new Map();
-  cadastros.gerentes.forEach(g => { if (g.email) m.set(g.email.toLowerCase(), {email: g.email.toLowerCase(), nome: g.nome, origem: ["Gerente de projeto"]}); });
+  cadastros.gerentes.forEach(g => { const k = emailDoCadastro(g); if (k) m.set(k, {email: k, nome: g.nome, origem: ["Gerente de projeto"]}); });
   cadastros.solicitantes.forEach(s => {
-    if (!s.email) return;
-    const k = s.email.toLowerCase();
+    const k = emailDoCadastro(s);
+    if (!k) return;
     if (m.has(k)) m.get(k).origem.push("Solicitante"); else m.set(k, {email: k, nome: s.nome, origem: ["Solicitante"]});
   });
   return [...m.values()].sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
@@ -3502,14 +3628,20 @@ document.addEventListener("focusout", e => {
 });
 
 function emailsEquipe(){
-  return [...new Set([...pessoas.map(e => e.toLowerCase()), ...pessoasAuto().map(p => p.email)])];
+  return [...new Set([...pessoas.map(e => e.toLowerCase()), ...pessoasAuto().map(p => p.email), ...spUsuariosSite().map(u => u.email)])];
 }
 function pessoasOptions(atual){
   const lista = emailsEquipe();
   if (atual && !lista.includes(atual)) lista.push(atual);
-  const cont = {}; lista.forEach(e => { const n = nomeDe(e); cont[n] = (cont[n] || 0) + 1; });
+  lista.sort((a, b) => nomeCompletoDe(a).localeCompare(nomeCompletoDe(b), "pt-BR"));
+  const cont = {}; lista.forEach(e => { const n = acNorm(nomeCompletoDe(e)); cont[n] = (cont[n] || 0) + 1; });
+  const nomesOk = new Set(lista.map(e => acNorm(nomeCompletoDe(e))));
+  const semEmail = [...new Map([...cadastros.gerentes, ...cadastros.solicitantes]
+    .filter(c => c.nome && !emailDoCadastro(c) && !nomesOk.has(acNorm(c.nome)))
+    .map(c => [acNorm(c.nome), c.nome])).values()].sort((a, b) => a.localeCompare(b, "pt-BR"));
   return `<option value="">— selecione —</option>` + lista.map(e =>
-    `<option value="${esc(e)}" title="${esc(e)}" ${e === atual ? "selected" : ""}>${esc(nomeDe(e))}${cont[nomeDe(e)] > 1 ? " (" + esc(e) + ")" : ""}</option>`).join("");
+    `<option value="${esc(e)}" title="${esc(e)}" ${e === atual ? "selected" : ""}>${esc(nomeCompletoDe(e))}${cont[acNorm(nomeCompletoDe(e))] > 1 ? " (" + esc(e) + ")" : ""}</option>`).join("")
+    + (semEmail.length ? `<optgroup label="Sem e-mail no cadastro (complete em Base para poder selecionar)">` + semEmail.map(n => `<option disabled>${esc(n)}</option>`).join("") + `</optgroup>` : "");
 }
 function renderDrawer(){
   if (!drawerCtx) return;
@@ -3881,6 +4013,7 @@ function renderPessoas(){
   $("pessoasLista").innerHTML = `
     <div class="pp-grupo"><b>Vindas dos cadastros</b> <span class="note" style="margin:0">${auto.length} pessoa(s). Para remover, apague o e-mail em Gerentes de projetos ou Solicitantes.</span></div>
     <div class="chips-p">${auto.length ? auto.map(p => `<span class="pp-auto">${avatarHtml(p.nome, 22)} ${esc(p.nome)} · ${esc(p.email)} <em>${esc(p.origem.join(" e "))}</em></span>`).join("") : `<span class="note" style="margin:0">Nenhum gerente ou solicitante com e-mail ainda.</span>`}</div>
+    <div class="pp-grupo" style="margin-top:10px"><b>Com acesso ao site do SharePoint</b> <span class="note" style="margin:0">${spUsuariosSite().length} pessoa(s), entram automaticamente nas listas de responsável e apoio.</span></div>
     <div class="pp-grupo" style="margin-top:10px"><b>Adicionadas manualmente</b> <span class="note" style="margin:0">${manuais.length} pessoa(s)</span></div>
     <div class="chips-p">${manuais.length ? manuais.map(e => `<span>${avatarHtml(nomeDe(e), 22)} ${esc(nomeDe(e))} · ${esc(e)}<button data-rm-pessoa="${esc(e)}" title="Remover">✕</button></span>`).join("") : `<span class="note" style="margin:0">Nenhuma.</span>`}</div>`;
 }
