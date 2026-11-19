@@ -782,6 +782,17 @@ body.resp .tcard.minha{box-shadow:0 0 0 2px var(--green) inset}
 .tc-dep b{font-weight:700}
 .tc-dep.pend{border-color:#ED174F;color:#ED174F;background:rgba(237,23,79,.10)}
 .tc-dep.aviso{border-color:#C39366;color:#C39366;background:rgba(195,147,102,.12)}
+.g-deps{position:absolute;top:0;left:0;pointer-events:none;z-index:2;overflow:visible}
+.g-deps .gd{fill:none;stroke-width:1.8;stroke-linejoin:round}
+.g-deps .gd.ok{stroke:#4697A8}
+.g-deps .gd.pend{stroke:#ED174F}
+.g-deps .gd.at{stroke-dasharray:5 4}
+.g-topo{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 20px;align-items:center}
+.g-leg-dep{align-items:center}
+.g-leg-dep i.ld{width:22px;height:0;border-top:2px solid #4697A8;border-radius:0;background:none}
+.g-leg-dep i.ld.at{border-top-style:dashed}
+.g-leg-dep i.ld.pend{border-top-color:#ED174F}
+.g-dep-tg{display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-weight:700}
 </style>
 </head>
 <body>
@@ -2892,7 +2903,9 @@ function renderGestaoProjeto(id){
       });
     });
     corpo = `<div class="card" style="padding:16px">
-      ${legenda(BUCKETS.map(b => [BUCKET_COR[b.key], b.nome]))}
+      <div class="g-topo">${legenda(BUCKETS.map(b => [BUCKET_COR[b.key], b.nome]))}
+        <div class="leg g-leg-dep"><span><i class="ld"></i>Depende do card</span><span><i class="ld at"></i>Depende de atividade</span><span><i class="ld pend"></i>Pendente</span>
+          <label class="g-dep-tg"><input type="checkbox" data-gdeps ${ganttDepsOn ? "checked" : ""}> Mostrar dependências</label></div></div>
       ${ganttHtml(linhas, {titulo: "Fase / tarefa", labW: 300, largura: 900})}
       ${r.tarefas.length ? `<p class="note" style="margin:10px 0 0">Clique numa tarefa para editar datas, responsável e atividades. A barra vai do início ao fim previsto.</p>` : `<p class="note" style="margin:10px 0 0">Nenhuma tarefa cadastrada ainda. Crie tarefas no Backlog pela visão Kanban.</p>`}
     </div>`;
@@ -2925,7 +2938,73 @@ function renderGestaoProjeto(id){
     </div>
     ${comunicacaoHtml(r)}
     ${corpo}`;
+  if (pVisao === "gantt") {
+    requestAnimationFrame(() => desenharDepsGantt(r));
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => desenharDepsGantt(r));
+  }
 }
+/* ===== Setas de dependência no Gantt do projeto =====
+   Linha cheia: depende do card inteiro. Tracejada: depende de uma atividade (do outro card, ou cadastrada numa atividade deste card).
+   Vermelha: pendente. Azul: cumprida. Vai do fim do card predecessor até o início do card que espera. */
+let ganttDepsOn = true;
+function ligacoesDep(r){
+  const mapa = new Map();
+  const add = (de, para, tipo, cumprida) => {
+    if (!de || de === para) return;
+    const k = de + "|" + para + "|" + tipo;
+    const x = mapa.get(k);
+    if (x) x.cumprida = x.cumprida && cumprida; else mapa.set(k, {de, para, tipo, cumprida});
+  };
+  r.tarefas.forEach(t => {
+    (t.dependencias || []).forEach(d => { const inf = infoDep(r, d, t); if (inf) add(d.tarefa, t.id, d.atividade ? "atividade" : "card", inf.cumprida); });
+    t.atividades.forEach(a => (a.dependencias || []).forEach(d => { if (d.tarefa === t.id) return; const inf = infoDep(r, d, t); if (inf) add(d.tarefa, t.id, "atividade", inf.cumprida); }));
+  });
+  return [...mapa.values()];
+}
+function desenharDepsGantt(r){
+  const g = document.querySelector("#v-gestao-projeto .gantt");
+  if (!g || !r) return;
+  const velho = g.querySelector(".g-deps"); if (velho) velho.remove();
+  if (!ganttDepsOn) return;
+  const base = g.getBoundingClientRect();
+  const caixa = tid => {
+    const el = [...g.querySelectorAll(".g-track .g-bar[data-tid], .g-track .g-mile[data-tid]")].find(e => e.dataset.tid === tid);
+    if (!el) return null;
+    const b = el.getBoundingClientRect();
+    return {x1: b.left - base.left, x2: b.right - base.left, y: b.top - base.top + b.height / 2, top: b.top - base.top, bot: b.bottom - base.top};
+  };
+  const caminhos = ligacoesDep(r).map(l => {
+    const p = caixa(l.de), q = caixa(l.para);
+    if (!p || !q) return "";
+    /* Sai da ponta final do predecessor (por baixo ou por cima, sem cobrir o percentual) e entra pela esquerda do card que espera */
+    const desce = q.y > p.y;
+    const sx = p.x2 - Math.min(6, (p.x2 - p.x1) / 2), sy = desce ? p.bot : p.top, ex = q.x1, ey = q.y;
+    const d = ex - 10 >= sx
+      ? `M${sx},${sy} V${ey} H${ex - 2}`
+      : `M${sx},${sy} V${ey + (desce ? -17 : 17)} H${ex - 12} V${ey} H${ex - 2}`;
+    const st = l.cumprida ? "ok" : "pend";
+    return `<path class="gd ${st} ${l.tipo === "atividade" ? "at" : ""}" d="${d}" marker-end="url(#gdSeta-${st})"/>`;
+  }).join("");
+  if (!caminhos) return;
+  const ns = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(ns, "svg");
+  svg.setAttribute("class", "g-deps");
+  svg.setAttribute("width", g.scrollWidth);
+  svg.setAttribute("height", g.scrollHeight);
+  svg.innerHTML = `<defs>
+    <marker id="gdSeta-ok" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4697A8"/></marker>
+    <marker id="gdSeta-pend" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#ED174F"/></marker></defs>${caminhos}`;
+  g.appendChild(svg);
+}
+window.addEventListener("resize", () => {
+  if (pVisao !== "gantt" || !document.querySelector("#v-gestao-projeto .gantt")) return;
+  try { desenharDepsGantt(achar(currentProjId())); } catch (e) {}
+});
+$("v-gestao-projeto").addEventListener("change", e => {
+  if (!e.target.matches("[data-gdeps]")) return;
+  ganttDepsOn = e.target.checked;
+  desenharDepsGantt(achar(currentProjId()));
+});
 $("v-gestao-projeto").addEventListener("click", e => {
   if (e.target.closest("[data-tcm]")) return;
   const pa = e.target.closest("[data-proj-acao]");
