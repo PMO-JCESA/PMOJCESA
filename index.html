@@ -307,6 +307,31 @@ body.ro .tcm-btn.so-leitura{display:none}
 .tcm .dup-lin input{width:74px;margin:0;font:inherit;padding:7px 8px;border-radius:8px;border:1px solid var(--line2);background:var(--surface2);color:var(--text)}
 .tcm label.tudo{font-weight:800;color:var(--hi)}
 .tcm .why.aviso{color:var(--tan)}
+.com-card{margin-bottom:16px;padding:16px 18px}
+.com-h{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline;margin-bottom:10px}
+.com-hist{max-height:340px;overflow:auto;display:grid;gap:10px;padding-right:4px}
+.com-msg{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--surface2)}
+.com-top{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;font-size:13px}
+.com-st{font-size:11.5px;font-weight:700;border-radius:999px;padding:2px 9px;border:1px solid var(--line2);color:var(--muted)}
+.com-st.ok{color:var(--green);border-color:var(--green)}
+.com-st.err{color:#FF6B8B;border-color:#FF6B8B}
+.com-para{font-size:12px;color:var(--muted);margin-top:4px}
+.com-txt{margin-top:6px;line-height:1.45}
+.com-erro{margin-top:6px;font-size:12px;color:#FF6B8B}
+.com-acts-msg{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.com-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line2);border-radius:999px;padding:2px 9px;font-size:12px;background:var(--surface);margin:2px 4px 2px 0}
+.com-chip button{background:none;border:none;color:var(--muted);cursor:pointer;font:inherit;padding:0}
+.com-form{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
+.com-para-lbl{font-size:12px;color:var(--muted);margin-bottom:4px}
+.com-chips{min-height:26px;margin-bottom:8px}
+.com-ed{position:relative}
+.com-ed textarea{width:100%;font:inherit;padding:9px 10px;border-radius:9px;border:1px solid var(--line2);background:var(--surface2);color:var(--text);resize:vertical;box-sizing:border-box}
+.com-pop{position:absolute;left:0;top:100%;margin-top:4px;z-index:30;min-width:260px;max-width:100%;background:var(--surface);border:1px solid var(--line2);border-radius:10px;padding:4px;box-shadow:0 12px 28px rgba(0,0,0,.35);display:grid;gap:2px}
+.com-pop[hidden]{display:none}
+.com-pop button{font:inherit;text-align:left;background:none;border:none;color:var(--text);padding:7px 9px;border-radius:7px;cursor:pointer}
+.com-pop button:hover,.com-pop button.on{background:var(--surface2)}
+.com-pop small{display:block;color:var(--muted);font-size:11.5px}
+.com-acts{display:flex;justify-content:flex-end;margin-top:8px}
 .tcm .lb{display:flex;align-items:center;gap:10px}
 .tcm .lb .ti{flex:none;opacity:.85}
 .pdot{width:10px;height:10px;border-radius:50%;display:inline-block;background:var(--green)}
@@ -1207,6 +1232,7 @@ function normalizar(d){
   if (!r.Status) r.Status = "0.Novo/Aguardando";
   r.tarefas = Array.isArray(d.tarefas) ? d.tarefas.map(normalizarTarefa) : [];
   r.historico = Array.isArray(d.historico) ? d.historico : [];
+  r.mensagens = Array.isArray(d.mensagens) ? d.mensagens.map(normalizarMsg) : [];
   r.report = d.report && typeof d.report === "object" ? d.report : {};
   if (d._sp) r._sp = String(d._sp);
   return r;
@@ -2447,6 +2473,163 @@ function ntRefresh(form){
 }
 let pVisao = "kanban";
 const BUCKET_COR = {backlog: "#C9CFDB", execucao: "#3FA9C0", atraso: "#ED174F", cancelado: "#8A8A89", concluido: "#5DB075"};
+/* ================= COMUNICAÇÃO DO PROJETO (histórico + @ + envio pelo Outlook) ================= */
+const comDH = iso => { const d = new Date(iso); return isNaN(d) ? "" : d.toLocaleString("pt-BR", {day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit"}); };
+function normalizarMsg(m){
+  const e = m.envio || {};
+  return {
+    id: m.id || uid(), autor: String(m.autor || "—"), ts: m.ts || new Date().toISOString(), texto: String(m.texto || ""),
+    para: Array.isArray(m.para) ? m.para.filter(p => p && p.email).map(p => ({email: String(p.email).toLowerCase(), nome: String(p.nome || p.email)})) : [],
+    envio: {estado: ["enviado","pendente","falhou","local"].includes(e.estado) ? e.estado : "local", ts: e.ts || "", erro: String(e.erro || ""), precisaAutorizar: !!e.precisaAutorizar}
+  };
+}
+let cmp = {pid: "", para: [], texto: ""};
+function comCandidatos(q){
+  const toks = acNorm(q).split(/\s+/).filter(Boolean);
+  const ja = new Set(cmp.para.map(p => p.email));
+  return emailsEquipe().filter(e => !ja.has(e)).map(e => ({email: e, nome: nomeCompletoDe(e)}))
+    .filter(p => !toks.length || toks.every(t => acNorm(p.nome + " " + p.email).includes(t)))
+    .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")).slice(0, 8);
+}
+function comMsgHtml(r, m){
+  const est = m.envio.estado;
+  const badge = est === "enviado" ? `<span class="com-st ok">Enviado em ${esc(comDH(m.envio.ts))}</span>`
+    : est === "pendente" ? `<span class="com-st">Enviando…</span>`
+    : est === "falhou" ? `<span class="com-st err">Não enviado</span>`
+    : `<span class="com-st">Só no histórico</span>`;
+  const para = m.para.map(p => `<span class="com-chip">${esc(p.nome)}</span>`).join("");
+  const acoes = (est === "falhou" || est === "pendente") && podeEditar()
+    ? `<div class="com-acts-msg">${m.envio.precisaAutorizar ? `<button class="btn sm" data-com-autorizar="1">Autorizar envio de e-mail</button>` : ""}<button class="btn sm" data-com-reenviar="${esc(m.id)}">Reenviar</button></div>` : "";
+  return `<div class="com-msg">
+    <div class="com-top"><b>${esc(m.autor)}</b><span class="note">${esc(comDH(m.ts))}</span>${badge}</div>
+    <div class="com-para">Para: ${para || "—"}</div>
+    <div class="com-txt">${esc(m.texto).replace(/\n/g, "<br>")}</div>
+    ${est === "falhou" && m.envio.erro ? `<div class="com-erro">${esc(m.envio.erro)}</div>` : ""}
+    ${acoes}</div>`;
+}
+function comunicacaoHtml(r){
+  if (cmp.pid !== r.ID) cmp = {pid: r.ID, para: [], texto: ""};
+  const msgs = (r.mensagens || []).slice(-200);
+  const hist = msgs.length ? msgs.map(m => comMsgHtml(r, m)).join("") : `<p class="note" style="margin:0">Nenhuma mensagem ainda.</p>`;
+  const form = podeEditar() ? `
+    <div class="com-form">
+      <div class="com-para-lbl">Para</div>
+      <div class="com-chips" data-com-chips>${cmp.para.map(p => `<span class="com-chip">${esc(p.nome)}<button data-com-rm="${esc(p.email)}" aria-label="Remover ${esc(p.nome)}">×</button></span>`).join("") || `<span class="note" style="margin:0">Digite @ e um nome para escolher quem recebe.</span>`}</div>
+      <div class="com-ed">
+        <textarea data-com-texto rows="3" placeholder="Escreva a mensagem. Ex.: @Maria, pode confirmar o prazo deste projeto?">${esc(cmp.texto)}</textarea>
+        <div class="com-pop" data-com-pop hidden></div>
+      </div>
+      <div class="com-acts"><button class="btn" data-com-enviar="1">Enviar via Outlook</button></div>
+      <p class="note" style="margin:6px 0 0">O e-mail sai da sua conta Microsoft. O resultado (enviado ou não) fica registrado no histórico.</p>
+    </div>`
+    : `<p class="note" style="margin:10px 0 0">Somente o administrador e os gerentes de projeto enviam mensagens.</p>`;
+  return `<section class="card com-card">
+    <div class="com-h"><b>Comunicação do projeto</b><span class="note">Histórico de mensagens e envios para a equipe</span></div>
+    <div class="com-hist">${hist}</div>
+    ${form}</section>`;
+}
+function comAtualizarChips(){
+  const box = document.querySelector("[data-com-chips]"); if (!box) return;
+  box.innerHTML = cmp.para.map(p => `<span class="com-chip">${esc(p.nome)}<button data-com-rm="${esc(p.email)}" aria-label="Remover ${esc(p.nome)}">×</button></span>`).join("") || `<span class="note" style="margin:0">Digite @ e um nome para escolher quem recebe.</span>`;
+}
+function comMostrarPop(ta){
+  const pop = document.querySelector("[data-com-pop]"); if (!pop) return;
+  const pre = ta.value.slice(0, ta.selectionStart);
+  const mm = pre.match(/@([^\s@]*)$/);
+  if (!mm) { pop.hidden = true; return; }
+  const lista = comCandidatos(mm[1]);
+  if (!lista.length) { pop.hidden = true; return; }
+  pop.innerHTML = lista.map((p, i) => `<button type="button" data-com-pick="${esc(p.email)}" class="${i === 0 ? "on" : ""}">${esc(p.nome)}<small>${esc(p.email)}</small></button>`).join("");
+  pop.hidden = false;
+}
+function comEscolher(email){
+  const ta = document.querySelector("[data-com-texto]"); if (!ta) return;
+  const pre = ta.value.slice(0, ta.selectionStart);
+  const mm = pre.match(/@([^\s@]*)$/);
+  if (mm) { ta.value = ta.value.slice(0, mm.index) + ta.value.slice(ta.selectionStart); ta.setSelectionRange(mm.index, mm.index); }
+  const c = comCandidatos("").find(p => p.email === email) || {email, nome: nomeCompletoDe(email)};
+  if (!cmp.para.some(p => p.email === email)) cmp.para.push({email: c.email, nome: c.nome});
+  cmp.texto = ta.value;
+  document.querySelector("[data-com-pop]").hidden = true;
+  comAtualizarChips();
+  ta.focus();
+}
+async function comTokenEnvio(){
+  const app = await spMsal();
+  const conta = spConta(app);
+  if (!conta) throw new Error("sem conta Microsoft");
+  return (await app.acquireTokenSilent({scopes: ["Mail.Send"], account: conta})).accessToken;
+}
+async function comEnviarMsg(r, m){
+  const falha = (erro, precisaAutorizar) => { m.envio = {estado: "falhou", ts: new Date().toISOString(), erro, precisaAutorizar: !!precisaAutorizar}; };
+  if (!spLigado()) falha("Sem conexão com o SharePoint. Clique no indicador do topo e entre com sua conta Microsoft para enviar.");
+  else {
+    let tk = null;
+    try { tk = await comTokenEnvio(); }
+    catch (e) {
+      if (e && (e.name === "InteractionRequiredAuthError" || /interaction|consent/i.test(e.message || ""))) falha("Falta autorizar o envio de e-mail pela sua conta Microsoft (clique em Autorizar envio de e-mail).", true);
+      else falha("Não foi possível obter permissão para enviar: " + (e && e.message || e));
+    }
+    if (tk) {
+      const corpo = `${m.texto}\n\nProjeto: ${r["Título"]} (#${r.ID})\nEnviado por: ${m.autor}\nAbrir projeto: ${linkProjeto(r)}` + ASSINATURA;
+      const payload = {message: {subject: `[Projetos TI] ${r["Título"]} (#${r.ID})`, body: {contentType: "HTML", content: corpoHtml(corpo)},
+        toRecipients: m.para.map(p => ({emailAddress: {address: p.email, name: p.nome}}))}, saveToSentItems: true};
+      try {
+        const resp = await fetch(GRAPH + "/me/sendMail", {method: "POST", headers: {Authorization: "Bearer " + tk, "Content-Type": "application/json"}, body: JSON.stringify(payload)});
+        if (resp.ok) m.envio = {estado: "enviado", ts: new Date().toISOString(), erro: "", precisaAutorizar: false};
+        else { const j = await resp.json().catch(() => null); falha(`O Outlook recusou o envio (${resp.status})${j && j.error && j.error.message ? ": " + j.error.message : "."}`); }
+      } catch (e) { falha("Falha de rede ao enviar: " + e.message); }
+    }
+  }
+  registrar(r, m.envio.estado === "enviado" ? `Mensagem enviada a ${m.para.map(p => p.nome).join(", ")}` : `Mensagem não enviada: ${m.envio.erro}`);
+  salvar();
+  renderGestaoProjeto(r.ID);
+  toast(m.envio.estado === "enviado" ? "Mensagem enviada pelo seu Outlook." : "A mensagem não foi enviada. Veja o motivo no histórico.");
+}
+document.addEventListener("input", e => {
+  const ta = e.target.closest("[data-com-texto]"); if (!ta) return;
+  cmp.texto = ta.value; comMostrarPop(ta);
+});
+document.addEventListener("keydown", e => {
+  const ta = e.target.closest && e.target.closest("[data-com-texto]"); if (!ta) return;
+  const pop = document.querySelector("[data-com-pop]");
+  if (!pop || pop.hidden) return;
+  if (e.key === "Enter" && !e.shiftKey) { const b = pop.querySelector("button"); if (b) { e.preventDefault(); comEscolher(b.dataset.comPick); } }
+  else if (e.key === "Escape") { pop.hidden = true; }
+});
+document.addEventListener("click", e => {
+  const pick = e.target.closest("[data-com-pick]"); if (pick) { comEscolher(pick.dataset.comPick); return; }
+  const rm = e.target.closest("[data-com-rm]"); if (rm) { cmp.para = cmp.para.filter(p => p.email !== rm.dataset.comRm); comAtualizarChips(); return; }
+  const env = e.target.closest("[data-com-enviar]"); if (env) {
+    const r = achar(cmp.pid || currentProjId());
+    const ta = document.querySelector("[data-com-texto]");
+    const texto = ((ta && ta.value) || "").trim();
+    if (!r) return;
+    if (!cmp.para.length) { toast("Escolha pelo menos uma pessoa: digite @ e o nome."); return; }
+    if (!texto) { toast("Escreva a mensagem antes de enviar."); return; }
+    const m = normalizarMsg({id: uid(), autor: autor || (sessao && sessao.nome) || "Você", ts: new Date().toISOString(), texto, para: cmp.para, envio: {estado: "pendente"}});
+    r.mensagens = (r.mensagens || []).concat([m]);
+    cmp = {pid: r.ID, para: [], texto: ""};
+    salvar(); renderGestaoProjeto(r.ID);
+    comEnviarMsg(r, m);
+    return;
+  }
+  const re = e.target.closest("[data-com-reenviar]"); if (re) {
+    const r = achar(currentProjId());
+    const m = r && (r.mensagens || []).find(x => x.id === re.dataset.comReenviar);
+    if (!m) return;
+    m.envio = {estado: "pendente", ts: "", erro: "", precisaAutorizar: false};
+    salvar(); renderGestaoProjeto(r.ID);
+    comEnviarMsg(r, m);
+    return;
+  }
+  const au = e.target.closest("[data-com-autorizar]"); if (au) {
+    spMsal().then(app => { const conta = spConta(app); return app.acquireTokenRedirect({scopes: ["Mail.Send"], account: conta}); })
+      .catch(err => toast("Não foi possível abrir a autorização: " + (err && err.message || err)));
+    return;
+  }
+});
+
 function renderGestaoProjeto(id){
   const r = achar(id);
   const p = progProjeto(r);
@@ -2497,6 +2680,7 @@ function renderGestaoProjeto(id){
         <a class="btn" href="${isConcluido(r) ? "#/concluidos" : "#/gestao"}">Voltar</a>
       </div>
     </div>
+    ${comunicacaoHtml(r)}
     ${corpo}`;
 }
 $("v-gestao-projeto").addEventListener("click", e => {
