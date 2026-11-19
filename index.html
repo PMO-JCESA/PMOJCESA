@@ -793,6 +793,9 @@ body.resp .tcard.minha{box-shadow:0 0 0 2px var(--green) inset}
 .g-leg-dep i.ld.at{border-top-style:dashed}
 .g-leg-dep i.ld.pend{border-top-color:#ED174F}
 .g-dep-tg{display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-weight:700}
+body:not(.ro) .sr-wrap [data-sr-edit]{cursor:pointer}
+body:not(.ro) .sr-wrap .sr-un[data-sr-edit]:hover{outline:1.5px dashed #4697A8;outline-offset:2px;border-radius:4px}
+body:not(.ro) .sr-wrap .sr-f[data-sr-edit]:hover,body:not(.ro) .sr-wrap .sr-av[data-sr-edit]:hover{outline:2px dashed #4697A8;outline-offset:2px}
 </style>
 </head>
 <body>
@@ -3023,6 +3026,16 @@ $("v-gestao-projeto").addEventListener("click", e => {
     renderGestaoProjeto(r.ID);
     return;
   }
+  const se = e.target.closest("[data-sr-edit]");
+  if (se && !e.target.closest("[data-sr]")) {
+    if (!podeEditar() || bloqueado()) return;
+    const r = achar(currentProjId());
+    abrirEdicaoReport(r);
+    const alvo = $("rdBody").querySelector(`[name="${se.dataset.srEdit}"]`);
+    const campo = alvo && alvo.readOnly ? $("rdBody").querySelector("[data-sr-fase]") : alvo;
+    if (campo) { campo.scrollIntoView({block: "center"}); campo.focus(); if (campo.select) campo.select(); }
+    return;
+  }
   const sr = e.target.closest("[data-sr]");
   if (sr) {
     const r = achar(currentProjId());
@@ -3321,12 +3334,18 @@ function dadosReport(r){
   if (m.avanco !== undefined && m.avanco !== "") d.avanco = Math.max(0, Math.min(100, parseInt(m.avanco, 10) || 0));
   d.fasesAv = {};
   FASES_MACRO.forEach(f => { const v = m["fase_" + f.key]; if (v !== undefined && v !== "") d.fasesAv[f.key] = Math.max(0, Math.min(100, parseInt(v, 10) || 0)); });
+  /* Fases informadas à mão: o avanço global passa a ser a média das 5 fases (fase sem valor conta como 0%) */
+  if (Object.keys(d.fasesAv).length) {
+    d.avanco = Math.round(FASES_MACRO.reduce((s, f) => s + (d.fasesAv[f.key] ?? progFase(r, f.key) ?? 0), 0) / FASES_MACRO.length);
+    d.avancoMedia = true;
+    if (!m.situacao) d.situacao = d.situacao.replace(/Avanço calculado pelas atividades: \d+%\./, `Avanço global (média das fases): ${d.avanco}%.`);
+  }
   if (m.marcos) d.marcos = srLinhas(m.marcos, 3).map(([nome, data, status]) => ({nome, data: parseData(data), status: status || "—"}));
   if (m.riscos) d.riscos = srLinhas(m.riscos, 4).map(([risco, impacto, acao, status]) => ({risco, impacto: impacto || "—", acao, status: status || "—"}));
   if (m.passos) d.passos = srLinhas(m.passos, 1).map(x => x[0]);
   if (m.entregas) d.entregas = srLinhas(m.entregas, 1).map(x => x[0]);
   d.manuais = SR_CAMPOS.filter(k => m[k] !== undefined && m[k] !== "");
-  d.avancoManual = d.manuais.includes("avanco");
+  d.avancoManual = d.manuais.includes("avanco") || !!d.avancoMedia;
   return d;
 }
 function autoComoTexto(a){
@@ -3349,11 +3368,11 @@ function srSheetHtml(r, d){
     const cls = r.Status.startsWith("5.") || i < idxAtual ? "ok" : i === idxAtual ? "now" : "";
     const rot = cls === "ok" ? "Concluída" : cls === "now" ? "Fase atual" : i === idxAtual + 1 ? "Próxima" : "A seguir";
     const pf = progFaseRel(r, d, f.key);
-    return `<div class="sr-f ${cls}"><small>${rot}</small><div class="sr-fr"><b>${esc(f.nome)}</b><span>${pf == null ? "—" : pf + "%"}</span></div></div>`;
+    return `<div class="sr-f ${cls}" data-sr-edit="fase_${f.key}"><small>${rot}</small><div class="sr-fr"><b>${esc(f.nome)}</b><span>${pf == null ? "—" : pf + "%"}</span></div></div>`;
   }).join("");
   const av = d.avanco;
   const sem = [["Status geral", d.statusGeral], ["Cronograma", d.cronograma], ["Orçamento", d.orcamento === "Não informado" && d.orcValor ? d.orcValor : d.orcamento + (d.orcValor ? " · " + d.orcValor : "")], ["Qualidade", d.qualidade]];
-  const porFase = FASES_MACRO.map(f => ({n: f.nome, p: progFaseRel(r, d, f.key)}));
+  const porFase = FASES_MACRO.map(f => ({k: f.key, n: f.nome, p: progFaseRel(r, d, f.key)}));
   const marcos = d.marcos.length
     ? `<table class="sr-tb"><thead><tr><th>Marco</th><th style="width:20%">Data</th><th style="width:32%">Status</th></tr></thead><tbody>${
         d.marcos.slice(0, 8).map(m => `<tr><td>${esc(srCorta(m.nome, 60))}</td><td>${esc(m.data ? dataBR(m.data) : "—")}</td><td>${srTag(m.status)}</td></tr>`).join("")}</tbody></table>`
@@ -3395,16 +3414,16 @@ function srSheetHtml(r, d){
       <div class="sr-fases">${fases}</div>
       <div class="sr-cols">
         <div class="sr-col">
-          <div class="sr-av">
+          <div class="sr-av" data-sr-edit="avanco">
             <div class="sr-l">Avanço global</div>
             <div class="sr-v">${av == null ? "—" : av + "%"}</div>
             <div class="sr-bar"><i style="width:${av ?? 0}%"></i></div>
-            <div class="sr-s">${d.avancoManual ? "Informado manualmente" : av == null ? "Sem tarefas para calcular" : "Calculado pelas tarefas e atividades"}</div>
+            <div class="sr-s">${d.avancoMedia ? "Média das fases (informado manualmente)" : d.avancoManual ? "Informado manualmente" : av == null ? "Sem tarefas para calcular" : "Calculado pelas tarefas e atividades"}</div>
           </div>
           <div class="sr-sem">${sem.map(([l, v]) => `<div><span class="sr-lbl">${l}</span>${srTag(v)}</div>`).join("")}</div>
           <div>
             <div class="sr-t">Avanço por fase</div>
-            ${porFase.map(x => `<div class="sr-un"><span>${esc(x.n)}</span><div class="sr-bar"><i style="width:${x.p ?? 0}%"></i></div><em>${x.p == null ? "—" : x.p + "%"}</em></div>`).join("")}
+            ${porFase.map(x => `<div class="sr-un" data-sr-edit="fase_${x.k}"><span>${esc(x.n)}</span><div class="sr-bar"><i style="width:${x.p ?? 0}%"></i></div><em>${x.p == null ? "—" : x.p + "%"}</em></div>`).join("")}
           </div>
         </div>
         <div class="sr-col">
@@ -4017,7 +4036,7 @@ function renderEdicaoReport(r, m){
     <div class="dr-sec">
       <h4>Indicadores</h4>
       <div class="fgrid">
-        <div class="fld"><label>Avanço global (%)</label><input type="text" name="avanco" inputmode="numeric" value="${esc(m.avanco || "")}" placeholder="Automático: ${a.avanco == null ? "sem tarefas" : a.avanco + "%"}"></div>
+        <div class="fld"><label data-sr-av-lbl>Avanço global (%)</label><input type="text" name="avanco" data-sr-av data-orig="${esc(m.avanco || "")}" inputmode="numeric" value="${esc(m.avanco || "")}" placeholder="Automático: ${a.avanco == null ? "sem tarefas" : a.avanco + "%"}"></div>
         <div class="fld"><label>Status geral</label>${sel("statusGeral", a.statusGeral)}</div>
         <div class="fld"><label>Cronograma</label>${sel("cronograma", a.cronograma)}</div>
         <div class="fld"><label>Qualidade</label>${sel("qualidade", a.qualidade)}</div>
@@ -4027,8 +4046,8 @@ function renderEdicaoReport(r, m){
     </div>
     <div class="dr-sec">
       <h4>Avanço por fase (%)</h4>
-      <p class="note">Deixe vazio para usar o avanço calculado pelos cards.</p>
-      <div class="fgrid">${FASES_MACRO.map(f => { const pf = progFase(r, f.key); return `<div class="fld"><label>${esc(f.nome)}</label><input type="text" name="fase_${f.key}" inputmode="numeric" value="${esc(m["fase_" + f.key] || "")}" placeholder="Automático: ${pf == null ? "sem cards" : pf + "%"}"></div>`; }).join("")}</div>
+      <p class="note">Deixe vazio para usar o avanço calculado pelos cards. Ao preencher qualquer fase, o avanço global passa a ser a média das 5 fases (fase vazia usa o valor dos cards; sem cards, conta 0%).</p>
+      <div class="fgrid">${FASES_MACRO.map(f => { const pf = progFase(r, f.key); return `<div class="fld"><label>${esc(f.nome)}</label><input type="text" name="fase_${f.key}" data-sr-fase data-auto="${pf == null ? "" : pf}" inputmode="numeric" value="${esc(m["fase_" + f.key] || "")}" placeholder="Automático: ${pf == null ? "sem cards" : pf + "%"}"></div>`; }).join("")}</div>
     </div>
     <div class="dr-sec">
       <h4>Resumo executivo</h4>
@@ -4061,7 +4080,29 @@ function renderEdicaoReport(r, m){
       <button type="button" class="btn" data-rd="cancelar">Cancelar</button>
       <button type="button" class="btn primary" data-rd="salvar">Salvar e atualizar o report</button>
     </div>`;
+  srAtualizarMedia();
 }
+function srAtualizarMedia(){
+  const body = $("rdBody"), av = body.querySelector("[data-sr-av]");
+  if (!av) return;
+  const ins = [...body.querySelectorAll("[data-sr-fase]")];
+  const lbl = body.querySelector("[data-sr-av-lbl]");
+  if (ins.some(i => i.value.trim() !== "")) {
+    const vals = ins.map(i => {
+      const v = i.value.trim().replace("%", "");
+      const n = v !== "" ? parseInt(v, 10) : i.dataset.auto !== "" ? parseInt(i.dataset.auto, 10) : 0;
+      return Math.max(0, Math.min(100, isNaN(n) ? 0 : n));
+    });
+    av.value = String(Math.round(vals.reduce((a, b) => a + b, 0) / vals.length));
+    av.readOnly = true; av.classList.add("ro");
+    if (lbl) lbl.textContent = "Avanço global (%) · média das fases";
+  } else if (av.readOnly) {
+    av.readOnly = false; av.classList.remove("ro");
+    av.value = av.dataset.orig || "";
+    if (lbl) lbl.textContent = "Avanço global (%)";
+  }
+}
+$("rdBody").addEventListener("input", e => { if (e.target.matches("[data-sr-fase]")) srAtualizarMedia(); });
 function lerFormReport(){
   const m = {};
   $("rdBody").querySelectorAll("[name]").forEach(el => { const v = el.value.trim(); if (v) m[el.name] = v; });
@@ -4089,6 +4130,7 @@ $("rdrawer").addEventListener("click", e => {
     if (m.avanco) m.avanco = m.avanco.replace("%", "");
     const fasesOk = FASES_MACRO.every(f => { const v = m["fase_" + f.key]; if (v && !/^\d{1,3}%?$/.test(v)) return false; if (v) m["fase_" + f.key] = v.replace("%", ""); return true; });
     if (!fasesOk) { toast("Informe o avanço de cada fase como número de 0 a 100."); return; }
+    if (FASES_MACRO.some(f => m["fase_" + f.key])) delete m.avanco;
     r.report = m;
     registrar(r, Object.keys(m).length ? `Status report editado (${Object.keys(m).length} campo(s) manuais)` : "Status report voltou aos dados automáticos");
     salvar();
