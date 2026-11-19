@@ -3573,8 +3573,8 @@ async function spTokenMail(){
 async function spVerificarMail(){
   try { await spTokenMail(); spSt.mailOk = true; } catch (e) { spSt.mailOk = false; }
 }
-async function spRascunhoGraph(assunto, html, anexo){
-  const tk = await spTokenMail();
+async function spRascunhoGraph(assunto, html, anexo, tkDado){
+  const tk = tkDado || await spTokenMail();
   const resp = await fetch(GRAPH + "/me/messages", {method: "POST", headers: {Authorization: "Bearer " + tk, "Content-Type": "application/json"},
     body: JSON.stringify({subject: assunto, body: {contentType: "HTML", content: html},
       attachments: [{"@odata.type": "#microsoft.graph.fileAttachment", name: anexo.nome, contentType: "application/pdf", contentBytes: anexo.base64}]})});
@@ -3583,32 +3583,38 @@ async function spRascunhoGraph(assunto, html, anexo){
   return j.webLink;
 }
 async function enviarComPdf(tipo, r){
-  const online = spLigado() && spSt.mailOk;
-  const janela = online ? window.open("about:blank", "_blank") : null;
+  if (!spLigado()) {
+    toast("Para abrir o e-mail com o PDF direto no seu Outlook, entre com sua conta Microsoft (indicador do topo).");
+    return false;
+  }
+  const janela = window.open("about:blank", "_blank");
+  let tk = null;
+  try { tk = await spTokenMail(); }
+  catch (e) {
+    if (janela) janela.close();
+    if (e && (e.name === "InteractionRequiredAuthError" || /interaction|consent/i.test(e.message || ""))) {
+      if (confirm("Para criar o e-mail com o PDF direto no seu Outlook, o sistema precisa da sua autorização. É uma vez só: você será levado à Microsoft e volta para cá. Depois, clique de novo em Enviar no Outlook. Continuar?")) {
+        const app = await spMsal();
+        await app.acquireTokenRedirect({scopes: ["Mail.ReadWrite"], account: spConta(app)});
+      }
+      return false;
+    }
+    toast("Não foi possível acessar o seu Outlook: " + (e && e.message || e));
+    return false;
+  }
   try {
     toast("Preparando o e-mail com o PDF anexado…");
     const m = tipo === "report" ? emailStatusReport(r) : emailHome();
     const pdf = tipo === "report" ? await pdfDoReport() : await pdfDaHome();
     const base = tipo === "report" ? nomeReport(r) : nomeHome();
     const anexo = {nome: base + ".pdf", base64: pdf.output("datauristring").split(",")[1]};
-    const html = corpoHtml(m.corpo);
-    if (online) {
-      try {
-        const link = await spRascunhoGraph(m.assunto, html, anexo);
-        if (janela && !janela.closed) janela.location.href = link; else window.open(link, "_blank");
-        toast("Rascunho criado no seu Outlook com o PDF anexado. Adicione os destinatários e envie.");
-        return true;
-      } catch (e) {
-        if (janela) janela.close();
-        spLog("aviso", "Não foi possível criar o rascunho direto no Outlook (" + e.message + "). Usei o arquivo de e-mail.");
-      }
-    }
-    baixarBlob(new Blob([emlRascunho(m.assunto, html, anexo)], {type: "message/rfc822"}), base + ".eml");
-    toast("E-mail pronto com o PDF anexado. Abra o arquivo .eml que foi baixado: ele abre no Outlook como rascunho. Só falta adicionar os destinatários e enviar.");
+    const link = await spRascunhoGraph(m.assunto, corpoHtml(m.corpo), anexo, tk);
+    if (janela && !janela.closed) janela.location.href = link; else window.open(link, "_blank");
+    toast("E-mail criado no seu Outlook, com o PDF anexado. Confira os destinatários e envie.");
     return true;
   } catch (err) {
     if (janela) janela.close();
-    toast("Não foi possível preparar o e-mail: " + err.message);
+    toast("Não foi possível criar o e-mail no Outlook: " + (err && err.message || err));
     return false;
   }
 }
@@ -4871,7 +4877,8 @@ const SP_BUCKET = {backlog: "Backlog", execucao: "Em execução", cancelado: "Ca
 const SP_BUCKET_INV = {"Backlog": "backlog", "Em execução": "execucao", "Cancelado": "cancelado", "Concluído": "concluido"};
 const SP_DATAS = ["Inicio", "FimPrevisto", "FimReal"];
 const SP_FONTE_KEY = "projetos_ti_fonte", SP_BACKUP_KEY = "projetos_ti_backup_local";
-const SP_ESCOPOS = ["User.Read", "Sites.ReadWrite.All"];
+/* E-mail entra no mesmo login da plataforma: uma só autorização, sem pedir de novo depois */
+const SP_ESCOPOS = ["User.Read", "Sites.ReadWrite.All", "Mail.ReadWrite", "Mail.Send"];
 const GRAPH = "https://graph.microsoft.com/v1.0";
 
 var spSt = {
