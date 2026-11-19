@@ -1221,7 +1221,7 @@ function normalizarTarefa(t){
     descricao: String(t.descricao || ""),
     atividades: Array.isArray(t.atividades) ? t.atividades.map(a => ({id: a.id || uid(), texto: String(a.texto || ""), feito: !!a.feito})) : [],
     anexos: Array.isArray(t.anexos) ? t.anexos : [],
-    comunicacao: Array.isArray(t.comunicacao) ? t.comunicacao : [],
+    comunicacao: Array.isArray(t.comunicacao) ? t.comunicacao.map(normalizarMsg) : [],
     criadoEm: t.criadoEm || new Date().toISOString(),
     ...(t._sp ? {_sp: String(t._sp)} : {})
   };
@@ -2429,9 +2429,9 @@ function ntExtrasHtml(){
     </div>
     <div class="nt-panel">
       <h5>Comunicação <small>${d.com.length ? d.com.length + " mensagem(ns)" : "nenhuma"}</small></h5>
-      ${d.com.map(m => `<div class="msg"><b>${esc(m.autor)}</b> <button type="button" class="del" data-nt-act="com-del" data-aid="${esc(m.id)}" title="Remover" style="float:right">✕</button><br>${esc(m.texto)}</div>`).join("")}
-      <textarea data-nt-com placeholder="Escreva uma mensagem para o time…" rows="2"></textarea>
-      <div style="display:flex;justify-content:flex-end;margin-top:6px"><button type="button" class="btn sm" data-nt-act="com-add">Adicionar mensagem</button></div>
+      ${d.com.map(m => `<div class="msg"><b>${esc(m.autor)}</b> <button type="button" class="del" data-nt-act="com-del" data-aid="${esc(m.id)}" title="Remover" style="float:right">✕</button>${m.para && m.para.length ? ` <small class="note" style="margin:0">→ ${m.para.map(p => esc(p.nome)).join(", ")}</small>` : ""}<br>${esc(m.texto)}</div>`).join("")}
+      ${csComposerHtml("nov", ncmp, `<button type="button" class="btn sm" data-cs-enviar="nov">Adicionar mensagem</button>`)}
+      <p class="note" style="margin:6px 0 0">Mensagens com destinatário ficam como rascunho. Depois de criar a tarefa, envie pela própria tarefa.</p>
     </div>`;
 }
 function ntApoioHtml(){
@@ -2482,7 +2482,7 @@ function normalizarMsg(m){
   return {
     id: m.id || uid(), autor: String(m.autor || "—"), ts: m.ts || new Date().toISOString(), texto: String(m.texto || ""),
     para: Array.isArray(m.para) ? m.para.filter(p => p && p.email).map(p => ({email: String(p.email).toLowerCase(), nome: String(p.nome || p.email)})) : [],
-    envio: {estado: ["enviado","pendente","falhou","local"].includes(e.estado) ? e.estado : "local", ts: e.ts || "", erro: String(e.erro || ""), precisaAutorizar: !!e.precisaAutorizar}
+    envio: {estado: ["enviado","pendente","falhou","local","rascunho"].includes(e.estado) ? e.estado : "local", ts: e.ts || "", erro: String(e.erro || ""), precisaAutorizar: !!e.precisaAutorizar}
   };
 }
 let cmp = {pid: "", para: [], texto: ""};
@@ -2568,37 +2568,151 @@ async function comTokenEnvio(){
   if (!conta) throw new Error("sem conta Microsoft");
   return (await app.acquireTokenSilent({scopes: ["Mail.Send"], account: conta})).accessToken;
 }
-async function comEnviarMsg(r, m){
-  const falha = (erro, precisaAutorizar) => { m.envio = {estado: "falhou", ts: new Date().toISOString(), erro, precisaAutorizar: !!precisaAutorizar}; };
-  if (!spLigado()) falha("Sem conexão com o SharePoint. Clique no indicador do topo e entre com sua conta Microsoft para enviar.");
-  else {
-    let tk = null;
-    try { tk = await comTokenEnvio(); }
-    catch (e) {
-      if (e && (e.name === "InteractionRequiredAuthError" || /interaction|consent/i.test(e.message || ""))) falha("Falta autorizar o envio de e-mail pela sua conta Microsoft (clique em Autorizar envio de e-mail).", true);
-      else falha("Não foi possível obter permissão para enviar: " + (e && e.message || e));
-    }
-    if (tk) {
-      const corpo = `${m.texto}\n\nProjeto: ${r["Título"]} (#${r.ID})\nEnviado por: ${m.autor}\nAbrir projeto: ${linkProjeto(r)}` + ASSINATURA;
-      const payload = {message: {subject: `[Projetos TI] ${r["Título"]} (#${r.ID})`, body: {contentType: "HTML", content: corpoHtml(corpo)},
-        toRecipients: m.para.map(p => ({emailAddress: {address: p.email, name: p.nome}}))}, saveToSentItems: true};
-      try {
-        const resp = await fetch(GRAPH + "/me/sendMail", {method: "POST", headers: {Authorization: "Bearer " + tk, "Content-Type": "application/json"}, body: JSON.stringify(payload)});
-        if (resp.ok) m.envio = {estado: "enviado", ts: new Date().toISOString(), erro: "", precisaAutorizar: false};
-        else { const j = await resp.json().catch(() => null); falha(`O Outlook recusou o envio (${resp.status})${j && j.error && j.error.message ? ": " + j.error.message : "."}`); }
-      } catch (e) { falha("Falha de rede ao enviar: " + e.message); }
-    }
+async function comDisparo(m, assunto, corpoTxt){
+  const falha = (erro, precisa) => { m.envio = {estado: "falhou", ts: new Date().toISOString(), erro, precisaAutorizar: !!precisa}; };
+  if (!spLigado()) { falha("Sem conexão com o SharePoint. Clique no indicador do topo e entre com sua conta Microsoft para enviar."); return; }
+  let tk = null;
+  try { tk = await comTokenEnvio(); }
+  catch (e) {
+    if (e && (e.name === "InteractionRequiredAuthError" || /interaction|consent/i.test(e.message || ""))) falha("Falta autorizar o envio de e-mail pela sua conta Microsoft (clique em Autorizar envio de e-mail).", true);
+    else falha("Não foi possível obter permissão para enviar: " + (e && e.message || e));
+    return;
   }
+  const payload = {message: {subject: assunto, body: {contentType: "HTML", content: corpoHtml(corpoTxt)},
+    toRecipients: m.para.map(p => ({emailAddress: {address: p.email, name: p.nome}}))}, saveToSentItems: true};
+  try {
+    const resp = await fetch(GRAPH + "/me/sendMail", {method: "POST", headers: {Authorization: "Bearer " + tk, "Content-Type": "application/json"}, body: JSON.stringify(payload)});
+    if (resp.ok) m.envio = {estado: "enviado", ts: new Date().toISOString(), erro: "", precisaAutorizar: false};
+    else { const j = await resp.json().catch(() => null); falha(`O Outlook recusou o envio (${resp.status})${j && j.error && j.error.message ? ": " + j.error.message : "."}`); }
+  } catch (e) { falha("Falha de rede ao enviar: " + e.message); }
+}
+async function comEnviarMsg(r, m){
+  const corpo = `${m.texto}\n\nProjeto: ${r["Título"]} (#${r.ID})\nEnviado por: ${m.autor}\nAbrir projeto: ${linkProjeto(r)}` + ASSINATURA;
+  await comDisparo(m, `[Projetos TI] ${r["Título"]} (#${r.ID})`, corpo);
   registrar(r, m.envio.estado === "enviado" ? `Mensagem enviada a ${m.para.map(p => p.nome).join(", ")}` : `Mensagem não enviada: ${m.envio.erro}`);
   salvar();
   renderGestaoProjeto(r.ID);
   toast(m.envio.estado === "enviado" ? "Mensagem enviada pelo seu Outlook." : "A mensagem não foi enviada. Veja o motivo no histórico.");
 }
+
+/* ----- Comunicação da tarefa (gaveta) e da nova tarefa: mesmo @ e mesmo envio ----- */
+let drwCmp = {tid: "", para: [], texto: ""};
+let ncmp = {para: [], texto: ""};
+const csEst = scope => scope === "drw" ? drwCmp : ncmp;
+function csPadrao(t){
+  const em = [t.responsavel, ...t.apoio].filter(Boolean).map(e => e.toLowerCase());
+  return [...new Set(em)].map(e => ({email: e, nome: nomeCompletoDe(e)}));
+}
+function csChipsHtml(scope, para){
+  return para.map(p => `<span class="com-chip">${esc(p.nome)}<button type="button" data-cs-rm="${esc(p.email)}" data-cs-scope="${scope}" aria-label="Remover ${esc(p.nome)}">×</button></span>`).join("")
+    || `<span class="note" style="margin:0">Digite @ e um nome para escolher quem recebe.</span>`;
+}
+function csComposerHtml(scope, est, botao){
+  return `<div class="com-scope" data-cs-box="${scope}">
+    <div class="com-para-lbl">Para</div>
+    <div class="com-chips" data-cs-chips="${scope}">${csChipsHtml(scope, est.para)}</div>
+    <div class="com-ed">
+      <textarea data-cs-texto="${scope}" rows="2" placeholder="Escreva uma mensagem. Use @ para escolher quem recebe.">${esc(est.texto)}</textarea>
+      <div class="com-pop" data-cs-pop="${scope}" hidden></div>
+    </div>
+    <div class="com-acts">${botao}</div></div>`;
+}
+function csMsgHtml(m, pode){
+  const est = m.envio.estado;
+  const badge = est === "enviado" ? `<span class="com-st ok">Enviado em ${esc(comDH(m.envio.ts))}</span>`
+    : est === "pendente" ? `<span class="com-st">Enviando…</span>`
+    : est === "falhou" ? `<span class="com-st err">Não enviado</span>`
+    : est === "rascunho" ? `<span class="com-st">Não enviada</span>`
+    : `<span class="com-st">Só no histórico</span>`;
+  const para = m.para.length ? `<div class="com-para">Para: ${m.para.map(p => `<span class="com-chip">${esc(p.nome)}</span>`).join("")}</div>` : "";
+  const acoes = pode && m.para.length && (est === "falhou" || est === "rascunho" || est === "pendente")
+    ? `<div class="com-acts-msg">${m.envio.precisaAutorizar ? `<button class="btn sm" data-com-autorizar="1">Autorizar envio de e-mail</button>` : ""}<button class="btn sm" data-cs-enviar-msg="${esc(m.id)}">${est === "falhou" ? "Reenviar" : "Enviar via Outlook"}</button></div>` : "";
+  return `<div class="com-msg">
+    <div class="com-top"><b>${esc(m.autor)}</b><span class="note">${esc(comDH(m.ts))}</span>${badge}</div>${para}
+    <div class="com-txt">${esc(m.texto).replace(/\n/g, "<br>")}</div>
+    ${est === "falhou" && m.envio.erro ? `<div class="com-erro">${esc(m.envio.erro)}</div>` : ""}${acoes}</div>`;
+}
+function csMostrar(scope, ta){
+  const pop = document.querySelector(`[data-cs-pop="${scope}"]`); if (!pop) return;
+  const mm = ta.value.slice(0, ta.selectionStart).match(/@([^\s@]*)$/);
+  if (!mm) { pop.hidden = true; return; }
+  const ja = new Set(csEst(scope).para.map(p => p.email));
+  const toks = acNorm(mm[1]).split(/\s+/).filter(Boolean);
+  const lista = emailsEquipe().filter(e => !ja.has(e)).map(e => ({email: e, nome: nomeCompletoDe(e)}))
+    .filter(p => !toks.length || toks.every(t => acNorm(p.nome + " " + p.email).includes(t)))
+    .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")).slice(0, 8);
+  if (!lista.length) { pop.hidden = true; return; }
+  pop.innerHTML = lista.map((p, i) => `<button type="button" data-cs-pick="${esc(p.email)}" data-cs-scope="${scope}" class="${i === 0 ? "on" : ""}">${esc(p.nome)}<small>${esc(p.email)}</small></button>`).join("");
+  pop.hidden = false;
+}
+function csChipsRefresh(scope){ const box = document.querySelector(`[data-cs-chips="${scope}"]`); if (box) box.innerHTML = csChipsHtml(scope, csEst(scope).para); }
+function csEscolher(scope, email){
+  const ta = document.querySelector(`[data-cs-texto="${scope}"]`); if (!ta) return;
+  const mm = ta.value.slice(0, ta.selectionStart).match(/@([^\s@]*)$/);
+  if (mm) { ta.value = ta.value.slice(0, mm.index) + ta.value.slice(ta.selectionStart); ta.setSelectionRange(mm.index, mm.index); }
+  const est = csEst(scope);
+  if (!est.para.some(p => p.email === email)) est.para.push({email, nome: nomeCompletoDe(email)});
+  est.texto = ta.value;
+  const pop = document.querySelector(`[data-cs-pop="${scope}"]`); if (pop) pop.hidden = true;
+  csChipsRefresh(scope); ta.focus();
+}
+function csAtualizarDrawer(r, t){ if (drawerCtx && drawerCtx.tid === t.id) renderDrawer(); }
+async function csDisparar(r, t, m){
+  m.envio = {estado: "pendente", ts: "", erro: "", precisaAutorizar: false};
+  salvar(); csAtualizarDrawer(r, t);
+  const corpo = `${m.texto}\n\nTarefa: ${t.nome}\nProjeto: ${r["Título"]} (#${r.ID})\nEnviado por: ${m.autor}\nAbrir tarefa: ${urlSistema()}#/gestao/${r.ID}/${t.id}` + ASSINATURA;
+  await comDisparo(m, `[Projetos TI] ${t.nome} · ${r["Título"]} (#${r.ID})`, corpo);
+  registrar(r, m.envio.estado === "enviado" ? `Mensagem da tarefa "${t.nome}" enviada a ${m.para.map(p => p.nome).join(", ")}` : `Mensagem da tarefa "${t.nome}" não enviada: ${m.envio.erro}`);
+  salvar(); csAtualizarDrawer(r, t); renderGestaoProjeto(r.ID);
+  toast(m.envio.estado === "enviado" ? `Mensagem enviada: "${t.nome}".` : "A mensagem não foi enviada. Veja o motivo na tarefa.");
+}
+function csEnviarClick(scope){
+  if (scope === "nov") {
+    const ta = document.querySelector('[data-cs-texto="nov"]'); const texto = ((ta && ta.value) || "").trim();
+    ncmp.texto = ta ? ta.value : "";
+    if (!texto) { toast("Escreva a mensagem antes de adicionar."); return; }
+    if (!novoForm) return;
+    novoForm.com.push({id: uid(), autor: autor || "Você", texto, ts: new Date().toISOString(), para: ncmp.para.map(p => ({...p})), envio: {estado: ncmp.para.length ? "rascunho" : "local"}});
+    ncmp = {para: [], texto: ""};
+    const form = document.querySelector(".nt-form"); if (form) ntRefresh(form);
+    return;
+  }
+  if (!drawerCtx) return;
+  const r = achar(drawerCtx.pid), t = acharTarefa(r, drawerCtx.tid);
+  if (!t) return;
+  if (!podeEditarTarefa(t)) { bloqueado(); return; }
+  const ta = document.querySelector('[data-cs-texto="drw"]'); const texto = ((ta && ta.value) || "").trim();
+  drwCmp.texto = ta ? ta.value : "";
+  if (!drwCmp.para.length) { toast("Escolha pelo menos uma pessoa: digite @ e o nome."); return; }
+  if (!texto) { toast("Escreva a mensagem antes de enviar."); return; }
+  const m = normalizarMsg({id: uid(), autor: autor || (sessao && sessao.nome) || "Você", ts: new Date().toISOString(), texto, para: drwCmp.para, envio: {estado: "pendente"}});
+  t.comunicacao = (t.comunicacao || []).concat([m]);
+  drwCmp = {tid: t.id, para: csPadrao(t), texto: ""};
+  csDisparar(r, t, m);
+}
+function csReenviarMsg(mid){
+  if (!drawerCtx) return;
+  const r = achar(drawerCtx.pid), t = acharTarefa(r, drawerCtx.tid);
+  const m = t && (t.comunicacao || []).find(x => x.id === mid);
+  if (!m) return;
+  if (!podeEditarTarefa(t)) { bloqueado(); return; }
+  csDisparar(r, t, m);
+}
 document.addEventListener("input", e => {
+  const cs = e.target.closest("[data-cs-texto]");
+  if (cs) { const sc = cs.dataset.csTexto; csEst(sc).texto = cs.value; csMostrar(sc, cs); return; }
   const ta = e.target.closest("[data-com-texto]"); if (!ta) return;
   cmp.texto = ta.value; comMostrarPop(ta);
 });
 document.addEventListener("keydown", e => {
+  const cst = e.target.closest && e.target.closest("[data-cs-texto]");
+  if (cst) {
+    const sc = cst.dataset.csTexto, pop = document.querySelector(`[data-cs-pop="${sc}"]`);
+    if (!pop || pop.hidden) return;
+    if (e.key === "Enter" && !e.shiftKey) { const b = pop.querySelector("button"); if (b) { e.preventDefault(); csEscolher(sc, b.dataset.csPick); } }
+    else if (e.key === "Escape") pop.hidden = true;
+    return;
+  }
   const ta = e.target.closest && e.target.closest("[data-com-texto]"); if (!ta) return;
   const pop = document.querySelector("[data-com-pop]");
   if (!pop || pop.hidden) return;
@@ -2606,6 +2720,10 @@ document.addEventListener("keydown", e => {
   else if (e.key === "Escape") { pop.hidden = true; }
 });
 document.addEventListener("click", e => {
+  const csp = e.target.closest("[data-cs-pick]"); if (csp) { csEscolher(csp.dataset.csScope, csp.dataset.csPick); return; }
+  const csr = e.target.closest("[data-cs-rm]"); if (csr) { const sc = csr.dataset.csScope, est = csEst(sc); est.para = est.para.filter(p => p.email !== csr.dataset.csRm); csChipsRefresh(sc); return; }
+  const cse = e.target.closest("[data-cs-enviar]"); if (cse) { csEnviarClick(cse.dataset.csEnviar); return; }
+  const csm = e.target.closest("[data-cs-enviar-msg]"); if (csm) { csReenviarMsg(csm.dataset.csEnviarMsg); return; }
   const ca = e.target.closest("[data-com-abrir]"); if (ca) { comUI.aberta = true; renderGestaoProjeto(currentProjId()); return; }
   const cf = e.target.closest("[data-com-fechar]"); if (cf) { comUI = {pid: comUI.pid, aberta: false, hist: false}; renderGestaoProjeto(currentProjId()); return; }
   const ch = e.target.closest("[data-com-hist]"); if (ch) { comUI.hist = !comUI.hist; renderGestaoProjeto(currentProjId()); return; }
@@ -2783,7 +2901,7 @@ $("v-gestao-projeto").addEventListener("submit", e => {
     fase: form.dataset.nt, nome, bucket: novoForm.bucket, responsavel: resp, apoio, prioridade: fd.get("prioridade"),
     andamento: fd.get("andamento"), inicio, fimPrevisto: fim, descricao: String(fd.get("descricao") || "").trim(),
     atividades: novoForm.ativ, anexos: novoForm.anexos,
-    comunicacao: novoForm.com.map(m => ({id: m.id, autor: m.autor, texto: m.texto, ts: m.ts}))
+    comunicacao: novoForm.com.map(m => ({id: m.id, autor: m.autor, texto: m.texto, ts: m.ts, para: m.para || [], envio: m.envio || {estado: "local"}}))
   });
   if (novaT.bucket === "concluido" || novaT.andamento === "Concluído") { novaT.bucket = "concluido"; novaT.andamento = "Concluído"; novaT.fimReal = hojeISO(); }
   else if (novaT.bucket === "cancelado") novaT.fimReal = "";
@@ -2792,6 +2910,7 @@ $("v-gestao-projeto").addEventListener("submit", e => {
   novaT.apoio.forEach(em => notificarAtribuicao(novaT, em, "apoio", r));
   const bk = novoForm.bucket, fs = novoForm.fase;
   novoForm = {fase: fs, bucket: bk, apoio: [], ativ: [], anexos: [], com: []};
+  ncmp = {para: [], texto: ""};
   salvar();
   renderGestaoProjeto(r.ID);
   toast(`Tarefa "${nome}" criada em ${bucketNome(novaT.bucket)}. Preencha outra ou clique em Fechar.`);
@@ -3879,6 +3998,7 @@ function renderDrawer(){
   const r = achar(drawerCtx.pid);
   const t = acharTarefa(r, drawerCtx.tid);
   if (!t) { closeDrawer(); return; }
+  if (drwCmp.tid !== t.id) drwCmp = {tid: t.id, para: csPadrao(t), texto: ""};
   const ef = efetivo(t);
   const pr = progTarefa(t);
   const feitas = t.atividades.filter(a => a.feito).length;
@@ -3953,12 +4073,9 @@ function renderDrawer(){
     </div>
 
     <div class="dr-sec">
-      <h4>Comunicação</h4>
-      ${t.comunicacao.length ? t.comunicacao.slice().reverse().map(m => `
-        <div class="msg"><b>${esc(m.autor)}</b> <small>· ${esc(new Date(m.ts).toLocaleString("pt-BR"))}</small><br>${esc(m.texto)}</div>`).join("")
-        : `<p class="note">Nenhuma mensagem ainda.</p>`}
-      <textarea data-f="novo-com" placeholder="Escreva uma mensagem para o time…" style="margin-top:6px"></textarea>
-      <div style="display:flex;justify-content:flex-end;margin-top:6px"><button class="btn primary" data-act="com-send">Enviar</button></div>
+      <h4>Comunicação <small class="note" style="margin:0">${t.comunicacao.length ? t.comunicacao.length + " mensagem(ns)" : "nenhuma"}</small></h4>
+      <div class="com-hist">${t.comunicacao.length ? t.comunicacao.slice().reverse().map(m => csMsgHtml(m, podeEditarTarefa(t))).join("") : `<p class="note" style="margin:0">Nenhuma mensagem ainda.</p>`}</div>
+      ${csComposerHtml("drw", drwCmp, `<button class="btn primary" data-cs-enviar="drw">Enviar via Outlook</button>`)}
     </div>`;
   if (podeEditarTarefa(t) && !podeEditar()) {
     $("drBody").querySelectorAll("[data-f='responsavel'], .ac-in").forEach(el => el.disabled = true);
@@ -3967,7 +4084,7 @@ function renderDrawer(){
   }
   if (!podeEditarTarefa(t)) {
     $("drBody").querySelectorAll("input,select,textarea,button").forEach(el => el.disabled = true);
-    $("drBody").querySelectorAll(".dr-acts, .addrow, [data-f='anexos'], [data-f='novo-com'], [data-act='com-send'], .del").forEach(el => el.hidden = true);
+    $("drBody").querySelectorAll(".dr-acts, .addrow, [data-f='anexos'], [data-cs-box='drw'], .del").forEach(el => el.hidden = true);
     $("drPid").textContent += " · somente visualização";
   }
 }
