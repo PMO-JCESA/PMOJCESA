@@ -289,7 +289,39 @@ input.ro,textarea.ro,select.ro{color:var(--muted) !important;background:transpar
 .tcard.pb-linha{border-left-color:var(--green)}
 .tcard.pb-risco{border-left-color:#FF3B6B}
 .tcard.pb-venc{border-left-color:var(--cherry)}
-.tc-top{font-weight:700;color:var(--hi);white-space:normal;line-height:1.3}
+.tc-top{font-weight:700;color:var(--hi);white-space:normal;line-height:1.3;padding-right:24px}
+.tcard{position:relative}
+.tcm-btn{position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:8px;border:1px solid transparent;background:transparent;color:var(--muted);cursor:pointer;font:inherit;font-weight:900;font-size:20px;line-height:1;padding-bottom:5px;display:grid;place-items:center;opacity:.6;transition:opacity .12s,background .12s}
+.tcard:hover .tcm-btn,.tcm-btn:focus-visible,.tcm-btn.on{opacity:1}
+.tcm-btn:hover,.tcm-btn.on{background:var(--surface);border-color:var(--line2);color:var(--hi)}
+body.ro .tcm-btn.so-leitura{display:none}
+.tcm{position:fixed;z-index:60;width:272px;max-width:calc(100vw - 20px);background:var(--surface);border:1px solid var(--line2);border-radius:12px;padding:6px;box-shadow:0 18px 40px rgba(0,0,0,.4);display:grid;gap:2px;font-size:13.5px}
+.tcm[hidden]{display:none}
+.tcm button.it{font:inherit;text-align:left;background:none;border:none;color:var(--text);padding:9px 11px;border-radius:8px;cursor:pointer;display:flex;justify-content:space-between;gap:8px;align-items:center}
+.tcm button.it:hover:not(:disabled){background:var(--surface2)}
+.tcm button.it:disabled{opacity:.45;cursor:not-allowed}
+.tcm button.it.perigo{color:#FF6B8B}
+.tcm.larga{width:340px;max-height:min(84vh,680px);overflow:auto}
+.tcm .dup-lin{padding:2px 11px}
+.tcm .dup-lin label{display:flex;justify-content:space-between;align-items:center;gap:10px;font-weight:700;color:var(--hi)}
+.tcm .dup-lin input{width:74px;margin:0;font:inherit;padding:7px 8px;border-radius:8px;border:1px solid var(--line2);background:var(--surface2);color:var(--text)}
+.tcm label.tudo{font-weight:800;color:var(--hi)}
+.tcm .why.aviso{color:var(--tan)}
+.tcm .lb{display:flex;align-items:center;gap:10px}
+.tcm .lb .ti{flex:none;opacity:.85}
+.pdot{width:10px;height:10px;border-radius:50%;display:inline-block;background:var(--green)}
+.pdot.pd-alta{background:var(--cherry)}.pdot.pd-atencao{background:var(--tan)}.pdot.pd-linha{background:var(--green)}.pdot.pd-risco{background:#FF3B6B}
+.tcm .sep{height:1px;background:var(--line);margin:3px 4px}
+.tcm .tph{position:sticky;top:0;z-index:1;background:var(--surface);padding:6px 10px 4px;font-weight:800;color:var(--hi);display:flex;align-items:center;gap:8px}
+.tcm .tph button{font:inherit;background:none;border:none;color:var(--muted);cursor:pointer;padding:0 4px;font-size:15px}
+.tcm .why{padding:2px 11px 6px;font-size:11.5px;color:var(--muted);line-height:1.35}
+.tcm label.ck{display:flex;gap:9px;align-items:flex-start;padding:6px 11px;border-radius:8px;cursor:pointer}
+.tcm label.ck:hover{background:var(--surface2)}
+.tcm label.ck input{margin-top:2px;accent-color:var(--cherry)}
+.tcm label.ck small{display:block;color:var(--muted);font-size:11.5px}
+.tcm input[type=text],.tcm select{width:calc(100% - 22px);margin:4px 11px;font:inherit;padding:8px 9px;border-radius:8px;border:1px solid var(--line2);background:var(--surface2);color:var(--text)}
+.tcm .go{position:sticky;bottom:4px;margin:6px 11px 8px;font:inherit;font-weight:800;border:none;border-radius:9px;padding:9px 12px;background:var(--cherry);color:#fff;cursor:pointer}
+.tcm .go:hover{filter:brightness(1.08)}
 .tc-meta{font-size:12px;color:var(--muted)}
 .tc-tags{display:flex;gap:6px;flex-wrap:wrap}
 .tc-foot{font-size:11px;color:var(--muted)}
@@ -1812,7 +1844,7 @@ function route(){
   closeDrawer();
   if (typeof novoForm !== "undefined") novoForm = null;
   const h = location.hash.replace(/^#\/?/, "") || "home";
-  const [v, id] = h.split("/");
+  const [v, id, idTarefa] = h.split("/");
   let view = ["home","lista","gestao","base","projeto","editar","concluidos","perfil","emails"].includes(v) ? v : (perfil() === "viewer" ? "gestao" : "home");
   if (view === "gestao" && id) view = "gestao-projeto";
   if (["projeto","editar","gestao-projeto"].includes(view) && !achar(id)) view = view === "gestao-projeto" ? "gestao" : "home";
@@ -1832,6 +1864,7 @@ function route(){
   else if (view === "emails") renderEmails();
   $("v-" + view).classList.add("active");
   window.scrollTo(0, 0);
+  if (view === "gestao-projeto" && idTarefa && acharTarefa(achar(id), idTarefa)) openDrawer(id, idTarefa);
 }
 
 /* ================= HOME ================= */
@@ -2302,6 +2335,7 @@ function cardHtml(t){
   const pb = prioVisivel ? (PRIO_KEY[t.prioridade] || "linha") : "venc";
   return `
     <div class="tcard pb-${pb}${perfil() === "resp" ? (minhaTarefa(t) ? " minha" : " alheia") : ""}" draggable="${podeEditarTarefa(t)}" data-tid="${esc(t.id)}">
+      <button type="button" class="tcm-btn${perfil() === "viewer" ? "" : ""}" data-tcm="${esc(t.id)}" aria-label="Ações da tarefa" title="Mais ações">⋯</button>
       <div class="tc-top">${esc(t.nome)}</div>
       <div class="tc-meta">${t.responsavel ? avatarHtml(nomeCompletoDe(t.responsavel), 20) + " " + esc(nomeDe(t.responsavel)) : "sem responsável"}${t.fimPrevisto ? " · prazo " + esc(dataBR(t.fimPrevisto)) : ""}</div>
       <div class="tc-tags">
@@ -2466,6 +2500,7 @@ function renderGestaoProjeto(id){
     ${corpo}`;
 }
 $("v-gestao-projeto").addEventListener("click", e => {
+  if (e.target.closest("[data-tcm]")) return;
   const pa = e.target.closest("[data-proj-acao]");
   if (pa) {
     if (bloqueado()) return;
@@ -4004,6 +4039,235 @@ function renderEditar(id){
     location.hash = "#/projeto/" + id;
   });
 }
+
+
+/* ================= MENU ⋮ DO CARD ================= */
+const DUP_CAMPOS = [
+  ["descricao", "Descrição", "", true],
+  ["datas", "Datas", "início e fim previsto", true],
+  ["prioridade", "Prioridade", "", true],
+  ["andamento", "Status (andamento)", "ex.: Em andamento, Pausado", true],
+  ["bucket", "Coluna do card", "mantém a coluna (Backlog, Em execução, Concluído…); sem marcar, a cópia vai para o Backlog", false],
+  ["atividades", "Atividades", "copiadas como pendentes", true],
+  ["responsavel", "Responsável", "cada cópia envia o aviso de indicação", false],
+  ["apoio", "Apoio", "cada cópia envia o aviso de indicação", false],
+  ["anexos", "Anexos", "", false],
+  ["mensagens", "Mensagens", "", false]
+];
+const DUP_KEY = "projetos_ti_dup_campos";
+const dupEscolha = () => { try { const v = JSON.parse(localStorage.getItem(DUP_KEY) || "null"); if (v && typeof v === "object") return v; } catch (e) {} return {}; };
+const TI = p => `<svg class="ti" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+const TCM_ICO = {
+  abrir: TI('<path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>'),
+  prio: TI('<path d="M4 4v16"/><path d="M4 5h12l-2 4 2 4H4"/>'),
+  resp: TI('<circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.6 3-6 7-6s7 2.4 7 6"/>'),
+  copia: TI('<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>'),
+  link: TI('<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>'),
+  mover: TI('<path d="M4 12h16"/><path d="M14 6l6 6-6 6"/>'),
+  excluir: TI('<path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/>')
+};
+let tcm = null; /* {pid, tid, painel, btn} */
+function tcmEl(){
+  let el = document.getElementById("tcMenu");
+  if (!el) { el = document.createElement("div"); el.id = "tcMenu"; el.className = "tcm"; el.hidden = true; document.body.appendChild(el); }
+  return el;
+}
+function tcmFechar(){
+  const el = document.getElementById("tcMenu");
+  if (el) el.hidden = true;
+  document.querySelectorAll(".tcm-btn.on").forEach(b => b.classList.remove("on"));
+  tcm = null;
+}
+function tcmPosicionar(){
+  const el = tcmEl(); if (!tcm || !tcm.btn || !document.body.contains(tcm.btn)) { tcmFechar(); return; }
+  const b = tcm.btn.getBoundingClientRect();
+  el.style.left = "0px"; el.style.top = "0px";
+  const w = el.offsetWidth, h = el.offsetHeight;
+  let x = Math.min(Math.max(8, b.right - w), window.innerWidth - w - 8);
+  let y = b.bottom + 6;
+  if (y + h > window.innerHeight - 8) y = Math.max(8, b.top - h - 6);
+  el.style.left = x + "px"; el.style.top = y + "px";
+}
+function tcmTarefa(){ if (!tcm) return {}; const r = achar(tcm.pid); return {r, t: r && acharTarefa(r, tcm.tid)}; }
+function tcmRender(){
+  const el = tcmEl(); const {r, t} = tcmTarefa();
+  if (!r || !t) { tcmFechar(); return; }
+  el.classList.remove("larga");
+  const adm = podeEditar(), edT = podeEditarTarefa(t), ef = efetivo(t);
+  if (tcm.painel === "main") {
+    el.innerHTML = `
+      <button class="it" data-tcm-a="abrir"><span class="lb">${TCM_ICO.abrir}${edT ? "Abrir / editar" : "Abrir"}</span></button>
+      ${edT ? `<button class="it" data-tcm-a="prio"><span class="lb">${TCM_ICO.prio}Prioridade</span><span>›</span></button>` : ""}
+      ${adm ? `<button class="it" data-tcm-a="resp"><span class="lb">${TCM_ICO.resp}Trocar responsável</span><span>›</span></button>` : ""}
+      ${adm ? `<button class="it" data-tcm-a="dup"><span class="lb">${TCM_ICO.copia}Copiar card…</span><span>›</span></button>` : ""}
+      <button class="it" data-tcm-a="link"><span class="lb">${TCM_ICO.link}Copiar link da tarefa</span></button>
+      ${edT ? `<button class="it" data-tcm-a="mover"><span class="lb">${TCM_ICO.mover}Mover tarefa</span><span>›</span></button>` : ""}
+      ${adm ? `<div class="sep"></div><button class="it perigo" data-tcm-a="excluir"><span class="lb">${TCM_ICO.excluir}Excluir</span></button>` : ""}`;
+  } else if (tcm.painel === "dup") {
+    const esc0 = dupEscolha();
+    const tudo = DUP_CAMPOS.every(([k, n, d, pad]) => (k in esc0 ? esc0[k] : pad));
+    el.innerHTML = `<div class="tph"><button data-tcm-a="voltar" title="Voltar">‹</button>Copiar card</div>
+      <div class="dup-lin"><label>Quantidade de cópias<input type="number" min="1" max="50" value="1" data-tcm-qtd></label></div>
+      <input type="text" data-tcm-nome value="${esc(t.nome)} (cópia)" aria-label="Nome da cópia">
+      <div class="why" data-tcm-nota-nome>Com mais de uma cópia, o nome recebe um número no final (1, 2, 3…).</div>
+      <div class="sep"></div>
+      <label class="ck tudo"><input type="checkbox" data-tcm-all ${tudo ? "checked" : ""}><span>Copiar tudo<small>cópia completa do card</small></span></label>
+      ${DUP_CAMPOS.map(([k, n, d, pad]) => `<label class="ck"><input type="checkbox" data-tcm-ck="${k}" ${(k in esc0 ? esc0[k] : pad) ? "checked" : ""}><span>${esc(n)}${d ? `<small>${esc(d)}</small>` : ""}</span></label>`).join("")}
+      <div class="why aviso" data-tcm-aviso hidden></div>
+      <button class="go" data-tcm-a="dup-ok">Criar cópia</button>`;
+    el.classList.add("larga");
+    tcmDupAviso();
+  } else if (tcm.painel === "mover") {
+    const opts = BUCKETS.filter(b => b.key !== "atraso");
+    el.innerHTML = `<div class="tph"><button data-tcm-a="voltar" title="Voltar">‹</button>Mover tarefa</div>` + opts.map(b => {
+      const atual = ef === b.key || (ef === "atraso" && false);
+      const motivo = atual ? "" : motivoBloqueioArraste(t, b.key);
+      return `<button class="it" data-tcm-mv="${b.key}" ${atual || motivo ? "disabled" : ""} ${motivo ? `title="${esc(motivo)}"` : ""}><span class="lb">${esc(b.nome)}</span><span>${atual ? "atual" : ""}</span></button>${motivo ? `<div class="why">${esc(motivo)}</div>` : ""}`;
+    }).join("");
+  } else if (tcm.painel === "prio") {
+    el.innerHTML = `<div class="tph"><button data-tcm-a="voltar" title="Voltar">‹</button>Prioridade</div>` + PRIORIDADES.map(p =>
+      `<button class="it" data-tcm-pr="${esc(p)}" ${p === t.prioridade ? "disabled" : ""}><span class="lb"><i class="pdot pd-${PRIO_KEY[p] || "linha"}"></i>${esc(p)}</span><span>${p === t.prioridade ? "atual" : ""}</span></button>`).join("");
+  } else if (tcm.painel === "resp") {
+    el.innerHTML = `<div class="tph"><button data-tcm-a="voltar" title="Voltar">‹</button>Trocar responsável</div>
+      <select data-tcm-resp aria-label="Novo responsável">${pessoasOptions(t.responsavel)}</select>
+      <div class="why">A pessoa indicada recebe o aviso por e-mail.</div>`;
+  }
+  el.hidden = false;
+  tcmPosicionar();
+}
+function tcmAbrir(btn){
+  const col = btn.closest(".col"); if (!col) return;
+  document.querySelectorAll(".tcm-btn.on").forEach(b => b.classList.remove("on"));
+  btn.classList.add("on");
+  tcm = {pid: col.dataset.proj, tid: btn.dataset.tcm, painel: "main", btn};
+  tcmRender();
+}
+function tcmMover(r, t, destino){
+  if (efetivo(t) === destino) return;
+  const motivo = motivoBloqueioArraste(t, destino);
+  if (motivo) { toast(motivo); return; }
+  if (destino === "execucao" && !t.inicio) { t.inicio = hojeISO(); registrar(r, `Tarefa "${t.nome}": início registrado em ${dataBR(t.inicio)} ao ir para Em execução`); }
+  setBucket(t, destino);
+  salvar();
+  renderGestaoProjeto(r.ID);
+  toast(`"${t.nome}" movida para ${bucketNome(destino)}.`);
+}
+function tcmDupAviso(){
+  const el = tcmEl(); const av = el.querySelector("[data-tcm-aviso]"); if (!av) return;
+  const q = Math.max(1, Math.min(50, parseInt(el.querySelector("[data-tcm-qtd]").value, 10) || 1));
+  const ck = k => { const c = el.querySelector(`[data-tcm-ck="${k}"]`); return c && c.checked; };
+  const nota = el.querySelector("[data-tcm-nota-nome]");
+  if (nota) nota.hidden = q <= 1;
+  const msgs = [];
+  if (ck("responsavel") || ck("apoio")) msgs.push(`Com responsável/apoio marcados, serão enviados ${q > 1 ? "até " + q + " avisos" : "o aviso"} de indicação por e-mail.`);
+  if (q > 10) msgs.push(`${q} cópias serão criadas de uma vez.`);
+  av.hidden = !msgs.length; av.textContent = msgs.join(" ");
+}
+function tcmDuplicar(r, t){
+  const el = tcmEl();
+  const q = Math.max(1, Math.min(50, parseInt(el.querySelector("[data-tcm-qtd]").value, 10) || 1));
+  const base = (el.querySelector("[data-tcm-nome]").value || "").trim() || (t.nome + " (cópia)");
+  const esc1 = {}; el.querySelectorAll("[data-tcm-ck]").forEach(c => { esc1[c.dataset.tcmCk] = c.checked; });
+  try { localStorage.setItem(DUP_KEY, JSON.stringify(esc1)); } catch (e) {}
+  const criadas = [];
+  for (let i = 1; i <= q; i++) {
+    const d = {fase: t.fase, nome: q > 1 ? `${base} ${i}` : base, bucket: esc1.bucket ? t.bucket : "backlog"};
+    if (esc1.descricao) d.descricao = t.descricao;
+    if (esc1.datas) { d.inicio = t.inicio; d.fimPrevisto = t.fimPrevisto; }
+    if (esc1.prioridade) d.prioridade = t.prioridade;
+    if (esc1.andamento) d.andamento = t.andamento === "Concluído" && d.bucket !== "concluido" ? "Em andamento" : t.andamento;
+    if (d.bucket === "concluido") { d.andamento = "Concluído"; d.fimReal = esc1.datas && t.fimReal ? t.fimReal : hojeISO(); }
+    if (esc1.atividades) d.atividades = t.atividades.map(a => ({id: uid(), texto: a.texto, feito: d.bucket === "concluido" ? a.feito : false}));
+    if (esc1.responsavel) d.responsavel = t.responsavel;
+    if (esc1.apoio) d.apoio = t.apoio.filter(e => e !== (esc1.responsavel ? t.responsavel : ""));
+    if (esc1.anexos) d.anexos = t.anexos.map(a => Object.assign(JSON.parse(JSON.stringify(a)), {id: uid()}));
+    if (esc1.mensagens) d.comunicacao = t.comunicacao.map(m => Object.assign({}, m, {id: uid()}));
+    const nova = normalizarTarefa(d);
+    r.tarefas.push(nova);
+    criadas.push(nova);
+    if (nova.responsavel) notificarAtribuicao(nova, nova.responsavel, "responsável", r);
+    nova.apoio.forEach(em => notificarAtribuicao(nova, em, "apoio", r));
+  }
+  registrar(r, q > 1 ? `${q} cópias da tarefa "${t.nome}" criadas` : `Tarefa "${criadas[0].nome}" criada como cópia de "${t.nome}"`);
+  salvar();
+  tcmFechar();
+  renderGestaoProjeto(r.ID);
+  toast(q > 1 ? `${q} cópias de "${t.nome}" criadas${esc1.bucket ? "" : " no Backlog"}.` : `Cópia "${criadas[0].nome}" criada em ${bucketNome(criadas[0].bucket)}.`);
+}
+document.addEventListener("click", e => {
+  const btn = e.target.closest("[data-tcm]");
+  if (btn) { e.preventDefault(); e.stopPropagation(); if (tcm && tcm.btn === btn) tcmFechar(); else tcmAbrir(btn); return; }
+  const menu = e.target.closest("#tcMenu");
+  if (!menu) { if (tcm) tcmFechar(); return; }
+  const mv = e.target.closest("[data-tcm-mv]");
+  const pr = e.target.closest("[data-tcm-pr]");
+  const a = e.target.closest("[data-tcm-a]");
+  const {r, t} = tcmTarefa();
+  if (!tcm || !r || !t) return;
+  if (mv) { if (mv.disabled) return; if (!podeEditarTarefa(t)) { bloqueado(); return; } const d = mv.dataset.tcmMv; tcmFechar(); tcmMover(r, t, d); return; }
+  if (pr) {
+    if (pr.disabled) return;
+    if (!podeEditarTarefa(t)) { bloqueado(); return; }
+    const p = pr.dataset.tcmPr;
+    if (!PRIORIDADES.includes(p)) return;
+    t.prioridade = p;
+    registrar(r, `Tarefa "${t.nome}": prioridade alterada para ${p}`);
+    salvar(); tcmFechar(); renderGestaoProjeto(r.ID);
+    toast(`Prioridade de "${t.nome}": ${p}.`);
+    return;
+  }
+  if (!a) return;
+  const act = a.dataset.tcmA;
+  if (act === "prio") { if (!podeEditarTarefa(t)) { bloqueado(); return; } tcm.painel = "prio"; tcmRender(); }
+  else if (act === "link") {
+    const url = `${urlSistema()}#/gestao/${r.ID}/${t.id}`;
+    tcmFechar();
+    const ok = () => toast("Link da tarefa copiado.");
+    const fb = () => { const ta = document.createElement("textarea"); ta.value = url; ta.style.position = "fixed"; ta.style.opacity = "0"; document.body.appendChild(ta); ta.select(); try { document.execCommand("copy"); ok(); } catch (er) { toast(url); } ta.remove(); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(ok, fb); else fb();
+  }
+  else if (act === "voltar") { tcm.painel = "main"; tcmRender(); }
+  else if (act === "abrir") { const pid = tcm.pid, tid = tcm.tid; tcmFechar(); openDrawer(pid, tid); }
+  else if (act === "dup") { if (!podeEditar()) { bloqueado(); return; } tcm.painel = "dup"; tcmRender(); }
+  else if (act === "mover") { tcm.painel = "mover"; tcmRender(); }
+  else if (act === "resp") { if (!podeEditar()) { bloqueado(); return; } tcm.painel = "resp"; tcmRender(); }
+  else if (act === "dup-ok") { if (!podeEditar()) { bloqueado(); return; } tcmDuplicar(r, t); }
+  else if (act === "excluir") {
+    if (!podeEditar()) { bloqueado(); return; }
+    tcmFechar();
+    if (!confirm(`Excluir a tarefa "${t.nome}"?`)) return;
+    r.tarefas = r.tarefas.filter(x => x.id !== t.id);
+    registrar(r, `Tarefa "${t.nome}" excluída`);
+    salvar();
+    renderGestaoProjeto(r.ID);
+    toast("Tarefa excluída.");
+  }
+});
+document.addEventListener("change", e => {
+  const all = e.target.closest("[data-tcm-all]");
+  if (all) { document.querySelectorAll("#tcMenu [data-tcm-ck]").forEach(c => { c.checked = all.checked; }); tcmDupAviso(); return; }
+  const ck = e.target.closest("[data-tcm-ck]");
+  if (ck) { const a2 = document.querySelector("#tcMenu [data-tcm-all]"); if (a2) a2.checked = [...document.querySelectorAll("#tcMenu [data-tcm-ck]")].every(c => c.checked); tcmDupAviso(); return; }
+  const sel = e.target.closest("[data-tcm-resp]");
+  if (!sel || !tcm) return;
+  const {r, t} = tcmTarefa();
+  if (!r || !t || !podeEditar()) return;
+  const v = sel.value, ant = t.responsavel;
+  if (!v || v === ant) return;
+  t.responsavel = v;
+  t.apoio = t.apoio.filter(x => x !== v);
+  notificarAtribuicao(t, v, "responsável", r);
+  registrar(r, `Tarefa "${t.nome}": responsável alterado para ${nomeCompletoDe(v)}`);
+  salvar();
+  tcmFechar();
+  renderGestaoProjeto(r.ID);
+  toast(`Responsável de "${t.nome}": ${nomeCompletoDe(v)}.`);
+});
+document.addEventListener("keydown", e => { if (e.key === "Escape" && tcm) tcmFechar(); });
+document.addEventListener("input", e => { if (e.target.closest("[data-tcm-qtd]")) tcmDupAviso(); });
+window.addEventListener("resize", () => { if (tcm) tcmPosicionar(); });
+document.addEventListener("scroll", () => { if (tcm) tcmPosicionar(); }, true);
+window.addEventListener("hashchange", () => { if (tcm) tcmFechar(); });
 
 /* ================= BASE (EDITÁVEL) ================= */
 function renderPessoas(){
