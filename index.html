@@ -308,6 +308,8 @@ body.ro .tcm-btn.so-leitura{display:none}
 .tcm label.tudo{font-weight:800;color:var(--hi)}
 .tcm .why.aviso{color:var(--tan)}
 .com-card{margin-bottom:16px;padding:16px 18px}
+.com-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.com-h-acts{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
 .com-h{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline;margin-bottom:10px}
 .com-hist{max-height:340px;overflow:auto;display:grid;gap:10px;padding-right:4px}
 .com-msg{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--surface2)}
@@ -2507,9 +2509,14 @@ function comMsgHtml(r, m){
     ${est === "falhou" && m.envio.erro ? `<div class="com-erro">${esc(m.envio.erro)}</div>` : ""}
     ${acoes}</div>`;
 }
+let comUI = {pid: "", aberta: false, hist: false};
 function comunicacaoHtml(r){
   if (cmp.pid !== r.ID) cmp = {pid: r.ID, para: [], texto: ""};
+  if (comUI.pid !== r.ID) comUI = {pid: r.ID, aberta: false, hist: false};
   const msgs = (r.mensagens || []).slice(-200);
+  const naoEnv = msgs.filter(m => m.envio.estado === "falhou").length;
+  const resumo = `${msgs.length} mensagem(ns)` + (naoEnv ? ` · <span class="com-st err">${naoEnv} não enviada(s)</span>` : "");
+  if (!comUI.aberta) return `<div class="com-bar"><button class="btn" data-com-abrir="1">Comunicação do projeto</button><span class="note" style="margin:0">${resumo}</span></div>`;
   const hist = msgs.length ? msgs.map(m => comMsgHtml(r, m)).join("") : `<p class="note" style="margin:0">Nenhuma mensagem ainda.</p>`;
   const form = podeEditar() ? `
     <div class="com-form">
@@ -2524,8 +2531,9 @@ function comunicacaoHtml(r){
     </div>`
     : `<p class="note" style="margin:10px 0 0">Somente o administrador e os gerentes de projeto enviam mensagens.</p>`;
   return `<section class="card com-card">
-    <div class="com-h"><b>Comunicação do projeto</b><span class="note">Histórico de mensagens e envios para a equipe</span></div>
-    <div class="com-hist">${hist}</div>
+    <div class="com-h"><b>Comunicação do projeto</b><span class="note">${resumo}</span>
+      <span class="com-h-acts"><button class="btn sm" data-com-hist="1">${comUI.hist ? "Ocultar histórico" : "Ver histórico"}</button><button class="btn sm" data-com-fechar="1">Fechar</button></span></div>
+    ${comUI.hist ? `<div class="com-hist">${hist}</div>` : ""}
     ${form}</section>`;
 }
 function comAtualizarChips(){
@@ -2598,6 +2606,9 @@ document.addEventListener("keydown", e => {
   else if (e.key === "Escape") { pop.hidden = true; }
 });
 document.addEventListener("click", e => {
+  const ca = e.target.closest("[data-com-abrir]"); if (ca) { comUI.aberta = true; renderGestaoProjeto(currentProjId()); return; }
+  const cf = e.target.closest("[data-com-fechar]"); if (cf) { comUI = {pid: comUI.pid, aberta: false, hist: false}; renderGestaoProjeto(currentProjId()); return; }
+  const ch = e.target.closest("[data-com-hist]"); if (ch) { comUI.hist = !comUI.hist; renderGestaoProjeto(currentProjId()); return; }
   const pick = e.target.closest("[data-com-pick]"); if (pick) { comEscolher(pick.dataset.comPick); return; }
   const rm = e.target.closest("[data-com-rm]"); if (rm) { cmp.para = cmp.para.filter(p => p.email !== rm.dataset.comRm); comAtualizarChips(); return; }
   const env = e.target.closest("[data-com-enviar]"); if (env) {
@@ -2610,6 +2621,7 @@ document.addEventListener("click", e => {
     const m = normalizarMsg({id: uid(), autor: autor || (sessao && sessao.nome) || "Você", ts: new Date().toISOString(), texto, para: cmp.para, envio: {estado: "pendente"}});
     r.mensagens = (r.mensagens || []).concat([m]);
     cmp = {pid: r.ID, para: [], texto: ""};
+    comUI = {pid: r.ID, aberta: true, hist: true};
     salvar(); renderGestaoProjeto(r.ID);
     comEnviarMsg(r, m);
     return;
