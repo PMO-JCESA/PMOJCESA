@@ -759,6 +759,18 @@ body.ro .tcard, body.ro .pcard{cursor:pointer}
 .em-acts{display:flex;gap:6px;flex-wrap:wrap}
 body.resp .tcard.alheia{opacity:.55}
 body.resp .tcard.minha{box-shadow:0 0 0 2px var(--green) inset}
+.tc-num{color:#ED174F;font-weight:800;margin-right:2px}
+.tag-dep{background:#FFF4E5;color:#8a5a00}
+.anum{color:#ED174F;font-weight:800;margin-right:4px}
+.dep-lista{display:grid;gap:6px;margin-bottom:10px}
+.dep-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;border:1px solid var(--border)}
+.dep-item.ok{background:rgba(62,142,87,.10)}
+.dep-item.pend{background:rgba(237,23,79,.06)}
+.dep-st{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;flex:none}
+.dep-item.ok .dep-st{color:#3E8E57}.dep-item.pend .dep-st{color:#ED174F}
+.dep-txt{flex:1;min-width:0}.dep-txt small{color:var(--muted)}
+.dep-add{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.dep-add select{flex:1;min-width:220px}
 </style>
 </head>
 <body>
@@ -1117,47 +1129,7 @@ const MESES = {jan:0,fev:1,mar:2,abr:3,mai:4,jun:5,jul:6,ago:7,set:8,out:9,nov:1
   january:0,february:1,march:2,april:3,may:4,june:5,july:6,august:7,september:8,october:9,november:10,december:11};
 
 /* Dados iniciais (39 projetos do protótipo original) */
-const SEED = [
-["4.Paralisado","36","ProJuris - Fase II","0.0 Backlog","Cristiano Vieira","Geovanna Rech Arruda","Planner","","","","Projeto","Sistemas","Governança","Jurídico","Portfolio 2026","Guislayne Alves Carlotto","","","André Vasques"],
-["4.Paralisado","27","PontoCOB - Fase II","0.1 Em análise","Cristiano Vieira","Emanuel Senn","Planner","","June 08","June 18","Projeto","Sistemas","Eficiência operacional","Financeiro","Portfolio 2026","Henrique Bastos","","","André Vasques"],
-["4.Paralisado","34","Digitalização de Documentos","0.1 Em análise","André Vasques","Aldo Pereira Brun Ribeiro","","","","","Projeto","Sistemas","Governança","Jurídico","Portfolio 2026","Guislayne Alves Carlotto","","","André Vasques"],
-["4.Paralisado","35","Fluxo de Compras","0.1 Em análise","Cristiano Vieira","Aldo Pereira Brun Ribeiro","Planner","","June 23","","Projeto","Sistemas","Eficiência operacional","Suprimentos","JCE Conecta","Claudia Oliveira Kodama","","","André Vasques"],
-["4.Paralisado","45","JCE Expenses - Fase II","0.1 Em análise","Cristiano Vieira","Aldo Pereira Brun Ribeiro","Planner","","","","Projeto","Sistemas","Eficiência operacional","Financeiro","Portfolio 2026","Henrique Bastos","","","André Vasques"],
-["0.Novo/Aguardando","41","Ecommerce LATAM - Colômbia","0.2 Pré-escopo","José Itamar","José Itamar","","","","","Projeto","Sistemas","Aumento de receita","Comercial Latam","e-Commerce","Walter Rodrigues de Souza","","","André Vasques"],
-["1.Em linha","49","Venda Futura","0.2 Pré-escopo","Geovanna Rech Arruda","Geovanna Rech Arruda","Planner","https://nordtechmaquinas.sharepoint.com/:u:/r/sites/PortalTecnologia/SitePages/DW-Comercial-copy(1).aspx?d=wa561ac85b7f644c49e3e5f52b11d971b&csf=1&web=2&share=IQCFrGGl9rfERJ4-X1KxHZcbAbJIriY78RiaCu-RuxiqFZ8&e=5tUA8Q","September 03","","Projeto","Sistemas","Estratégia e inovação","Comercial","Portfolio 2026","Paulo Menucci","","","Cristiano Vieira"],
-["1.Em linha","17","TMS Intelipost","2.0 Execução","Alisson Santos","José Itamar / Jean Rodrigo Moreira Faria","","https://nordtechmaquinas.sharepoint.com/:u:/r/sites/PortalTecnologia/SitePages/WMS-SILT-S%C3%8ANIOR-copy.aspx?d=wc6cfb63789eb4908964e427c424dcce5&csf=1&web=2&share=IQA3ts_G64kISZZOQnxCTczlASUXVjLsz_jB_t3rqtm7kDw&e=Os9nMw","","","POC/Estudo","Sistemas","Eficiência operacional","Logística Transportes","Supply Chain Program","Helysson Silva","","","Alisson Santos"],
-["1.Em linha","46","Monitoramento de integrações","2.0 Execução","André Vasques","Tiago Fermin","","","July 06","December 04","Projeto","Infraestrutura","Eficiência operacional","Tecnologia","Infraestrutura e Performance de TI","Helysson Silva","","","André Vasques"],
-["1.Em linha","50","Implantação WMS - SILT","2.0 Execução","Alisson Santos","Jean Rodrigo Moreira Faria","Planner","https://nordtechmaquinas.sharepoint.com/:u:/r/sites/PortalTecnologia/SitePages/WMS---Notas-por-DI-copy.aspx?d=w5e62bca0358948a385f366034ed0c7c9&csf=1&web=2&share=IQCgvGJeiTWjSIXzZgNO0MfJAfOMXFb7euOrQE3Lo_ONbvQ&e=84e4WA","February 09","June 25, 2027","Projeto","Sistemas","Estratégia e inovação","Logística","Supply Chain Program","Amilquio Gudelunas","","","Alisson Santos"],
-["2.Alerta","23","Reforma Tributária - Corporativo","2.0 Execução","André Vasques","Aldo Pereira Brun Ribeiro / Alisson Santos","Planner","https://nordtechmaquinas.sharepoint.com/:u:/r/sites/PortalTecnologia/SitePages/DW-Comercial-copy.aspx?d=w0b848492610b4384b4c5b76861d97650&csf=1&web=2&share=IQCShIQLC2GEQ7TFt2hh2XZQAQRV4KoAjM3MDjY8pcf-5hI&e=bkWhlS","June 01","January 01, 2027","Projeto","TI Corporativo","Requisito legal","JCE Coporativo","Programa Estratégia Tributária","Marlbor Necchio","","","Alisson Santos"],
-["4.Paralisado","29","Data Intelligence - Forum","2.0 Execução","André Vasques","Emanuel Senn","Planner","","June 12","December 11","Projeto","TI Corporativo","Estratégia e inovação","JCE Corporativo","JCE Digital Intelligence","André Vasques","","","André Vasques"],
-["1.Em linha","40","Ecommerce B2B Fase 2","2.1 Desenvolvimento","José Itamar","José Itamar","Planner","","","","Projeto","Sistemas","Aumento de receita","Comercial","e-Commerce","Marlbor Necchio","","","André Vasques"],
-["1.Em linha","52","Reforma Tributária - Outros Sistemas","3.0 Homologação (UAT)","Cristiano Vieira","","","https://nordtechmaquinas.sharepoint.com/sites/PortalTecnologia/SitePages/Reforma-Tribut%C3%A1ria-copy.aspx","","","Melhoria","Sistemas","Requisito legal","Comercial","Programa Estratégia Tributária","André Vasques","","","Cristiano Vieira"],
-["1.Em linha","22","Reforma Tributária - Sistemas TOTVS","4.1 Deploy (Release)","Alisson Santos","Aldo Pereira Brun Ribeiro","Planner","https://nordtechmaquinas.sharepoint.com/:u:/r/sites/PortalTecnologia/SitePages/Reforma-Tribut%C3%A1ria-copy.aspx?d=wb657d738bd6e4df58caa76279c5d1347&csf=1&web=2&share=IQA411e2br31TYyqdiecXRNHAUYxqq9i4yUv0H2EdDEV5Ps&e=fTMQzl","November 04, 2025","October 31","Projeto","Sistemas","Requisito legal","Fiscal","Programa Estratégia Tributária","Marlbor Necchio","","","Alisson Santos"],
-["1.Em linha","43","Inteligência de Mercado (otimização do ambiente)","4.1 Deploy (Release)","Cristiano Vieira","Emanuel Senn","Planner","https://nordtechmaquinas.sharepoint.com/:u:/r/sites/PortalTecnologia/SitePages/CMV-Automa%C3%A7%C3%A3o-copy.aspx?d=wb9a5116cf33e4856b2a92f54221ff299&csf=1&web=2&share=IQBsEaW5PvNWSLKpL1QiH_KZAT9eHdl-MbFbXwCFPccDXkk&e=kEB4Qu","June 25","August 13","Melhoria","Infraestrutura","Eficiência operacional","Inteligência de Mercado","JCE Digital Intelligence","Vitor Kock","","","Cristiano Vieira"],
-["1.Em linha","31","WMS - NF Container","5.0 Pós-Implementação","Alisson Santos","Jean Rodrigo Moreira Faria","Planner","https://nordtechmaquinas.sharepoint.com/:u:/r/sites/PortalTecnologia/SitePages/Integra%C3%A7%C3%A3o-Correios-copy.aspx?d=wb86447663e28463bb0c0e8d6309e6447&csf=1&web=2&share=IQBmR2S4KD47RrDA6NYwnmRHAZizZFxciGb7GJgoTnbKYb4&e=wJYYpN","June 12","July 27","Melhoria","Sistemas","Eficiência operacional","Logística","Supply Chain Program","Cecilia Schaab","10.000","17.300","Jean Rodrigo Moreira Faria"],
-["1.Em linha","38","Ecommerce B2B Aquabrazil","5.0 Pós-Implementação","José Itamar","José Itamar","Planner","","May 04","July 31","Projeto","Sistemas","Aumento de receita","Comercial","e-Commerce","Gustavo Seffrin","","","André Vasques"],
-["1.Em linha","39","Ecommerce B2B Nordtech","5.0 Pós-Implementação","José Itamar","José Itamar","Planner","","June 08","July 31","Projeto","Sistemas","Aumento de receita","Comercial","e-Commerce","Eduardo André Reis Santos","","","André Vasques"],
-["1.Em linha","48","DW Comercial Visão Executiva Toyama","5.0 Pós-Implementação","Cristiano Vieira","Emanuel Senn","Planner","https://nordtechmaquinas.sharepoint.com/:u:/r/sites/PortalTecnologia/SitePages/Atualiza%C3%A7%C3%A3o-Tabela-de-Pre%C3%A7os-copy(1).aspx?d=wb9b85b82701b489d8e5ffad2adbf0992&csf=1&web=2&share=IQCCW7i5G3CdSI5f-tKtvwmSAWFgu0E7tKtX2GmsrJyqJdM&e=0psOmu","July 20","","Projeto","Sistemas","Eficiência operacional","Comercial","JCE Digital Intelligence","Paulo Menucci","","","Cristiano Vieira"],
-["2.Alerta","16","S&OP / S&OE Plannera","5.0 Pós-Implementação","André Vasques","Geovanna Rech Arruda","Planner","https://nordtechmaquinas.sharepoint.com/:u:/r/sites/PortalTecnologia/SitePages/Import-Export-copy.aspx?d=w7bb030ab38d5449ea87ad103fe95ef03&csf=1&web=2&share=IQCrMLB71TieRKh60QP-le8DAfzyfzN4LOtUkh87t1kitU8&e=cqhKta","June 19","November 30","Projeto","Sistemas","Eficiência operacional","PCP","Supply Chain Program","Cleiton Santos","","","Alisson Santos"],
-["3.Atrasado","14","Implantação GRCAC (IAM Protheus)","5.0 Pós-Implementação","Alisson Santos","Aldo Pereira Brun Ribeiro / Gilberto Junior","Planner","https://nordtechmaquinas.sharepoint.com/:u:/r/sites/PortalTecnologia/SitePages/Intelig%C3%AAncia-de-Mercado-copy.aspx?d=wce74ea2980d84b53abc85e39a0e2a22f&csf=1&web=2&share=IQAp6nTO2IBTS6vIXjmg4qIvAcD1teTasw3qxMnO7G-ixys&e=IjDeTK","May 18","November 20","Projeto","Segurança","Auditoria e Compliance","JCE Corporativo","Programa IT Security","Helysson Silva","","","Alisson Santos"],
-["3.Atrasado","18","Data Intelligence - Data Engineering","5.0 Pós-Implementação","Cristiano Vieira","Geovanna Rech Arruda","Planner","https://nordtechmaquinas.sharepoint.com/:u:/r/sites/PortalTecnologia/SitePages/Atualiza%C3%A7%C3%A3o-Tabela-de-Pre%C3%A7os-copy.aspx?d=wbc7ee4ea6e9446449d2db41b78f3ab1c&csf=1&web=2&share=IQDq5H68lG5ERp0ttBt486scAcnnvEM460diDJmln6xXk0o&e=lVeovX","March 12","December 10","Projeto","Sistemas","Governança","Controladoria","JCE Digital Intelligence","Guilherme Guiraud","","","Cristiano Vieira"],
-["4.Paralisado","37","SIBS - Salesforce Metas","5.0 Pós-Implementação","Cristiano Vieira","Emanuel Senn","Planner","","June 01","July 31","Projeto","Sistemas","Eficiência operacional","Comercial","JCE Digital Intelligence","Paulo Menucci","","","Cristiano Vieira"],
-["1.Em linha","33","Agentic CX","5.1 Termo de aceite","José Itamar","","","","","","POC/Estudo","Sistemas","Estratégia e inovação","e-Commerce","JCE Digital Intelligence","José Itamar","","","André Vasques"],
-["1.Em linha","13","Import Export - Fase II","6.0 Concluído","Cristiano Vieira","Emanuel Senn","Planner","","June 01","September 10","Projeto","Sistemas","Eficiência operacional","Compras Internacionais","JCE Conecta","Cleiton Santos","","","Cristiano Vieira"],
-["1.Em linha","20","Import Export - Fase I","6.0 Concluído","Cristiano Vieira","Emanuel Senn","Planner","","September 01, 2025","March 31","Projeto","Sistemas","Governança","Compras Internacionais","JCE Conecta","Marlbor Necchio","","","Cristiano Vieira"],
-["1.Em linha","21","Fluxo de Engenharia","6.0 Concluído","Cristiano Vieira","Geovanna Rech Arruda","Planner","","February 16","August 20","Projeto","Sistemas","Governança","Engenharia P&D","JCE Conecta","Diego Cruz","","","Cristiano Vieira"],
-["1.Em linha","24","SalesForce Comercial","6.0 Concluído","Cristiano Vieira","Emanuel Senn","Planner","","March 02","August 20","Projeto","Sistemas","Aumento de receita","Comercial","Portfolio 2026","Paulo Menucci","","","Cristiano Vieira"],
-["1.Em linha","25","ProJuris - Fase I","6.0 Concluído","Cristiano Vieira","Geovanna Rech Arruda","Planner","","","","Projeto","Sistemas","Governança","Jurídico","Portfolio 2026","Carlos Pupo","","","Cristiano Vieira"],
-["1.Em linha","26","PontoCOB - Fase I","6.0 Concluído","Cristiano Vieira","Aldo Pereira Brun Ribeiro","Planner","","","","Projeto","Sistemas","Eficiência operacional","Financeiro","Portfolio 2026","Henrique Bastos","","","Cristiano Vieira"],
-["1.Em linha","28","JCE Expenses - Fase I","6.0 Concluído","Cristiano Vieira","Aldo Pereira Brun Ribeiro","Planner","","","","Projeto","Sistemas","Eficiência operacional","Financeiro","Portfolio 2026","Henrique Bastos","","","Cristiano Vieira"],
-["1.Em linha","30","RH - Estrutura Organizacional","6.0 Concluído","Cristiano Vieira","Cristiano Vieira","Planner","","June 01","July 14","Projeto","Sistemas","Governança","RH","Melhorias / Squad","Ana Beatriz","","","Cristiano Vieira"],
-["1.Em linha","32","Slack BOT","6.0 Concluído","Emanuel Senn","Emanuel Senn","","","June 01","July 17","POC/Estudo","Sistemas","Estratégia e inovação","Comercial","JCE Digital Intelligence","Eduardo André Reis Santos","","","André Vasques"],
-["1.Em linha","42","Automação atualização da tabela de preços Protheus","6.0 Concluído","Cristiano Vieira","Emanuel Senn","Planner","https://nordtechmaquinas.sharepoint.com/:u:/r/sites/PortalTecnologia/SitePages/WMS-SILT-S%C3%8ANIOR-copy(1).aspx?d=wdb581153e8864c7ca2309d76b445c1d0&csf=1&web=2&share=IQBTEVjbhuh8TKIwnXa0RcHQAXTyCYf0tqjHbcznLyXF0iE&e=eKpFQM","August 20","September 25","Projeto","Sistemas","Governança","MDM","Portfolio 2026","Helysson Silva","","","Cristiano Vieira"],
-["1.Em linha","44","Import Export COMEX - Wishlist","6.0 Concluído","Cristiano Vieira","Geovanna Rech Arruda","Planner","","June 15","August 20","Projeto","Sistemas","Eficiência operacional","Dimpex","JCE Conecta","Regis Bacelar","","","Cristiano Vieira"],
-["1.Em linha","47","Integração Correios - VisualSET","6.0 Concluído","Cristiano Vieira","Aldo Pereira Brun Ribeiro","Planner","","July 06","July 30","Melhoria","Sistemas","Eficiência operacional","Logística","Supply Chain Program","Giovane Azevedo","","","Cristiano Vieira"],
-["1.Em linha","51","CMV - Automação","6.0 Concluído","Cristiano Vieira","","","https://nordtechmaquinas.sharepoint.com/sites/PortalTecnologia/SitePages/Venda-Futura-copy.aspx","","","Melhoria","Sistemas","Estratégia e inovação","Comercial NORDTECH","Portfolio 2026","Eduardo André Reis Santos","","","Cristiano Vieira"],
-["3.Atrasado","19","MDM","6.0 Concluído","Aldo Pereira Brun Ribeiro","Aldo Pereira Brun Ribeiro","","","October 06, 2025","February 23, 2027","Projeto","Sistemas","Governança","MDM","JCE Conecta","Cleiton Santos","","","André Vasques"]
-];
+const SEED = [];
 
 /* ================= UTILITÁRIOS ================= */
 const $ = id => document.getElementById(id);
@@ -1222,9 +1194,51 @@ function normalizarTarefa(t){
     atividades: Array.isArray(t.atividades) ? t.atividades.map(a => ({id: a.id || uid(), texto: String(a.texto || ""), feito: !!a.feito})) : [],
     anexos: Array.isArray(t.anexos) ? t.anexos : [],
     comunicacao: Array.isArray(t.comunicacao) ? t.comunicacao.map(normalizarMsg) : [],
+    numero: String(t.numero || ""),
+    dependencias: Array.isArray(t.dependencias) ? t.dependencias.filter(d => d && d.tarefa).map(d => ({tarefa: String(d.tarefa), atividade: String(d.atividade || "")})) : [],
     criadoEm: t.criadoEm || new Date().toISOString(),
     ...(t._sp ? {_sp: String(t._sp)} : {})
   };
+}
+/* Numeração dos cards: 1.x Iniciação, 2.x Planejamento, 3.x Execução, 4.x Homologação, 5.x Encerramento */
+const NUM_FASE = {iniciacao: 1, planejamento: 2, execucao: 3, homologacao: 4, encerramento: 5};
+function proximoNumeroCard(r, fase, exceto){
+  const n = NUM_FASE[fase] || 1;
+  let max = 0;
+  r.tarefas.forEach(x => {
+    if (x === exceto || !x.numero) return;
+    const [a, b] = x.numero.split(".");
+    if (a === String(n)) max = Math.max(max, parseInt(b, 10) || 0);
+  });
+  return `${n}.${max + 1}`;
+}
+/* Cards sem número, ou com número de outra fase, recebem número pela ordem de criação (ordem da lista) */
+function numerarTarefas(r){
+  r.tarefas.forEach(t => {
+    const n = NUM_FASE[t.fase] || 1;
+    if (!t.numero || t.numero.split(".")[0] !== String(n)) t.numero = proximoNumeroCard(r, t.fase, t);
+  });
+}
+const projDaTarefa = t => rows.find(r => r.tarefas.includes(t));
+/* Dependências ainda não cumpridas: card inteiro (precisa estar concluído) ou atividade (precisa estar feita) */
+function depPendentes(t){
+  const r = projDaTarefa(t); if (!r) return [];
+  return (t.dependencias || []).map(d => {
+    const alvo = r.tarefas.find(x => x.id === d.tarefa);
+    if (!alvo) return null;
+    if (!d.atividade) return efetivo(alvo) === "concluido" ? null : {texto: `${alvo.numero || ""} ${alvo.nome}`.trim()};
+    const i = alvo.atividades.findIndex(a => a.id === d.atividade);
+    if (i < 0) return null;
+    const at = alvo.atividades[i];
+    return at.feito ? null : {texto: `${alvo.numero || ""}.${i + 1} ${at.texto}`.trim()};
+  }).filter(Boolean);
+}
+/* Verdadeiro se "a" depende, direta ou indiretamente, de "alvo" (evita ciclos) */
+function dependeDe(a, alvo, vistos = new Set()){
+  if (!a || vistos.has(a.id)) return false;
+  vistos.add(a.id);
+  const r = projDaTarefa(a); if (!r) return false;
+  return (a.dependencias || []).some(d => d.tarefa === alvo.id || dependeDe(r.tarefas.find(x => x.id === d.tarefa), alvo, vistos));
 }
 function normalizar(d){
   const r = {};
@@ -1233,6 +1247,7 @@ function normalizar(d){
   Object.keys(LISTAS).forEach(c => r[c] = canonLista(c, r[c]));
   if (!r.Status) r.Status = "0.Novo/Aguardando";
   r.tarefas = Array.isArray(d.tarefas) ? d.tarefas.map(normalizarTarefa) : [];
+  numerarTarefas(r);
   r.historico = Array.isArray(d.historico) ? d.historico : [];
   r.mensagens = Array.isArray(d.mensagens) ? d.mensagens.map(normalizarMsg) : [];
   r.report = d.report && typeof d.report === "object" ? d.report : {};
@@ -1290,6 +1305,7 @@ let autor = "";
 try { autor = localStorage.getItem(AUTOR_KEY) || ""; } catch(e) {}
 
 function salvar(){
+  rows.forEach(numerarTarefas);
   autoMover();
   const ok = salvarLocal();
   if (typeof spAgendar === "function") spAgendar();
@@ -1385,9 +1401,13 @@ function setAndamento(t, a){
 /* Coluna coerente com as datas: início no futuro = Backlog; início chegou (ou vazio) = Em execução */
 const iniciouT = t => { const d = toDate(t.inicio); return !!d && d <= HOJE; };
 const vencidaT = t => { const d = toDate(t.fimPrevisto); return !!d && d < HOJE; };
-const bucketPorDatas = t => { const d = toDate(t.inicio); return d && d > HOJE ? "backlog" : "execucao"; };
+const bucketPorDatas = t => { if (depPendentes(t).length) return "backlog"; const d = toDate(t.inicio); return d && d > HOJE ? "backlog" : "execucao"; };
 function motivoBloqueioArraste(t, destino){
   if (destino === "concluido" || destino === "cancelado") return "";
+  if (destino === "execucao") {
+    const pend = depPendentes(t);
+    if (pend.length) return `Depende de ${pend.map(x => x.texto).join(", ")}, ainda não concluído. Enquanto isso, a tarefa fica no Backlog.`;
+  }
   if (destino === "atraso") return "Em atraso é automático: quando o fim previsto passa, o card vai para esta coluna.";
   if (vencidaT(t)) return `O fim previsto (${dataBR(t.fimPrevisto)}) já passou: a tarefa está em atraso. Ajuste o fim previsto, conclua ou cancele.`;
   if (destino === "backlog" && iniciouT(t)) return `A data de início (${dataBR(t.inicio)}) já chegou: a tarefa fica em Em execução. Para voltar ao Backlog, mude a data de início para uma data futura.`;
@@ -1399,7 +1419,7 @@ function autoMover(){
   if (typeof sessao === "undefined" || !sessao) return 0;
   const movidas = [];
   rows.forEach(r => r.tarefas.forEach(t => {
-    if (t.bucket !== "backlog" || !iniciouT(t) || !podeEditarTarefa(t)) return;
+    if (t.bucket !== "backlog" || !iniciouT(t) || !podeEditarTarefa(t) || depPendentes(t).length) return;
     setBucket(t, "execucao");
     registrar(r, `Tarefa "${t.nome}" foi para Em execução automaticamente (início ${dataBR(t.inicio)})`);
     movidas.push(t.nome);
@@ -2364,12 +2384,13 @@ function cardHtml(t){
   return `
     <div class="tcard pb-${pb}${perfil() === "resp" ? (minhaTarefa(t) ? " minha" : " alheia") : ""}" draggable="${podeEditarTarefa(t)}" data-tid="${esc(t.id)}">
       <button type="button" class="tcm-btn${perfil() === "viewer" ? "" : ""}" data-tcm="${esc(t.id)}" aria-label="Ações da tarefa" title="Mais ações">⋯</button>
-      <div class="tc-top">${esc(t.nome)}</div>
+      <div class="tc-top">${t.numero ? `<span class="tc-num">${esc(t.numero)}</span> ` : ""}${esc(t.nome)}</div>
       <div class="tc-meta">${t.responsavel ? avatarHtml(nomeCompletoDe(t.responsavel), 20) + " " + esc(nomeDe(t.responsavel)) : "sem responsável"}${t.fimPrevisto ? " · prazo " + esc(dataBR(t.fimPrevisto)) : ""}</div>
       <div class="tc-tags">
         ${prioVisivel ? `<span class="tag ptag-${PRIO_KEY[t.prioridade] || "linha"}">${esc(t.prioridade)}</span>` : ""}
         <span class="tag">${esc(t.andamento)}</span>
         ${ef === "atraso" ? `<span class="tag tag-venc">Em atraso</span>` : ""}
+        ${depPendentes(t).length ? `<span class="tag tag-dep" title="${esc(depPendentes(t).map(x => x.texto).join("; "))}">Aguardando dependência</span>` : ""}
       </div>
       <div class="prog sm"><i style="width:${pr}%"></i></div>
       <div class="tc-foot">${pr}%${meta.length ? " · " + meta.join(" · ") : ""}</div>
@@ -2905,6 +2926,7 @@ $("v-gestao-projeto").addEventListener("submit", e => {
   });
   if (novaT.bucket === "concluido" || novaT.andamento === "Concluído") { novaT.bucket = "concluido"; novaT.andamento = "Concluído"; novaT.fimReal = hojeISO(); }
   else if (novaT.bucket === "cancelado") novaT.fimReal = "";
+  novaT.numero = proximoNumeroCard(r, novaT.fase);
   r.tarefas.push(novaT);
   if (novaT.responsavel) notificarAtribuicao(novaT, novaT.responsavel, "responsável", r);
   novaT.apoio.forEach(em => notificarAtribuicao(novaT, em, "apoio", r));
@@ -3032,7 +3054,9 @@ $("v-gestao-projeto").addEventListener("drop", e => {
 const H2C_URL = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
 const JSPDF_URL = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
 const SR_STATUS_OPTS = ["Em linha","Alerta","Atrasado","Crítico","Concluído","Paralisado","Não iniciado"];
-const SR_CAMPOS = ["avanco","statusGeral","cronograma","orcamento","orcValor","qualidade","situacao","desvio","marcos","riscos","passos","entregas","equipe"];
+const SR_CAMPOS = ["avanco","statusGeral","cronograma","orcamento","orcValor","qualidade","situacao","desvio","marcos","riscos","passos","entregas","equipe", ...FASES_MACRO.map(f => "fase_" + f.key)];
+/* Avanço de cada fase: informado à mão no report, ou calculado pelos cards */
+const progFaseRel = (r, d, key) => (d && d.fasesAv && d.fasesAv[key] != null) ? d.fasesAv[key] : progFase(r, key);
 function srCor(txt){
   const s = String(txt || "").toLowerCase();
   if (/atras|crític|critic|acima|alto|vencid|risco/.test(s)) return "#ED174F";
@@ -3098,6 +3122,8 @@ function dadosReport(r){
   const d = {...a};
   ["statusGeral","cronograma","orcamento","orcValor","qualidade","situacao","desvio","equipe"].forEach(k => { if (m[k]) d[k] = m[k]; });
   if (m.avanco !== undefined && m.avanco !== "") d.avanco = Math.max(0, Math.min(100, parseInt(m.avanco, 10) || 0));
+  d.fasesAv = {};
+  FASES_MACRO.forEach(f => { const v = m["fase_" + f.key]; if (v !== undefined && v !== "") d.fasesAv[f.key] = Math.max(0, Math.min(100, parseInt(v, 10) || 0)); });
   if (m.marcos) d.marcos = srLinhas(m.marcos, 3).map(([nome, data, status]) => ({nome, data: parseData(data), status: status || "—"}));
   if (m.riscos) d.riscos = srLinhas(m.riscos, 4).map(([risco, impacto, acao, status]) => ({risco, impacto: impacto || "—", acao, status: status || "—"}));
   if (m.passos) d.passos = srLinhas(m.passos, 1).map(x => x[0]);
@@ -3125,12 +3151,12 @@ function srSheetHtml(r, d){
   const fases = FASES_MACRO.map((f, i) => {
     const cls = r.Status.startsWith("5.") || i < idxAtual ? "ok" : i === idxAtual ? "now" : "";
     const rot = cls === "ok" ? "Concluída" : cls === "now" ? "Fase atual" : i === idxAtual + 1 ? "Próxima" : "A seguir";
-    const pf = progFase(r, f.key);
+    const pf = progFaseRel(r, d, f.key);
     return `<div class="sr-f ${cls}"><small>${rot}</small><div class="sr-fr"><b>${esc(f.nome)}</b><span>${pf == null ? "—" : pf + "%"}</span></div></div>`;
   }).join("");
   const av = d.avanco;
   const sem = [["Status geral", d.statusGeral], ["Cronograma", d.cronograma], ["Orçamento", d.orcamento === "Não informado" && d.orcValor ? d.orcValor : d.orcamento + (d.orcValor ? " · " + d.orcValor : "")], ["Qualidade", d.qualidade]];
-  const porFase = FASES_MACRO.map(f => ({n: f.nome, p: progFase(r, f.key)}));
+  const porFase = FASES_MACRO.map(f => ({n: f.nome, p: progFaseRel(r, d, f.key)}));
   const marcos = d.marcos.length
     ? `<table class="sr-tb"><thead><tr><th>Marco</th><th style="width:20%">Data</th><th style="width:32%">Status</th></tr></thead><tbody>${
         d.marcos.slice(0, 8).map(m => `<tr><td>${esc(srCorta(m.nome, 60))}</td><td>${esc(m.data ? dataBR(m.data) : "—")}</td><td>${srTag(m.status)}</td></tr>`).join("")}</tbody></table>`
@@ -3299,12 +3325,32 @@ function carregarScript(src){
     document.head.appendChild(s);
   });
 }
+/* Captura do report em A4 paisagem (297 x 210 mm) numa cópia fixa, fora da tela.
+   Assim o layout não depende da largura da janela, e as fontes ficam carregadas antes de desenhar. */
+async function esperarFontesReport(){
+  if (!document.fonts) return;
+  try { await Promise.all(["400", "600", "700", "800"].map(w => document.fonts.load(`${w} 16px Manrope`))); } catch (e) {}
+  await document.fonts.ready;
+}
 async function capturarReport(){
   await carregarScript(H2C_URL);
-  if (document.fonts && document.fonts.ready) await document.fonts.ready;
-  const el = $("srSheet");
-  return window.html2canvas(el, {scale: 2, backgroundColor: "#ffffff", useCORS: true, logging: false,
-    width: el.offsetWidth, height: el.offsetHeight, scrollX: 0, scrollY: -window.scrollY});
+  await esperarFontesReport();
+  const origem = $("srSheet");
+  const caixa = document.createElement("div");
+  caixa.setAttribute("aria-hidden", "true");
+  caixa.style.cssText = "position:fixed;left:-20000px;top:0;width:1123px;height:794px;overflow:hidden;background:#fff";
+  const copia = origem.cloneNode(true);
+  copia.removeAttribute("id");
+  copia.style.boxShadow = "none";
+  copia.style.margin = "0";
+  caixa.appendChild(copia);
+  document.body.appendChild(caixa);
+  try {
+    return await window.html2canvas(copia, {scale: 2, backgroundColor: "#ffffff", useCORS: true, logging: false, letterRendering: true,
+      width: 1123, height: 794, windowWidth: 1123, scrollX: 0, scrollY: 0});
+  } finally {
+    caixa.remove();
+  }
 }
 function baixarBlob(blob, nome){
   const a = document.createElement("a");
@@ -3783,6 +3829,11 @@ function renderEdicaoReport(r, m){
       </div>
     </div>
     <div class="dr-sec">
+      <h4>Avanço por fase (%)</h4>
+      <p class="note">Deixe vazio para usar o avanço calculado pelos cards.</p>
+      <div class="fgrid">${FASES_MACRO.map(f => { const pf = progFase(r, f.key); return `<div class="fld"><label>${esc(f.nome)}</label><input type="text" name="fase_${f.key}" inputmode="numeric" value="${esc(m["fase_" + f.key] || "")}" placeholder="Automático: ${pf == null ? "sem cards" : pf + "%"}"></div>`; }).join("")}</div>
+    </div>
+    <div class="dr-sec">
       <h4>Resumo executivo</h4>
       <div class="fld"><label>Situação</label>${ta("situacao", a.situacao, 3)}</div>
       <div class="fld" style="margin-top:10px"><label>Desvio</label>${ta("desvio", a.desvio, 3)}</div>
@@ -3828,6 +3879,7 @@ $("rdrawer").addEventListener("click", e => {
   if (acao === "preencher") {
     const atual = lerFormReport();
     const auto = autoComoTexto(autoReport(r));
+    FASES_MACRO.forEach(f => { const pf = progFase(r, f.key); if (pf != null) auto["fase_" + f.key] = String(pf); });
     Object.keys(auto).forEach(k => { if (!atual[k] && auto[k]) atual[k] = auto[k]; });
     renderEdicaoReport(r, atual);
     toast("Campos preenchidos com os dados dos cards. Edite e salve.");
@@ -3838,6 +3890,8 @@ $("rdrawer").addEventListener("click", e => {
     const m = lerFormReport();
     if (m.avanco && !/^\d{1,3}%?$/.test(m.avanco)) { toast("Informe o avanço como número de 0 a 100."); return; }
     if (m.avanco) m.avanco = m.avanco.replace("%", "");
+    const fasesOk = FASES_MACRO.every(f => { const v = m["fase_" + f.key]; if (v && !/^\d{1,3}%?$/.test(v)) return false; if (v) m["fase_" + f.key] = v.replace("%", ""); return true; });
+    if (!fasesOk) { toast("Informe o avanço de cada fase como número de 0 a 100."); return; }
     r.report = m;
     registrar(r, Object.keys(m).length ? `Status report editado (${Object.keys(m).length} campo(s) manuais)` : "Status report voltou aos dados automáticos");
     salvar();
@@ -3999,6 +4053,23 @@ function pessoasOptions(atual){
     `<option value="${esc(e)}" title="${esc(e)}" ${e === atual ? "selected" : ""}>${esc(nomeCompletoDe(e))}${cont[acNorm(nomeCompletoDe(e))] > 1 ? " (" + esc(e) + ")" : ""}</option>`).join("")
     + (semEmail.length ? `<optgroup label="Sem e-mail no cadastro (complete em Base para poder selecionar)">` + semEmail.map(n => `<option disabled>${esc(n)}</option>`).join("") + `</optgroup>` : "");
 }
+function depsDrawerHtml(r, t){
+  const itens = (t.dependencias || []).map((d, i) => {
+    const alvo = r.tarefas.find(x => x.id === d.tarefa);
+    if (!alvo) return "";
+    const ai = d.atividade ? alvo.atividades.findIndex(a => a.id === d.atividade) : -1;
+    if (d.atividade && ai < 0) return "";
+    const at = ai >= 0 ? alvo.atividades[ai] : null;
+    const cumprida = at ? at.feito : efetivo(alvo) === "concluido";
+    const rot = at ? `${alvo.numero || ""}.${ai + 1} ${at.texto}` : `${alvo.numero || ""} ${alvo.nome}`;
+    const escopo = at ? "atividade" : "card inteiro";
+    return `<div class="dep-item ${cumprida ? "ok" : "pend"}"><span class="dep-st">${cumprida ? "Cumprida" : "Pendente"}</span><span class="dep-txt"><b>${esc(rot.trim())}</b> <small>${escopo}</small></span>${podeEditarTarefa(t) ? `<button class="del" data-act="dep-rm" data-idx="${i}" title="Remover">✕</button>` : ""}</div>`;
+  }).join("");
+  return itens ? `<div class="dep-lista">${itens}</div>` : `<p class="note" style="margin:0 0 10px">Nenhuma dependência.</p>`;
+}
+function opcoesDepHtml(r, t){
+  return r.tarefas.filter(x => x.id !== t.id).map(x => `<optgroup label="${esc((x.numero ? x.numero + " " : "") + x.nome)}"><option value="${esc(x.id)}|">Card inteiro</option>${x.atividades.map((a, i) => `<option value="${esc(x.id)}|${esc(a.id)}">${esc((x.numero || "") + "." + (i + 1))} ${esc(a.texto)}</option>`).join("")}</optgroup>`).join("");
+}
 function renderDrawer(){
   if (!drawerCtx) return;
   const r = achar(drawerCtx.pid);
@@ -4009,7 +4080,7 @@ function renderDrawer(){
   const pr = progTarefa(t);
   const feitas = t.atividades.filter(a => a.feito).length;
   $("drPid").textContent = `${r["Título"]} · ${bucketNome(ef)}`;
-  $("drTitulo").textContent = t.nome;
+  $("drTitulo").textContent = (t.numero ? t.numero + " " : "") + t.nome;
   $("drBody").innerHTML = `
     <div class="dr-sec">
       <h4>Tarefa</h4>
@@ -4045,6 +4116,13 @@ function renderDrawer(){
     </div>
 
     <div class="dr-sec">
+      <h4>Dependências</h4>
+      <p class="note">Este card só vai para Em execução depois que as dependências abaixo forem concluídas (card inteiro) ou feitas (atividade).</p>
+      ${depsDrawerHtml(r, t)}
+      ${podeEditarTarefa(t) ? `<div class="dep-add"><select data-dep-sel><option value="">Escolha o card ou a atividade…</option>${opcoesDepHtml(r, t)}</select><button class="btn sm" data-act="dep-add">Adicionar dependência</button></div>` : ""}
+    </div>
+
+    <div class="dr-sec">
       <h4>Descrição</h4>
       <textarea data-f="descricao" placeholder="Descreva a tarefa…">${esc(t.descricao)}</textarea>
     </div>
@@ -4053,10 +4131,10 @@ function renderDrawer(){
       <h4>Atividades · ${t.atividades.length ? pr + "% concluído (" + feitas + "/" + t.atividades.length + ")" : "adicione micro atividades"}</h4>
       <div class="prog" style="margin-bottom:10px"><i style="width:${pr}%"></i></div>
       <ul class="alist">
-        ${t.atividades.map(a => `
+        ${t.atividades.map((a, ai) => `
           <li class="${a.feito ? "feito" : ""}">
             <button class="bullet ${a.feito ? "on" : ""}" data-act="ativ-toggle" data-aid="${esc(a.id)}" title="Marcar como feita"></button>
-            <span class="txt">${esc(a.texto)}</span>
+            <span class="txt">${t.numero ? `<b class="anum">${esc(t.numero)}.${ai + 1}</b> ` : ""}${esc(a.texto)}</span>
             <button class="del" data-act="ativ-del" data-aid="${esc(a.id)}" title="Remover">✕</button>
           </li>`).join("")}
       </ul>
@@ -4099,7 +4177,7 @@ function renderDrawer(){
 function applyField(t, f, v){
   switch (f) {
     case "nome": t.nome = v.trim() || "Sem nome"; break;
-    case "fase": t.fase = v; break;
+    case "fase": if (t.fase !== v) { const rf = achar(drawerCtx.pid); t.fase = v; t.numero = proximoNumeroCard(rf, v, t); } break;
     case "prioridade": t.prioridade = v; break;
     case "andamento": setAndamento(t, v); break;
     case "responsavel": { const ant = t.responsavel; t.responsavel = v; if (v && v !== ant) notificarAtribuicao(t, v, "responsável"); break; }
@@ -4189,6 +4267,18 @@ $("drawer").addEventListener("click", e => {
     t.atividades.push({id: uid(), texto, feito: false});
   }
   else if (act === "anx-del") { t.anexos = t.anexos.filter(x => x.id !== btn.dataset.aid); }
+  else if (act === "dep-add") {
+    const sel = $("drBody").querySelector("[data-dep-sel]");
+    const [tid, aid] = String(sel ? sel.value : "").split("|");
+    if (!tid) { toast("Escolha um card ou uma atividade."); return; }
+    const alvo = r.tarefas.find(x => x.id === tid);
+    if (!alvo) return;
+    if (dependeDe(alvo, t)) { toast("Essa dependência criaria um ciclo: os dois cards dependeriam um do outro."); return; }
+    if ((t.dependencias || []).some(d => d.tarefa === tid && (d.atividade || "") === (aid || ""))) { toast("Essa dependência já existe."); return; }
+    t.dependencias = (t.dependencias || []).concat([{tarefa: tid, atividade: aid || ""}]);
+    registrar(r, `Tarefa "${t.nome}" passou a depender de ${alvo.numero || ""} ${alvo.nome}${aid ? " (atividade)" : ""}`);
+  }
+  else if (act === "dep-rm") { t.dependencias = (t.dependencias || []).filter((_, i) => i !== +btn.dataset.idx); }
   else if (act === "rm-apoio") { t.apoio = t.apoio.filter(x => x !== btn.dataset.email); }
   else if (act === "com-send") {
     const ta = $("drBody").querySelector('[data-f="novo-com"]');
@@ -4502,6 +4592,7 @@ function tcmDuplicar(r, t){
     if (esc1.anexos) d.anexos = t.anexos.map(a => Object.assign(JSON.parse(JSON.stringify(a)), {id: uid()}));
     if (esc1.mensagens) d.comunicacao = t.comunicacao.map(m => Object.assign({}, m, {id: uid()}));
     const nova = normalizarTarefa(d);
+    nova.numero = proximoNumeroCard(r, nova.fase);
     r.tarefas.push(nova);
     criadas.push(nova);
     if (nova.responsavel) notificarAtribuicao(nova, nova.responsavel, "responsável", r);
