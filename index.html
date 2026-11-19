@@ -778,6 +778,10 @@ body.resp .tcard.minha{box-shadow:0 0 0 2px var(--green) inset}
 .dep-btn.pend{color:#ED174F;border-color:#ED174F}
 .alist li.ativ-dep-box{display:block;padding:8px 10px 10px 36px;background:var(--surface3)}
 .ativ-aguarda{display:block;color:#ED174F;font-size:11px;font-weight:700}
+.tc-dep{display:inline-flex;align-items:center;gap:4px;height:22px;padding:0 6px;border-radius:7px;border:1px solid #4697A8;color:#4697A8;background:rgba(70,151,168,.12);font-size:11px}
+.tc-dep b{font-weight:700}
+.tc-dep.pend{border-color:#ED174F;color:#ED174F;background:rgba(237,23,79,.10)}
+.tc-dep.aviso{border-color:#C39366;color:#C39366;background:rgba(195,147,102,.12)}
 </style>
 </head>
 <body>
@@ -2437,6 +2441,20 @@ $("gConteudo").addEventListener("drop", e => {
 });
 
 /* ================= GESTÃO: KANBAN DO PROJETO ================= */
+/* Símbolo de dependência no card: aparece quando o card ou alguma atividade dele tem dependência */
+function tcDepHtml(t){
+  const r = projDaTarefa(t);
+  const nCard = (t.dependencias || []).length;
+  const nAtiv = t.atividades.reduce((s, a) => s + (a.dependencias || []).length, 0);
+  if (!nCard && !nAtiv) return "";
+  const pCard = depPendentes(t);
+  const pAtiv = t.atividades.some(a => pendentesDe(r, a.dependencias, t).length);
+  const partes = [];
+  if (nCard) partes.push(`Card depende de: ${(t.dependencias || []).map(d => { const i = r ? infoDep(r, d, t) : null; return i ? i.texto + (i.cumprida ? " (cumprida)" : " (pendente)") : ""; }).filter(Boolean).join("; ")}`);
+  if (nAtiv) partes.push(`${nAtiv} dependência(s) em atividades${pAtiv ? ", com pendência" : ""}`);
+  const cls = pCard.length ? "pend" : pAtiv ? "aviso" : "ok";
+  return `<span class="tc-dep ${cls}" title="${esc(partes.join(" · "))}">${ICO_DEP}${pCard.length ? "<b>aguardando</b>" : ""}</span>`;
+}
 function cardHtml(t){
   const ef = efetivo(t);
   const pr = progTarefa(t);
@@ -2457,7 +2475,7 @@ function cardHtml(t){
         ${prioVisivel ? `<span class="tag ptag-${PRIO_KEY[t.prioridade] || "linha"}">${esc(t.prioridade)}</span>` : ""}
         <span class="tag">${esc(t.andamento)}</span>
         ${ef === "atraso" ? `<span class="tag tag-venc">Em atraso</span>` : ""}
-        ${depPendentes(t).length ? `<span class="tag tag-dep" title="${esc(depPendentes(t).map(x => x.texto).join("; "))}">Aguardando dependência</span>` : ""}
+        ${tcDepHtml(t)}
       </div>
       <div class="prog sm"><i style="width:${pr}%"></i></div>
       <div class="tc-foot">${pr}%${meta.length ? " · " + meta.join(" · ") : ""}</div>
