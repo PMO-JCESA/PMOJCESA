@@ -841,6 +841,8 @@ body:not(.ro) .sr-wrap .sr-f[data-sr-edit]:hover,body:not(.ro) .sr-wrap .sr-av[d
 .kc .l{padding-right:48px}
 .kc .v{font-size:34px}
 .kc.link:hover{border-color:var(--c)}
+.aviso-conc{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin:0 0 12px;padding:12px 14px;border-radius:12px;border:1px solid color-mix(in srgb,var(--tan) 55%,transparent);background:color-mix(in srgb,var(--tan) 14%,transparent);font-size:13px}
+.aviso-conc b{color:var(--hi)}
 </style>
 </head>
 <body>
@@ -970,6 +972,7 @@ body:not(.ro) .sr-wrap .sr-f[data-sr-edit]:hover,body:not(.ro) .sr-wrap .sr-av[d
       <a href="#/base/pessoas" data-sub="pessoas">Pessoas das tarefas</a>
     </nav>
     <div id="baseProjetos">
+    <div id="avisoConc"></div>
     <p class="note">Base editável. As alterações são salvas automaticamente neste navegador. Use <b>Exportar JSON</b> para guardar uma cópia e <b>Importar JSON</b> para restaurá-la.</p>
     <div class="toolbar">
       <button class="btn primary" id="btnNovo">+ Novo projeto</button>
@@ -1382,6 +1385,7 @@ function normalizar(d){
   r.historico = Array.isArray(d.historico) ? d.historico : [];
   r.mensagens = Array.isArray(d.mensagens) ? d.mensagens.map(normalizarMsg) : [];
   r.report = d.report && typeof d.report === "object" ? d.report : {};
+  if (d.faseAntesConclusao) r.faseAntesConclusao = String(d.faseAntesConclusao);
   if (d._sp) r._sp = String(d._sp);
   return r;
 }
@@ -2365,6 +2369,31 @@ $("cOrdenar").addEventListener("change", renderConcluidos);
 document.addEventListener("click", e => { if (e.target.closest("[data-open-kanban]")) pVisao = "kanban"; });
 
 /* ================= GESTÃO: PROJETOS (CARDS / GANTT) ================= */
+/* Status "5.Concluído" e Fase "6.0 Concluído" andam juntos, venha a mudança de onde vier */
+const fase6 = f => /^6\.0/.test(String(f || ""));
+const st5 = s => String(s || "").startsWith("5.");
+function alinharConclusao(r, stAntes, faseAntes){
+  const muda = (campo, novo, motivo) => {
+    const antes = r[campo] || "";
+    if (antes === novo) return;
+    r[campo] = novo;
+    registrar(r, `Alterou ${campo}: ${antes || "vazio"} → ${novo} (${motivo})`);
+    if (campo === "Status") notificarStatusProjeto(r, antes, novo);
+  };
+  if (fase6(r.Fase) && !fase6(faseAntes) && !st5(r.Status)) {
+    if (faseAntes) r.faseAntesConclusao = faseAntes;
+    muda("Status", "5.Concluído", "fase 6.0 Concluído");
+  } else if (st5(r.Status) && !st5(stAntes) && !fase6(r.Fase)) {
+    r.faseAntesConclusao = r.Fase;
+    muda("Fase", "6.0 Concluído", "projeto concluído");
+  } else if (!st5(r.Status) && st5(stAntes) && fase6(r.Fase)) {
+    muda("Fase", r.faseAntesConclusao && !fase6(r.faseAntesConclusao) ? r.faseAntesConclusao : "5.0 Pós-Implementação", "projeto reaberto");
+  } else if (!fase6(r.Fase) && fase6(faseAntes) && st5(r.Status)) {
+    muda("Status", "1.Em linha", "fase reaberta");
+  }
+}
+/* Projetos que já estavam com fase 6.0 Concluído mas outro status */
+const incoerentesConclusao = () => rows.filter(r => fase6(r.Fase) && !st5(r.Status));
 function mudarCampoProjeto(r, campo, novo){
   const antes = r[campo] || "";
   if (antes === novo) return false;
@@ -2372,6 +2401,7 @@ function mudarCampoProjeto(r, campo, novo){
   if (autor) r["Modificado por"] = autor;
   registrar(r, `Alterou ${campo}: ${antes || "vazio"} → ${novo}`);
   if (campo === "Status") notificarStatusProjeto(r, antes, novo);
+  alinharConclusao(r, campo === "Status" ? antes : r.Status, campo === "Fase" ? antes : r.Fase);
   salvar();
   return true;
 }
@@ -4755,11 +4785,12 @@ function renderEditar(id){
       if (antes !== depois) mudancas.push(`${c}: ${fmt(c, antes)} → ${fmt(c, depois)}`);
     });
     if (!mudancas.length) { toast("Nenhuma alteração para salvar."); return; }
-    const stAntes = alvo.Status;
+    const stAntes = alvo.Status, faseAntes = alvo.Fase;
     Object.keys(novo).forEach(c => alvo[c] = novo[c]);
     if (autor) alvo["Modificado por"] = autor;
     if (novo.Status !== undefined && novo.Status !== stAntes) notificarStatusProjeto(alvo, stAntes, novo.Status);
     registrar(alvo, "Alterou " + mudancas.join("; "));
+    alinharConclusao(alvo, stAntes, faseAntes);
     salvar();
     toast("Alterações salvas.");
     location.hash = "#/projeto/" + id;
@@ -5121,7 +5152,15 @@ $("baseCad").addEventListener("input", e => {
     tr.hidden = !!q && !txt.includes(q);
   });
 });
+function avisoConclusaoHtml(){
+  const lst = incoerentesConclusao();
+  if (!lst.length) return "";
+  return `<div class="aviso-conc"><b>${lst.length} projeto(s) com fase 6.0 Concluído e status diferente de Concluído</b>: ${lst.map(r => `#${esc(r.ID)} ${esc(r["Título"])} (${esc(r.Status)})`).join(" · ")}.
+    <button class="btn sm primary" data-corrigir-conc>Corrigir status para Concluído</button>
+    <span class="note" style="margin:0">Cada correção conta como mudança de status: o fluxo PTI-01 avisa o gerente de cada projeto.</span></div>`;
+}
 function renderBaseProjetos(){
+  const av = $("avisoConc"); if (av) av.innerHTML = avisoConclusaoHtml();
   $("cabBase").innerHTML = COLS.map(c => `<th>${esc(c)}</th>`).join("") + `<th></th>`;
   $("corpoBase").innerHTML = rows.map((r, i) =>
     `<tr>${COLS.map(c => {
@@ -5168,8 +5207,14 @@ $("corpoBase").addEventListener("change", e => {
   let v = t.value;
   if (DATE_COLS.includes(c)) { v = parseData(v); t.value = v; }
   const antesVal = rows[i][c];
+  const stAntesB = rows[i].Status, faseAntesB = rows[i].Fase;
   rows[i][c] = v;
+  if (antesVal !== v) registrar(rows[i], `Alterou ${c}: ${antesVal || "vazio"} → ${v || "vazio"} (na Base)`);
   if (c === "Status" && antesVal !== v) notificarStatusProjeto(rows[i], antesVal, v);
+  if ((c === "Status" || c === "Fase") && antesVal !== v) {
+    alinharConclusao(rows[i], stAntesB, faseAntesB);
+    if (rows[i].Status !== (c === "Status" ? v : stAntesB) || rows[i].Fase !== (c === "Fase" ? v : faseAntesB)) { salvar(); renderBaseProjetos(); toast(`Status e fase alinhados: ${rows[i].Status} · ${rows[i].Fase}`); return; }
+  }
   if (c === "Solicitante") {
     const s = cadastros.solicitantes.find(x => x.nome === v);
     if (s && s.departamento) {
@@ -5179,6 +5224,15 @@ $("corpoBase").addEventListener("change", e => {
     }
   }
   salvar();
+});
+$("avisoConc").addEventListener("click", e => {
+  if (!e.target.closest("[data-corrigir-conc]")) return;
+  const lst = incoerentesConclusao();
+  if (!lst.length || !confirm(`Mudar o status de ${lst.length} projeto(s) para 5.Concluído? O gerente de cada um recebe o aviso de mudança de status.`)) return;
+  lst.forEach(r => { const a = r.Status; r.Status = "5.Concluído"; registrar(r, `Alterou Status: ${a} → 5.Concluído (fase 6.0 Concluído)`); notificarStatusProjeto(r, a, r.Status); });
+  salvar();
+  renderBaseProjetos();
+  toast(`${lst.length} projeto(s) corrigido(s) para Concluído.`);
 });
 $("corpoBase").addEventListener("click", e => {
   const b = e.target.closest("[data-del]");
