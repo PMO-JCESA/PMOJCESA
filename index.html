@@ -131,6 +131,8 @@ main{padding:28px 32px 56px;min-width:0;max-width:1560px;width:100%}
 
 /* ---------- Controles ---------- */
 .toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px}
+.cano{margin-bottom:12px;flex-wrap:wrap;max-width:100%}
+.cano button{display:inline-flex;align-items:center;gap:4px}
 input[type=text],input[type=search],input[type=url],input[type=date],select,textarea{
   font:inherit;color:var(--text);background:var(--surface3);border:1px solid var(--line2);border-radius:9px;padding:8px 11px;min-width:0;outline:none;transition:border-color .15s
 }
@@ -950,6 +952,7 @@ body:not(.ro) .sr-wrap .sr-f[data-sr-edit]:hover,body:not(.ro) .sr-wrap .sr-av[d
   <section id="v-concluidos" class="view">
     <div class="crumb"><a href="#/gestao">Gestão</a> / Projetos concluídos</div>
     <div class="page-h"><div><span class="eyebrow">Gestão</span><h1>Projetos concluídos</h1><p>Projetos entregues saem da Gestão e ficam aqui. Você pode consultar o kanban, gerar o status report ou reabrir.</p></div><div class="acts"><a class="btn" href="#/gestao">← Voltar à gestão</a></div></div>
+    <div class="seg cano" id="cAnos" role="group" aria-label="Filtrar por ano de conclusão"></div>
     <div class="toolbar">
       <input type="search" id="cBusca" placeholder="Buscar projeto, responsável ou área…" aria-label="Buscar concluídos">
       <select id="cOrdenar" aria-label="Ordenar"><option value="fim">Mais recentes primeiro</option><option value="nome">Nome</option><option value="id">ID</option></select>
@@ -2324,16 +2327,42 @@ function ganttHtml(linhas, opts = {}){
 const legenda = itens => `<div class="leg">${itens.map(([cor, txt]) => `<span><i style="background:${cor}"></i>${esc(txt)}</span>`).join("")}<span><i class="hoje"></i>Hoje</span></div>`;
 
 /* ================= PROJETOS CONCLUÍDOS ================= */
+let cAno = "todos";
+/* Ano de conclusão: data em que o status passou para 5.Concluído (histórico); se não houver, usa o Fim; senão "sem" */
+function anoConclusao(r){
+  const h = [...(r.historico || [])].reverse().find(x => /→\s*5\.Concluído/.test(x.texto || ""));
+  if (h && h.ts) { const d = new Date(h.ts); if (!isNaN(d)) return String(d.getFullYear()); }
+  const f = toDate(r.Fim);
+  return f ? String(f.getFullYear()) : "sem";
+}
+function renderAnosConcluidos(){
+  const todos = rows.filter(isConcluido);
+  const cont = {};
+  todos.forEach(r => { const a = anoConclusao(r); cont[a] = (cont[a] || 0) + 1; });
+  const anos = Object.keys(cont).filter(a => a !== "sem").sort((a, b) => b - a);
+  if (cont.sem) anos.push("sem");
+  if (cAno !== "todos" && !cont[cAno]) cAno = "todos";
+  const btn = (v, txt, n) => `<button type="button" class="${cAno === v ? "on" : ""}" data-ano="${esc(v)}" aria-pressed="${cAno === v}">${txt} <span class="cnt-b">${n}</span></button>`;
+  $("cAnos").innerHTML = btn("todos", "Todos", todos.length) + anos.map(a => btn(a, a === "sem" ? "Sem data" : a, cont[a])).join("");
+}
+$("cAnos").addEventListener("click", e => {
+  const b = e.target.closest("[data-ano]");
+  if (!b) return;
+  cAno = b.dataset.ano;
+  renderConcluidos();
+});
 function concluidosFiltrados(){
   const q = $("cBusca").value.trim().toLowerCase();
   const o = $("cOrdenar").value;
   return rows.filter(isConcluido)
+    .filter(r => cAno === "todos" || anoConclusao(r) === cAno)
     .filter(r => !q || (r["Título"] + " " + r["Responsável TI"] + " " + r.Frente).toLowerCase().includes(q))
     .sort((a, b) => o === "nome" ? a["Título"].localeCompare(b["Título"], "pt-BR")
       : o === "id" ? (parseInt(a.ID, 10) || 0) - (parseInt(b.ID, 10) || 0)
       : (toDate(b.Fim) ? b.Fim : "0000").localeCompare(toDate(a.Fim) ? a.Fim : "0000"));
 }
 function renderConcluidos(){
+  renderAnosConcluidos();
   const list = concluidosFiltrados();
   $("cGrid").innerHTML = list.length ? list.map(r => {
     const ts = r.tarefas.filter(t => efetivo(t) !== "cancelado");
@@ -2351,8 +2380,8 @@ function renderConcluidos(){
           <button class="btn sm" data-reabrir="${esc(r.ID)}">Reabrir</button>
         </div>
       </div>`;
-  }).join("") : `<div class="card empty" style="grid-column:1/-1">Nenhum projeto concluído${q ? " com essa busca" : ""}.</div>`;
-  $("cContador").textContent = `${list.length} projeto(s) concluído(s)`;
+  }).join("") : `<div class="card empty" style="grid-column:1/-1">Nenhum projeto concluído${cAno !== "todos" ? " em " + (cAno === "sem" ? "data desconhecida" : cAno) : ""}${q ? " com essa busca" : ""}.</div>`;
+  $("cContador").textContent = `${list.length} projeto(s) concluído(s)${cAno !== "todos" ? " em " + (cAno === "sem" ? "data desconhecida" : cAno) : ""}`;
 }
 $("cGrid").addEventListener("click", e => {
   const b = e.target.closest("[data-reabrir]");
@@ -3792,7 +3821,7 @@ function filtrosListaTxt(){
 }
 $("btnExpLista").addEventListener("click", () => exportarExcel("portal_gp_lista", "Projetos", listaFiltrada(), filtrosListaTxt()));
 $("btnExpConc").addEventListener("click", () => exportarExcel("projetos_ti_concluidos", "Concluídos", concluidosFiltrados(),
-  [$("cBusca").value.trim() && `busca "${$("cBusca").value.trim()}"`, "ordem: " + $("cOrdenar").selectedOptions[0].textContent].filter(Boolean).join("; ")));
+  [cAno !== "todos" && `ano de conclusão: ${cAno === "sem" ? "sem data" : cAno}`, $("cBusca").value.trim() && `busca "${$("cBusca").value.trim()}"`, "ordem: " + $("cOrdenar").selectedOptions[0].textContent].filter(Boolean).join("; ")));
 
 /* Captura de tela: converte cores modernas (color-mix) para RGB só na cópia usada pela captura */
 const corCtx = (() => { const c = document.createElement("canvas"); c.width = c.height = 1; return c.getContext("2d", {willReadFrequently: true}); })();
