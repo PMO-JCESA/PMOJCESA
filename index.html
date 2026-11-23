@@ -845,6 +845,72 @@ body:not(.ro) .sr-wrap .sr-f[data-sr-edit]:hover,body:not(.ro) .sr-wrap .sr-av[d
 .kc.link:hover{border-color:var(--c)}
 .aviso-conc{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin:0 0 12px;padding:12px 14px;border-radius:12px;border:1px solid color-mix(in srgb,var(--tan) 55%,transparent);background:color-mix(in srgb,var(--tan) 14%,transparent);font-size:13px}
 .aviso-conc b{color:var(--hi)}
+.tab.sub{background:none;box-shadow:none;font-size:14px;font-weight:600;color:var(--muted)}
+.tab.sub:hover{color:var(--hi)}
+.tab.sub.active{background:color-mix(in srgb,var(--cherry) 15%,transparent);color:var(--hi);box-shadow:inset 3px 0 0 var(--cherry)}
+.tab.sub svg{width:18px;height:18px}
+.dir-acts{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0 0 16px}
+.dir-resumo{padding:18px 20px;margin-bottom:8px}
+.dir-rh{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.dir-rh h3{margin:0;font-size:16px}
+.dir-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}
+.dir-cols{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:16px}
+.dir-cols h4{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:10px 0 4px}
+.dir-cols p{margin:0;white-space:pre-line;font-size:13px;line-height:1.5}
+.dir-h2{font-size:15px;font-weight:800;margin:22px 0 10px}
+.dir-tb{width:100%;border-collapse:collapse;font-size:12.5px}
+.dir-tb th{text-align:left;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--line)}
+.dir-tb td{padding:8px 10px;border-bottom:1px solid var(--line)}
+.dir-st{display:inline-block;padding:2px 10px;border-radius:999px;font-size:11px;font-weight:700;font-style:normal;background:color-mix(in srgb,var(--c) 22%,transparent);color:var(--c)}
+.dir-sr{border:1px solid var(--line);border-radius:14px;margin:0 0 10px;background:var(--surface2)}
+.dir-sr>summary{cursor:pointer;padding:12px 16px;font-weight:700;list-style:none;display:flex;justify-content:space-between;gap:12px;align-items:center}
+.dir-sr>summary::-webkit-details-marker{display:none}
+.dir-sr .sr-wrap{margin:0 12px 12px}
+.dir-form{margin-bottom:16px}
+.dir-form h3{margin:0 0 6px;font-size:15px}
+.dir-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.dir-form label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:12px}
+.dir-form select,.dir-form input,.dir-form textarea{font:inherit;font-size:13px;font-weight:500;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface3);color:var(--hi)}
+.dir-form textarea{resize:vertical}
+.dir-pg{width:1123px;height:794px;overflow:hidden;background:#fff;position:relative;color:#0C1B38;font-family:"Manrope",Arial,sans-serif;box-sizing:border-box}
+.dir-pg .sr-sheet{margin:0 !important;box-shadow:none !important}
+.dir-pdf-in{padding:26px 34px;height:794px;box-sizing:border-box;overflow:hidden}
+.dir-pg .dir-pdf-cab{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid #ED174F;padding-bottom:8px;margin-bottom:12px}
+.dir-pg .dir-pdf-cab h1{font-size:22px;margin:0;color:#0C1B38;font-weight:800}
+.dir-pg .dir-pdf-cab span{font-size:12px;color:#5E6A80}
+.dir-pg .dir-pdf-data{text-align:right;display:flex;flex-direction:column;gap:4px;align-items:flex-end;font-size:12px;color:#26324A}
+.dir-pg .dir-pdf-kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:12px}
+.dir-pg .dir-pdf-kpis>div{border:1px solid #DCE0E7;border-radius:8px;padding:7px 10px;background:#fff}
+.dir-pg .dir-pdf-kpis .l{font-size:10px;text-transform:uppercase;color:#5E6A80;letter-spacing:.06em}
+.dir-pg .dir-pdf-kpis .b{font-size:20px;font-weight:800;color:#0C1B38}
+.dir-pg .dir-pdf-cols{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:12px}
+.dir-pg .dir-pdf-cols h4{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#5E6A80;margin:6px 0 3px}
+.dir-pg .dir-pdf-cols p{margin:0;font-size:11.5px;line-height:1.45;color:#26324A;white-space:pre-line;max-height:78px;overflow:hidden}
+.dir-pg .dir-tb th{color:#5E6A80;border-bottom:1px solid #DCE0E7;padding:5px 8px;font-size:9.5px}
+.dir-pg .dir-tb td{color:#26324A;border-bottom:1px solid #DCE0E7;padding:5px 8px;font-size:11px}
+.dir-pg .dir-st{font-size:10px;background:#F1F3F7 !important}
+.dg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:0 0 16px}
+.dg-card{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--surface2)}
+.dg-card h4{margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.dg-row{display:grid;grid-template-columns:110px 1fr 28px;gap:8px;align-items:center;font-size:12px;margin:6px 0}
+.dg-lbl{color:var(--hi);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dg-trk{display:block;height:8px;border-radius:999px;background:var(--surface3);overflow:hidden}
+.dg-trk i{display:block;height:100%;border-radius:999px}
+.dg-row b{text-align:right;font-weight:800}
+.dg-stack{display:flex;height:14px;border-radius:999px;overflow:hidden;background:var(--surface3);margin:14px 0 10px}
+.dg-stack i{display:block;height:100%}
+.dg-leg{display:flex;flex-wrap:wrap;gap:10px;font-size:11.5px;color:var(--hi)}
+.dg-leg i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px;vertical-align:middle}
+.dir-rod{margin:12px 0 0}
+.dir-pg .dg-grid{margin-bottom:12px}
+.dir-pg .dg-card{background:#fff;border-color:#DCE0E7;padding:8px 10px}
+.dir-pg .dg-card h4{color:#5E6A80;font-size:9px;margin-bottom:4px}
+.dir-pg .dg-row{font-size:10px;margin:3px 0;grid-template-columns:100px 1fr 22px}
+.dir-pg .dg-lbl{color:#26324A}
+.dir-pg .dg-trk{background:#EEF1F6}
+.dir-pg .dg-row b{color:#0C1B38}
+.dir-pg .dg-stack{background:#EEF1F6;margin:8px 0 6px;height:12px}
+.dir-pg .dg-leg{color:#26324A;font-size:10px}
 </style>
 </head>
 <body>
@@ -892,6 +958,7 @@ body:not(.ro) .sr-wrap .sr-f[data-sr-edit]:hover,body:not(.ro) .sr-wrap .sr-av[d
     <button class="tab" data-tab="emails"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>E-mails<span class="tab-badge" id="emBadge" hidden></span></button>
     <button class="tab" data-tab="perfil"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>Perfil</button>
     <button class="tab" data-tab="base"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>Base</button>
+    <button class="tab sub" data-tab="base/diretoria"><svg viewBox="0 0 24 24"><path d="M4 20V11M10 20V5M16 20v-6M22 20H2"/></svg>Report Diretoria</button>
   </nav>
   <div class="side-foot" id="userBox"><b>Portal GP</b>Juntos, somos um!</div>
 </aside>
@@ -974,6 +1041,7 @@ body:not(.ro) .sr-wrap .sr-f[data-sr-edit]:hover,body:not(.ro) .sr-wrap .sr-av[d
       <a href="#/base/solicitantes" data-sub="solicitantes">Solicitantes</a>
       <a href="#/base/pessoas" data-sub="pessoas">Pessoas das tarefas</a>
     </nav>
+    <div id="baseDir" hidden></div>
     <div id="baseProjetos">
     <div id="avisoConc"></div>
     <p class="note">Base editável. As alterações são salvas automaticamente neste navegador. Use <b>Exportar JSON</b> para guardar uma cópia e <b>Importar JSON</b> para restaurá-la.</p>
@@ -1725,7 +1793,7 @@ function aplicarPerfil(){
   document.body.classList.toggle("ro", !podeEditar());
   document.querySelectorAll(".tab").forEach(tb => {
     const k = tb.dataset.tab;
-    tb.hidden = (p === "viewer" || p === "resp") ? k !== "gestao" : (k === "base" && p !== "admin");
+    tb.hidden = (p === "viewer" || p === "resp") ? k !== "gestao" : ((k === "base" || k.startsWith("base/")) && p !== "admin");
   });
   document.body.classList.toggle("resp", p === "resp");
   if (p !== "viewer") autor = sessao.nome;
@@ -2036,7 +2104,7 @@ function route(){
   if (["projeto","editar","gestao-projeto"].includes(view) && !achar(id)) view = view === "gestao-projeto" ? "gestao" : "home";
   if (!viewPermitida(view)) { toast("Seu perfil não tem acesso a esta área."); location.hash = viewInicial(); return; }
   document.querySelectorAll(".view").forEach(s => s.classList.remove("active"));
-  const aba = (view === "gestao-projeto" || view === "concluidos") ? "gestao" : (view === "projeto" || view === "editar") ? "lista" : view;
+  const aba = (view === "base" && id === "diretoria") ? "base/diretoria" : (view === "gestao-projeto" || view === "concluidos") ? "gestao" : (view === "projeto" || view === "editar") ? "lista" : view;
   document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.dataset.tab === aba));
   if (view === "home") renderHome();
   else if (view === "lista") renderLista();
@@ -4007,9 +4075,10 @@ async function enviarComPdf(tipo, r){
   }
   try {
     toast("Preparando o e-mail com o PDF anexado…");
-    const m = tipo === "report" ? emailStatusReport(r) : emailHome();
-    const pdf = tipo === "report" ? await pdfDoReport() : await pdfDaHome();
-    const base = tipo === "report" ? nomeReport(r) : nomeHome();
+    const arqDir = tipo === "diretoria" ? nomePortfolio() : "";
+    const m = tipo === "report" ? emailStatusReport(r) : tipo === "diretoria" ? emailDiretoria(arqDir + ".pdf") : emailHome();
+    const pdf = tipo === "report" ? await pdfDoReport() : tipo === "diretoria" ? await pdfPortfolio() : await pdfDaHome();
+    const base = tipo === "report" ? nomeReport(r) : tipo === "diretoria" ? arqDir : nomeHome();
     const anexo = {nome: base + ".pdf", base64: pdf.output("datauristring").split(",")[1]};
     const link = await spRascunhoGraph(m.assunto, corpoHtml(m.corpo), anexo, tk);
     if (janela && !janela.closed) janela.location.href = link; else window.open(link, "_blank");
@@ -4046,6 +4115,208 @@ $("v-home").addEventListener("click", e => {
   if (b.dataset.homeExp === "outlook") { if (perfil() === "admin") enviarComPdf("home"); return; }
   exportarHome(b.dataset.homeExp);
 });
+
+/* ================= REPORT DIRETORIA (admin): resumo do portfólio + status reports ================= */
+const DIR_KEY = "portal_gp_diretoria_v1";
+function dirLerManual(){ try { return JSON.parse(localStorage.getItem(DIR_KEY)) || {}; } catch (e) { return {}; } }
+function dirSalvarManual(o){ try { localStorage.setItem(DIR_KEY, JSON.stringify(o)); } catch (e) {} }
+let dirManual = dirLerManual();
+let dirEditando = false;
+const dirCorStatus = s => s === "Crítico" ? "var(--st3)" : s === "Atenção" ? "var(--st2)" : "var(--st5)";
+const nomePortfolio = () => { const d = new Date(); return `Portfolio_TI_Status_Report_${hojeISO()}_${pad(d.getHours())}${pad(d.getMinutes())}`; };
+function dirOrdem(){
+  const ordS = {"3": 0, "2": 1, "1": 2, "0": 3, "4": 4, "5": 5};
+  return [...rows].sort((a, b) => (ordS[String(a.Status).charAt(0)] ?? 9) - (ordS[String(b.Status).charAt(0)] ?? 9)
+    || (parseInt(a.ID, 10) || 0) - (parseInt(b.ID, 10) || 0));
+}
+function dirStats(){
+  const ativos = rows.filter(emAndamento), parados = rows.filter(isParalisado), concl = rows.filter(isConcluido);
+  const venc = ativos.filter(r => prazo(r)?.tipo === "vencido").length;
+  const atras = rows.filter(r => String(r.Status).startsWith("3.")).length;
+  const avg = media(ativos.map(r => dadosReport(r).avanco));
+  const riscos = rows.filter(r => !isConcluido(r)).flatMap(r => dadosReport(r).riscos.map(x => `#${r.ID} ${x.risco}`));
+  const resumoAuto = `${ativos.length} projeto(s) em andamento, ${concl.length} concluído(s) e ${parados.length} paralisado(s). `
+    + (avg == null ? "Sem avanço registrado nos projetos ativos. " : `Avanço médio dos projetos ativos: ${avg}%. `)
+    + (venc ? `${venc} projeto(s) com prazo vencido.` : "Nenhum prazo vencido.")
+    + (atras ? ` ${atras} projeto(s) com status Atrasado.` : "");
+  const riscosAuto = riscos.length ? riscos.slice(0, 6).join("; ") + (riscos.length > 6 ? ` (+${riscos.length - 6})` : "") : "Nenhum risco registrado nos status reports.";
+  return {total: rows.length, ativos: ativos.length, concl: concl.length, parados: parados.length, venc, atras, avg,
+    statusAuto: venc || atras ? "Atenção" : "Saudável", resumoAuto, riscosAuto};
+}
+function dirTextos(st){
+  const m = dirManual;
+  return {
+    statusGeral: m.statusGeral || st.statusAuto,
+    avanco: m.avanco !== undefined && m.avanco !== "" ? Number(m.avanco) : st.avg,
+    resumo: m.resumo || st.resumoAuto,
+    riscos: m.riscos || st.riscosAuto,
+    decisoes: m.decisoes || "",
+    marcos: m.marcos || "",
+    manuais: Object.keys(m).length
+  };
+}
+const dirKpisList = (st, t) => [
+  ["Em andamento", st.ativos, "projetos ativos", "var(--st1)"],
+  ["Concluídos", st.concl, "entregues", "var(--st5)"],
+  ["Paralisados", st.parados, "em pausa", "var(--st4)"],
+  ["Prazo vencido", st.venc, "projetos ativos", "var(--st3)"],
+  ["Avanço médio", t.avanco == null || isNaN(t.avanco) ? "—" : t.avanco + "%", "projetos ativos", "var(--teal)"]
+];
+function dirLinha(r){
+  const d = dadosReport(r), pz = prazo(r);
+  return `<tr><td>#${esc(r.ID)}</td><td>${esc(r["Título"])}</td><td>${esc(r["Responsável TI"] || "—")}</td><td>${esc(faseNome(faseMacro(r.Fase)) || "—")}</td>`
+    + `<td><span class="dir-st" style="--c:${pacCor(r.Status)}">${esc(statusLabel(r.Status) || "—")}</span></td>`
+    + `<td>${d.avanco == null ? "—" : d.avanco + "%"}</td><td>${pz ? esc(pz.texto) : r.Fim ? "Fim " + esc(dataBR(r.Fim)) : "—"}</td></tr>`;
+}
+const dirTabela = lista => `<table class="dir-tb"><thead><tr><th>ID</th><th>Projeto</th><th>Responsável</th><th>Fase</th><th>Status</th><th>Avanço</th><th>Prazo</th></tr></thead><tbody>${lista.map(dirLinha).join("")}</tbody></table>`;
+function dirSheetHtml(r){
+  return srSheetHtml(r, dadosReport(r)).replace(' id="srSheet"', "").replace(/ data-sr-edit="[^"]*"/g, "");
+}
+function dirFormHtml(st){
+  const m = dirManual;
+  return `<form id="dirForm" class="card dir-form">
+    <h3>Editar dados do report geral</h3>
+    <p class="note" style="margin:0 0 12px">Campos vazios continuam automáticos. Os dados ficam salvos neste navegador.</p>
+    <div class="dir-grid">
+      <label>Status geral<select name="statusGeral"><option value="">Automático (${esc(st.statusAuto)})</option>${["Saudável", "Atenção", "Crítico"].map(o => `<option ${m.statusGeral === o ? "selected" : ""}>${o}</option>`).join("")}</select></label>
+      <label>Avanço médio (%)<input name="avanco" type="number" min="0" max="100" value="${esc(m.avanco ?? "")}" placeholder="Automático (${st.avg == null ? "—" : st.avg + "%"})"></label>
+    </div>
+    <label class="w">Resumo executivo<textarea name="resumo" rows="3" placeholder="${esc(st.resumoAuto)}">${esc(m.resumo || "")}</textarea></label>
+    <label class="w">Principais riscos e pontos de atenção<textarea name="riscos" rows="3" placeholder="${esc(st.riscosAuto)}">${esc(m.riscos || "")}</textarea></label>
+    <label class="w">Decisões necessárias da diretoria<textarea name="decisoes" rows="2">${esc(m.decisoes || "")}</textarea></label>
+    <label class="w">Próximos marcos<textarea name="marcos" rows="2">${esc(m.marcos || "")}</textarea></label>
+    <div class="dir-acts"><button class="btn primary" type="submit">Salvar</button><button class="btn" type="button" data-dir="cancelar">Cancelar</button><button class="btn" type="button" data-dir="auto">Voltar aos dados automáticos</button></div>
+  </form>`;
+}
+function dirGraficosHtml(){
+  const todos = rows, abertos = rows.filter(r => !isConcluido(r));
+  const barras = lista => { const m = Math.max(1, ...lista.map(x => x.n));
+    return lista.map(x => `<div class="dg-row"><span class="dg-lbl">${esc(x.l)}</span><span class="dg-trk"><i style="width:${Math.round(x.n / m * 100)}%;background:${x.c}"></i></span><b>${x.n}</b></div>`).join(""); };
+  const porStatus = STATUS_OPTS.map(s => ({l: statusLabel(s) || s, n: todos.filter(r => String(r.Status) === s).length, c: pacCor(s)}));
+  const porFase = FASES_MACRO.map(f => ({l: f.nome, n: abertos.filter(r => faseMacro(r.Fase) === f.key).length, c: "#4697A8"}));
+  const venc = abertos.filter(r => prazo(r)?.tipo === "vencido").length;
+  const semData = abertos.filter(r => !prazo(r) && !r.Fim).length;
+  const seg = [{l: "Vencido", n: venc, c: "#ED174F"}, {l: "No prazo", n: abertos.length - venc - semData, c: "#3E8E57"}, {l: "Sem data final", n: semData, c: "#9AA3B5"}];
+  const tot = abertos.length || 1;
+  return `<div class="dg-grid">
+    <div class="dg-card"><h4>Projetos por status</h4>${barras(porStatus)}</div>
+    <div class="dg-card"><h4>Projetos em aberto por fase</h4>${barras(porFase)}</div>
+    <div class="dg-card"><h4>Prazos dos projetos em aberto</h4>
+      <div class="dg-stack">${seg.map(x => `<i style="width:${x.n / tot * 100}%;background:${x.c}"></i>`).join("")}</div>
+      <div class="dg-leg">${seg.map(x => `<span><i style="background:${x.c}"></i>${esc(x.l)} <b>${x.n}</b></span>`).join("")}</div>
+    </div>
+  </div>`;
+}
+function renderDiretoria(){
+  const box = $("baseDir");
+  if (perfil() !== "admin") { box.innerHTML = `<div class="card empty">O Report Diretoria é exclusivo do Administrador.</div>`; return; }
+  const todos = dirOrdem(), abertos = todos.filter(r => !isConcluido(r));
+  const st = dirStats(), t = dirTextos(st);
+  const concl = todos.length - abertos.length;
+  box.innerHTML = `
+    <div class="dir-acts">
+      <button class="btn primary" data-dir="outlook">Enviar à diretoria no Outlook</button>
+      <button class="btn" data-dir="pdf">Baixar PDF do portfólio</button>
+      ${dirEditando ? "" : `<button class="btn navy" data-dir="editar">Editar manualmente</button>`}
+      <span class="note" style="margin:0">Atualizado em ${dataBR(hojeISO())}${t.manuais ? ` · ${t.manuais} campo(s) manual(is)` : ""}</span>
+    </div>
+    ${dirEditando ? dirFormHtml(st) : ""}
+    <div class="card dir-resumo">
+      <div class="dir-rh"><h3>Resumo do portfólio</h3><span class="dir-st" style="--c:${dirCorStatus(t.statusGeral)}">Status geral: ${esc(t.statusGeral)}</span></div>
+      <div class="dir-kpis">${dirKpisList(st, t).map(([l, v, s, c]) => kc(l, v, s, c)).join("")}</div>
+      ${dirGraficosHtml()}
+      <div class="dir-cols">
+        <div><h4>Resumo executivo</h4><p>${esc(t.resumo)}</p><h4>Principais riscos</h4><p>${esc(t.riscos)}</p></div>
+        <div><h4>Decisões necessárias</h4><p>${esc(t.decisoes || "—")}</p><h4>Próximos marcos</h4><p>${esc(t.marcos || "—")}</p></div>
+      </div>
+      <div class="tbl-wrap">${abertos.length ? dirTabela(abertos) : `<p class="note" style="margin:0">Nenhum projeto em aberto.</p>`}</div>
+      ${concl ? `<p class="note dir-rod">${concl} projeto(s) concluído(s) não aparecem aqui. Estão em Projetos concluídos.</p>` : ""}
+    </div>
+    ${abertos.length ? `<h2 class="dir-h2">Status reports · projetos em aberto</h2>` + abertos.map(r => `<details class="dir-sr"><summary><span>#${esc(r.ID)} · ${esc(r["Título"])}</span><span class="dir-st" style="--c:${pacCor(r.Status)}">${esc(statusLabel(r.Status) || "—")}</span></summary><div class="sr-wrap">${dirSheetHtml(r)}</div></details>`).join("") : ""}`;
+}
+$("baseDir").addEventListener("click", e => {
+  const b = e.target.closest("[data-dir]");
+  if (!b || perfil() !== "admin") return;
+  const a = b.dataset.dir;
+  if (a === "outlook") enviarComPdf("diretoria");
+  else if (a === "pdf") exportarPortfolioPdf();
+  else if (a === "editar") { dirEditando = true; renderDiretoria(); }
+  else if (a === "cancelar") { dirEditando = false; renderDiretoria(); }
+  else if (a === "auto") {
+    if (!confirm("Voltar todos os campos do Report Diretoria para os dados automáticos?")) return;
+    dirManual = {}; dirSalvarManual(dirManual); dirEditando = false; renderDiretoria();
+    toast("Campos voltaram aos dados automáticos.");
+  }
+});
+$("baseDir").addEventListener("submit", e => {
+  if (e.target.id !== "dirForm") return;
+  e.preventDefault();
+  if (perfil() !== "admin") return;
+  const f = e.target, v = n => f.elements[n].value.trim();
+  const o = {};
+  if (v("statusGeral")) o.statusGeral = v("statusGeral");
+  if (v("avanco") !== "") o.avanco = Math.max(0, Math.min(100, Math.round(Number(v("avanco")))));
+  ["resumo", "riscos", "decisoes", "marcos"].forEach(k => { if (v(k)) o[k] = v(k); });
+  dirManual = o; dirSalvarManual(o); dirEditando = false;
+  renderDiretoria();
+  toast("Report Diretoria atualizado.");
+});
+function emailDiretoria(arquivo){
+  const hoje = dataBR(hojeISO());
+  const assinatura = autor && autor !== "Administrador" ? autor : "Alisson";
+  return {assunto: `Status Report do Portfólio de TI · ${hoje}`,
+    corpo: `Prezados Diretores, boa tarde,\n\nSegue o Status Report do Portfólio de TI atualizado em ${hoje}.\n\nRelatório em PDF (anexo): ${arquivo}\n\nQualquer dúvida, estou à disposição.\n\nAtenciosamente,\n${assinatura}`};
+}
+function dirPaginasResumoPdf(ord, st, t){
+  const cab = titulo => `<div class="dir-pdf-cab"><div><h1>Portfólio de TI · Status Report</h1><span>${esc(titulo)} · JCE SA · Portal GP</span></div>`
+    + `<div class="dir-pdf-data"><b>Atualizado em ${dataBR(hojeISO())}</b><span class="dir-st" style="--c:${dirCorStatus(t.statusGeral)}">Status geral: ${esc(t.statusGeral)}</span></div></div>`;
+  const kpis = `<div class="dir-pdf-kpis">${dirKpisList(st, t).map(([l, v, , c]) => `<div style="border-top:4px solid ${c}"><div class="l">${esc(l)}</div><div class="b">${esc(String(v))}</div></div>`).join("")}</div>`;
+  const graf = dirGraficosHtml();
+  const cols = `<div class="dir-pdf-cols"><div><h4>Resumo executivo</h4><p>${esc(t.resumo)}</p><h4>Principais riscos</h4><p>${esc(t.riscos)}</p></div>`
+    + `<div><h4>Decisões necessárias</h4><p>${esc(t.decisoes || "—")}</p><h4>Próximos marcos</h4><p>${esc(t.marcos || "—")}</p></div></div>`;
+  if (!ord.length) return [`<div class="dir-pdf-in">${cab("Resumo do portfólio")}${kpis}${graf}${cols}<p>Nenhum projeto em aberto.</p></div>`];
+  const paginas = [`<div class="dir-pdf-in">${cab("Resumo do portfólio")}${kpis}${graf}${cols}${dirTabela(ord.slice(0, 6))}</div>`];
+  for (let i = 6; i < ord.length; i += 20) paginas.push(`<div class="dir-pdf-in">${cab("Resumo do portfólio (continuação)")}${dirTabela(ord.slice(i, i + 20))}</div>`);
+  return paginas;
+}
+async function capturarPaginaPdf(html){
+  const caixa = document.createElement("div");
+  caixa.setAttribute("aria-hidden", "true");
+  caixa.style.cssText = "position:fixed;left:-20000px;top:0;width:1123px;height:794px;overflow:hidden;background:#fff";
+  caixa.innerHTML = `<div class="dir-pg">${html}</div>`;
+  document.body.appendChild(caixa);
+  try {
+    return await window.html2canvas(caixa.firstElementChild, {scale: 2, backgroundColor: "#ffffff", useCORS: true, logging: false, letterRendering: true,
+      width: 1123, height: 794, windowWidth: 1123, scrollX: 0, scrollY: 0});
+  } finally { caixa.remove(); }
+}
+async function pdfPortfolio(){
+  await carregarScript(H2C_URL);
+  await carregarScript(JSPDF_URL);
+  await esperarFontesReport();
+  const abertos = dirOrdem().filter(r => !isConcluido(r)), st = dirStats(), t = dirTextos(st);
+  const paginas = dirPaginasResumoPdf(abertos, st, t);
+  abertos.forEach(r => paginas.push(dirSheetHtml(r)));
+  const pdf = new window.jspdf.jsPDF({orientation: "landscape", unit: "mm", format: "a4"});
+  for (let i = 0; i < paginas.length; i++) {
+    if (i) toast(`Gerando PDF do portfólio… ${i + 1}/${paginas.length}`);
+    const canvas = await capturarPaginaPdf(paginas[i]);
+    if (i) pdf.addPage("a4", "landscape");
+    pdf.addImage(canvas.toDataURL("image/jpeg", 0.92), "JPEG", 0, 0, 297, 210);
+  }
+  return pdf;
+}
+async function exportarPortfolioPdf(){
+  if (perfil() !== "admin") return;
+  try {
+    toast("Gerando PDF do portfólio…");
+    const nome = nomePortfolio();
+    (await pdfPortfolio()).save(nome + ".pdf");
+    toast("PDF do portfólio gerado.");
+  } catch (err) {
+    toast("Não foi possível gerar o PDF: " + err.message);
+  }
+}
 
 /* ================= EXPORTAR STATUS REPORTS EM HTML (pacote .zip) ================= */
 const JSZIP_URL = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
@@ -5070,11 +5341,13 @@ function renderPessoas(){
 }
 const subBaseAtual = () => { const p = location.hash.replace(/^#\/?/, "").split("/"); return p[0] === "base" && p[1] ? p[1] : "projetos"; };
 function renderBase(sub){
-  sub = ["projetos","gerentes","solicitantes","pessoas"].includes(sub) ? sub : subBaseAtual();
+  sub = ["projetos","gerentes","solicitantes","pessoas","diretoria"].includes(sub) ? sub : subBaseAtual();
   document.querySelectorAll("#baseNav a").forEach(a => a.classList.toggle("on", a.dataset.sub === sub));
   $("baseProjetos").hidden = sub !== "projetos";
   $("basePessoas").hidden = sub !== "pessoas";
   $("baseCad").hidden = !(sub === "gerentes" || sub === "solicitantes");
+  $("baseDir").hidden = sub !== "diretoria";
+  if (sub === "diretoria") { renderDiretoria(); return; }
   if (sub === "pessoas") { renderPessoas(); return; }
   if (sub === "gerentes" || sub === "solicitantes") { renderCadastro(sub); return; }
   renderBaseProjetos();
