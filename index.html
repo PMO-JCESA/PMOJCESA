@@ -911,6 +911,15 @@ body:not(.ro) .sr-wrap .sr-f[data-sr-edit]:hover,body:not(.ro) .sr-wrap .sr-av[d
 .dir-pg .dg-row b{color:#0C1B38}
 .dir-pg .dg-stack{background:#EEF1F6;margin:8px 0 6px;height:12px}
 .dir-pg .dg-leg{color:#26324A;font-size:10px}
+.dir-cont{font-size:12px;color:var(--muted);margin:0 0 10px;display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center}
+.dir-cont b{color:var(--hi);font-weight:700}
+.dir-sep{opacity:.5}
+.dir-lnk{background:none;border:none;color:#4697A8;font:inherit;font-size:12px;font-weight:700;cursor:pointer;padding:0 3px}
+.dir-lnk:hover{text-decoration:underline}
+.dir-tb input[type=checkbox],.dir-chk input{width:16px;height:16px;cursor:pointer;accent-color:#4697A8}
+.dir-sr-row{display:flex;gap:10px;align-items:flex-start;margin-bottom:10px}
+.dir-sr-row .dir-sr{flex:1;min-width:0;margin:0}
+.dir-chk{display:flex;align-items:center;height:52px;padding:0 2px}
 </style>
 </head>
 <body>
@@ -4122,6 +4131,19 @@ function dirLerManual(){ try { return JSON.parse(localStorage.getItem(DIR_KEY)) 
 function dirSalvarManual(o){ try { localStorage.setItem(DIR_KEY, JSON.stringify(o)); } catch (e) {} }
 let dirManual = dirLerManual();
 let dirEditando = false;
+/* Seleção: guarda o que NÃO entra (assim projetos novos entram por padrão) */
+const DSEL_KEY = "portal_gp_diretoria_sel_v1";
+function dirLerSel(){ try { const o = JSON.parse(localStorage.getItem(DSEL_KEY)) || {}; return {tabela: o.tabela || [], reports: o.reports || []}; } catch (e) { return {tabela: [], reports: []}; } }
+let dirSel = dirLerSel();
+function dirSalvarSel(){ try { localStorage.setItem(DSEL_KEY, JSON.stringify(dirSel)); } catch (e) {} }
+const dirIncluidos = (lista, tipo) => lista.filter(r => !dirSel[tipo].includes(String(r.ID)));
+function dirContadorInner(){
+  const abertos = dirOrdem().filter(r => !isConcluido(r));
+  const nT = dirIncluidos(abertos, "tabela").length, nR = dirIncluidos(abertos, "reports").length;
+  const links = tipo => `<button type="button" class="dir-lnk" data-dsel-all="${tipo}" data-val="1">Todos</button><button type="button" class="dir-lnk" data-dsel-all="${tipo}" data-val="0">Nenhum</button>`;
+  return `<span><b>Na tabela do PDF:</b> ${nT} de ${abertos.length} ${links("tabela")}</span>`
+    + `<span class="dir-sep">·</span><span><b>Status reports no PDF e no e-mail:</b> ${nR} de ${abertos.length} ${links("reports")}</span>`;
+}
 const dirCorStatus = s => s === "Crítico" ? "var(--st3)" : s === "Atenção" ? "var(--st2)" : "var(--st5)";
 const nomePortfolio = () => { const d = new Date(); return `Portfolio_TI_Status_Report_${hojeISO()}_${pad(d.getHours())}${pad(d.getMinutes())}`; };
 function dirOrdem(){
@@ -4162,13 +4184,14 @@ const dirKpisList = (st, t) => [
   ["Prazo vencido", st.venc, "projetos ativos", "var(--st3)"],
   ["Avanço médio", t.avanco == null || isNaN(t.avanco) ? "—" : t.avanco + "%", "projetos ativos", "var(--teal)"]
 ];
-function dirLinha(r){
+function dirLinha(r, comCheck){
   const d = dadosReport(r), pz = prazo(r);
-  return `<tr><td>#${esc(r.ID)}</td><td>${esc(r["Título"])}</td><td>${esc(r["Responsável TI"] || "—")}</td><td>${esc(faseNome(faseMacro(r.Fase)) || "—")}</td>`
+  const chk = comCheck ? `<td><input type="checkbox" data-dsel="tabela" data-id="${esc(r.ID)}" ${dirSel.tabela.includes(String(r.ID)) ? "" : "checked"}></td>` : "";
+  return `<tr>${chk}<td>#${esc(r.ID)}</td><td>${esc(r["Título"])}</td><td>${esc(r["Responsável TI"] || "—")}</td><td>${esc(faseNome(faseMacro(r.Fase)) || "—")}</td>`
     + `<td><span class="dir-st" style="--c:${pacCor(r.Status)}">${esc(statusLabel(r.Status) || "—")}</span></td>`
     + `<td>${d.avanco == null ? "—" : d.avanco + "%"}</td><td>${pz ? esc(pz.texto) : r.Fim ? "Fim " + esc(dataBR(r.Fim)) : "—"}</td></tr>`;
 }
-const dirTabela = lista => `<table class="dir-tb"><thead><tr><th>ID</th><th>Projeto</th><th>Responsável</th><th>Fase</th><th>Status</th><th>Avanço</th><th>Prazo</th></tr></thead><tbody>${lista.map(dirLinha).join("")}</tbody></table>`;
+const dirTabela = (lista, comCheck) => `<table class="dir-tb"><thead><tr>${comCheck ? `<th style="width:44px">Incluir</th>` : ""}<th>ID</th><th>Projeto</th><th>Responsável</th><th>Fase</th><th>Status</th><th>Avanço</th><th>Prazo</th></tr></thead><tbody>${lista.map(r => dirLinha(r, comCheck)).join("")}</tbody></table>`;
 function dirSheetHtml(r){
   return srSheetHtml(r, dadosReport(r)).replace(' id="srSheet"', "").replace(/ data-sr-edit="[^"]*"/g, "");
 }
@@ -4217,6 +4240,7 @@ function renderDiretoria(){
     <div class="dir-acts">
       <button class="btn primary" data-dir="outlook">Enviar à diretoria no Outlook</button>
       <button class="btn" data-dir="pdf">Baixar PDF do portfólio</button>
+      <button class="btn" data-dir="html">Baixar HTML do portfólio</button>
       ${dirEditando ? "" : `<button class="btn navy" data-dir="editar">Editar manualmente</button>`}
       <span class="note" style="margin:0">Atualizado em ${dataBR(hojeISO())}${t.manuais ? ` · ${t.manuais} campo(s) manual(is)` : ""}</span>
     </div>
@@ -4229,10 +4253,80 @@ function renderDiretoria(){
         <div><h4>Resumo executivo</h4><p>${esc(t.resumo)}</p><h4>Principais riscos</h4><p>${esc(t.riscos)}</p></div>
         <div><h4>Decisões necessárias</h4><p>${esc(t.decisoes || "—")}</p><h4>Próximos marcos</h4><p>${esc(t.marcos || "—")}</p></div>
       </div>
-      <div class="tbl-wrap">${abertos.length ? dirTabela(abertos) : `<p class="note" style="margin:0">Nenhum projeto em aberto.</p>`}</div>
+      <div class="dir-cont" id="dirContagem">${dirContadorInner()}</div>
+      <div class="tbl-wrap">${abertos.length ? dirTabela(abertos, true) : `<p class="note" style="margin:0">Nenhum projeto em aberto.</p>`}</div>
       ${concl ? `<p class="note dir-rod">${concl} projeto(s) concluído(s) não aparecem aqui. Estão em Projetos concluídos.</p>` : ""}
     </div>
-    ${abertos.length ? `<h2 class="dir-h2">Status reports · projetos em aberto</h2>` + abertos.map(r => `<details class="dir-sr"><summary><span>#${esc(r.ID)} · ${esc(r["Título"])}</span><span class="dir-st" style="--c:${pacCor(r.Status)}">${esc(statusLabel(r.Status) || "—")}</span></summary><div class="sr-wrap">${dirSheetHtml(r)}</div></details>`).join("") : ""}`;
+    ${abertos.length ? `<h2 class="dir-h2">Status reports · projetos em aberto</h2>` + abertos.map(r => `<div class="dir-sr-row"><label class="dir-chk" title="Incluir no PDF e no e-mail"><input type="checkbox" data-dsel="reports" data-id="${esc(r.ID)}" ${dirSel.reports.includes(String(r.ID)) ? "" : "checked"}></label><details class="dir-sr"><summary><span>#${esc(r.ID)} · ${esc(r["Título"])}</span><span class="dir-st" style="--c:${pacCor(r.Status)}">${esc(statusLabel(r.Status) || "—")}</span></summary><div class="sr-wrap">${dirSheetHtml(r)}</div></details></div>`).join("") : ""}`;
+}
+/* ---------- HTML do portfólio: home + um report por página (link), com botão para voltar ---------- */
+const PF_CSS = `html,body{display:block !important;height:auto !important;overflow:auto !important;margin:0}
+.pf-view{padding:22px 28px;max-width:1280px;margin:0 auto}
+.pf-view[hidden]{display:none !important}
+.pf-top{margin-bottom:14px}
+.pf-top h1{font-size:24px;margin:0 0 4px}
+.pf-top span{font-size:12px;color:var(--muted)}
+.pf-bar{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:14px;font-weight:700}
+.pf-wrap{overflow:auto}
+.pf-link{color:#4697A8;font-weight:700;text-decoration:none}
+.pf-link:hover{text-decoration:underline}`;
+const PF_JS = `function pfMostra(){
+  var h = (location.hash || '#home').slice(1);
+  var alvo = document.getElementById(h);
+  if (!alvo || !alvo.classList.contains('pf-view')) { h = 'home'; alvo = document.getElementById('home'); }
+  document.querySelectorAll('.pf-view').forEach(function(v){ v.hidden = (v !== alvo); });
+  window.scrollTo(0, 0);
+}
+window.addEventListener('hashchange', pfMostra);
+pfMostra();`;
+function gerarHtmlPortfolio(){
+  const abertos = dirOrdem().filter(r => !isConcluido(r)), st = dirStats(), t = dirTextos(st);
+  const tab = dirIncluidos(abertos, "tabela"), rep = dirIncluidos(abertos, "reports");
+  const comReport = new Set(rep.map(r => String(r.ID)));
+  const css = [...document.styleSheets].map(ss => { let out = []; try { out = [...ss.cssRules].map(x => x.cssText); } catch (e) {} return out.join("\n"); }).join("\n");
+  const linha = r => {
+    const d = dadosReport(r), pz = prazo(r), nome = esc(r["Título"]);
+    return `<tr><td>#${esc(r.ID)}</td><td>${comReport.has(String(r.ID)) ? `<a class="pf-link" href="#r-${esc(r.ID)}">${nome}</a>` : nome}</td>`
+      + `<td>${esc(r["Responsável TI"] || "—")}</td><td>${esc(faseNome(faseMacro(r.Fase)) || "—")}</td>`
+      + `<td><span class="dir-st" style="--c:${pacCor(r.Status)}">${esc(statusLabel(r.Status) || "—")}</span></td>`
+      + `<td>${d.avanco == null ? "—" : d.avanco + "%"}</td><td>${pz ? esc(pz.texto) : r.Fim ? "Fim " + esc(dataBR(r.Fim)) : "—"}</td></tr>`;
+  };
+  const tabela = tab.length
+    ? `<div class="tbl-wrap"><table class="dir-tb"><thead><tr><th>ID</th><th>Projeto</th><th>Responsável</th><th>Fase</th><th>Status</th><th>Avanço</th><th>Prazo</th></tr></thead><tbody>${tab.map(linha).join("")}</tbody></table></div>`
+    : `<p class="note">Nenhum projeto selecionado para a tabela.</p>`;
+  const home = `<section class="pf-view" id="home">
+    <div class="pf-top"><h1>Portfólio de TI · Status Report</h1><span>JCE SA · Portal GP · Atualizado em ${dataBR(hojeISO())}</span></div>
+    <div class="card dir-resumo">
+      <div class="dir-rh"><h3>Resumo do portfólio</h3><span class="dir-st" style="--c:${dirCorStatus(t.statusGeral)}">Status geral: ${esc(t.statusGeral)}</span></div>
+      <div class="dir-kpis">${dirKpisList(st, t).map(([l, v, s2, c]) => kc(l, v, s2, c)).join("")}</div>
+      ${dirGraficosHtml()}
+      <div class="dir-cols">
+        <div><h4>Resumo executivo</h4><p>${esc(t.resumo)}</p><h4>Principais riscos</h4><p>${esc(t.riscos)}</p></div>
+        <div><h4>Decisões necessárias</h4><p>${esc(t.decisoes || "—")}</p><h4>Próximos marcos</h4><p>${esc(t.marcos || "—")}</p></div>
+      </div>
+      ${tabela}
+      ${rep.length ? `<p class="note dir-rod">Clique no nome de um projeto para abrir o status report dele.</p>` : ""}
+    </div>
+  </section>`;
+  const reports = rep.map(r => `<section class="pf-view" id="r-${esc(r.ID)}" hidden>
+    <div class="pf-bar"><a class="btn" href="#home">← Voltar à home</a><span>#${esc(r.ID)} · ${esc(r["Título"])}</span></div>
+    <div class="pf-wrap">${dirSheetHtml(r)}</div>
+  </section>`).join("");
+  return `<!DOCTYPE html>
+<html lang="pt-BR" class="${document.documentElement.classList.contains("claro") ? "claro" : ""}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Portfólio de TI · Status Report ${esc(dataBR(hojeISO()))}</title>${PAC_FONTE}
+<style>${css}
+${PF_CSS}</style></head><body>${home}${reports}<script>${PF_JS}<\/script></body></html>`;
+}
+function baixarHtmlPortfolio(){
+  try {
+    toast("Gerando o HTML do portfólio…");
+    const html = gerarHtmlPortfolio();
+    baixarBlob(new Blob([html], {type: "text/html;charset=utf-8"}), nomePortfolio() + ".html");
+    toast("HTML do portfólio gerado. Abra o arquivo no navegador.");
+  } catch (err) {
+    toast("Não foi possível gerar o HTML: " + err.message);
+  }
 }
 $("baseDir").addEventListener("click", e => {
   const b = e.target.closest("[data-dir]");
@@ -4240,6 +4334,7 @@ $("baseDir").addEventListener("click", e => {
   const a = b.dataset.dir;
   if (a === "outlook") enviarComPdf("diretoria");
   else if (a === "pdf") exportarPortfolioPdf();
+  else if (a === "html") baixarHtmlPortfolio();
   else if (a === "editar") { dirEditando = true; renderDiretoria(); }
   else if (a === "cancelar") { dirEditando = false; renderDiretoria(); }
   else if (a === "auto") {
@@ -4247,6 +4342,25 @@ $("baseDir").addEventListener("click", e => {
     dirManual = {}; dirSalvarManual(dirManual); dirEditando = false; renderDiretoria();
     toast("Campos voltaram aos dados automáticos.");
   }
+});
+$("baseDir").addEventListener("click", e => {
+  const b = e.target.closest("[data-dsel-all]");
+  if (!b || perfil() !== "admin") return;
+  const tipo = b.dataset.dselAll, marcar = b.dataset.val === "1";
+  dirSel[tipo] = marcar ? [] : dirOrdem().filter(r => !isConcluido(r)).map(r => String(r.ID));
+  dirSalvarSel();
+  document.querySelectorAll(`input[data-dsel="${tipo}"]`).forEach(c => { c.checked = marcar; });
+  $("dirContagem").innerHTML = dirContadorInner();
+});
+$("baseDir").addEventListener("change", e => {
+  const c = e.target;
+  if (!c.matches || !c.matches("input[data-dsel]") || perfil() !== "admin") return;
+  const tipo = c.dataset.dsel, id = c.dataset.id;
+  const ex = dirSel[tipo].filter(x => x !== id);
+  if (!c.checked) ex.push(id);
+  dirSel[tipo] = ex;
+  dirSalvarSel();
+  $("dirContagem").innerHTML = dirContadorInner();
 });
 $("baseDir").addEventListener("submit", e => {
   if (e.target.id !== "dirForm") return;
@@ -4295,8 +4409,8 @@ async function pdfPortfolio(){
   await carregarScript(JSPDF_URL);
   await esperarFontesReport();
   const abertos = dirOrdem().filter(r => !isConcluido(r)), st = dirStats(), t = dirTextos(st);
-  const paginas = dirPaginasResumoPdf(abertos, st, t);
-  abertos.forEach(r => paginas.push(dirSheetHtml(r)));
+  const paginas = dirPaginasResumoPdf(dirIncluidos(abertos, "tabela"), st, t);
+  dirIncluidos(abertos, "reports").forEach(r => paginas.push(dirSheetHtml(r)));
   const pdf = new window.jspdf.jsPDF({orientation: "landscape", unit: "mm", format: "a4"});
   for (let i = 0; i < paginas.length; i++) {
     if (i) toast(`Gerando PDF do portfólio… ${i + 1}/${paginas.length}`);
