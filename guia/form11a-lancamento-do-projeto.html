@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FORM11A | Lançamento do Projeto · JCE SA</title>
+<style>
+:root{--bg:#0C1B38;--card:#13264a;--line:#24406e;--txt:#E9EDF5;--mut:#9AA8C4;--main:#ED174F;--acc:#4697A8;--ok:#3E8E57;--warn:#E0A23B}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--txt);font-family:Manrope,system-ui,sans-serif;font-size:14px}
+header.top{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:12px 22px;background:#0a1730;border-bottom:1px solid var(--line)}
+header.top .back{color:var(--acc);text-decoration:none;font-weight:700;margin-right:auto}
+header.top .tt b{display:block;font-size:16px}
+header.top .tt span{color:var(--mut);font-size:12px}
+.btn{font:inherit;font-weight:700;padding:8px 14px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--txt);cursor:pointer}
+.btn.pri{background:var(--main);border-color:var(--main);color:#fff}
+.btn.ghost:hover{border-color:var(--acc)}
+.btn.sm{padding:5px 10px;font-size:12px}
+.prog{font-size:12px;color:var(--mut);min-width:200px}
+.prog .bar{height:6px;border-radius:4px;background:var(--line);margin-top:4px;overflow:hidden}
+.prog .bar i{display:block;height:100%;width:0;background:var(--ok);transition:width .2s}
+main{max-width:1080px;margin:0 auto;padding:22px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px 22px;margin-bottom:16px}
+.sec-h{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.sec-h .n{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--main);font-weight:800;font-size:13px;flex:none}
+.sec-h h2{margin:0;font-size:17px}
+.sec-sub{color:var(--mut);margin:0 0 14px;line-height:1.45}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.g2{display:grid;gap:12px;grid-template-columns:1fr 1fr}
+label.f{display:flex;flex-direction:column;gap:6px}
+label.f span{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--mut)}
+input,textarea,select{font:inherit;color:var(--txt);background:#0a1730;border:1px solid var(--line);border-radius:10px;padding:9px 11px;width:100%}
+input:focus,textarea:focus,select:focus{outline:2px solid var(--acc);outline-offset:0}
+textarea{min-height:76px;resize:vertical}
+.req span::after{content:" *";color:var(--main)}
+table.t{width:100%;border-collapse:collapse;margin-top:6px}
+table.t th{text-align:left;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);padding:6px 8px;border-bottom:1px solid var(--line)}
+table.t td{padding:6px 4px;border-bottom:1px solid var(--line);vertical-align:middle}
+table.t td input,table.t td select{padding:7px 9px}
+.dt{position:relative;display:flex;align-items:center}
+.dt input[type=date]{padding-right:38px;color-scheme:dark}
+.dt input[type=date]::-webkit-calendar-picker-indicator{opacity:0;position:absolute;right:0;width:38px;height:100%;cursor:pointer}
+.dt .ic{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:22px;height:22px;color:var(--acc);pointer-events:none}
+.rm{background:transparent;border:0;color:var(--main);font-size:16px;cursor:pointer;padding:4px 8px}
+.add{margin-top:10px}
+.checks{display:flex;flex-wrap:wrap;gap:10px 18px;margin-top:6px}
+.checks label{display:flex;gap:8px;align-items:center;cursor:pointer}
+.checks input{width:auto}
+.road{margin-top:18px;border:1px solid var(--line);border-radius:12px;padding:14px 14px 10px;background:#0a1730;overflow-x:auto}
+.road h3{margin:0 0 10px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut)}
+.gan{position:relative;min-width:620px}
+.gan .row{display:grid;grid-template-columns:200px 1fr;align-items:center;gap:10px;height:30px}
+.gan .nm{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gan .track{position:relative;height:16px;border-radius:8px;background:#13264a}
+.gan .bar{position:absolute;top:0;height:16px;border-radius:8px;background:var(--acc);min-width:6px}
+.gan .bar.go{background:var(--main)}
+.gan .bar.hc{background:var(--warn)}
+.gan .axis{display:flex;justify-content:space-between;margin-left:210px;font-size:11px;color:var(--mut);margin-top:6px}
+.gan .vazio{color:var(--mut);font-size:12.5px;padding:8px 0}
+.sig{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px 22px;margin-top:8px}
+.sig div{border-top:1px solid var(--mut);padding-top:6px;color:var(--mut);font-size:12px;min-height:44px}
+.foot{color:var(--mut);font-size:12px;margin:8px 0 0}
+@media (max-width:760px){.g2{grid-template-columns:1fr}}
+@media print{
+  header.top,.add,.rm,.noprint,.btn.sm{display:none !important}
+  html,body{background:#fff;color:#0C1B38}
+  .card{background:#fff;border:1px solid #bbb;break-inside:avoid;page-break-inside:avoid}
+  input,textarea,select{background:#fff;color:#0C1B38;border:0;border-bottom:1px solid #999;border-radius:0;padding:4px 2px;resize:none;appearance:none}
+  .dt .ic{display:none}
+  .road{background:#fff;border-color:#bbb}
+  .gan .track{background:#eee}
+  .gan .nm,.gan .axis,.road h3{color:#333}
+  .sec-h .n{background:#0C1B38}
+  label.f span{color:#555}
+  .sig div{color:#333;border-color:#333}
+  main{padding:0;max-width:none}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <a class="back" href="../index.html#/guia/exe" target="_top" data-gd-hash="#/guia/exe" title="Voltar ao fluxo da etapa">← Fluxo: Execução</a>
+  <div class="tt"><b>Lançamento do Projeto</b><span>FORM11A | V.1</span></div>
+  <div class="prog"><span id="progTxt"></span><div class="bar"><i id="progBar"></i></div></div>
+  <button class="btn ghost" id="btnSave" type="button">Salvar rascunho</button>
+  <button class="btn ghost" id="btnLoad" type="button">Abrir rascunho</button>
+  <input type="file" id="fileLoad" accept=".json,application/json" hidden>
+  <button class="btn ghost" id="btnClear" type="button">Limpar</button>
+  <button class="btn pri" id="btnPdf" type="button">Gerar PDF</button>
+</header>
+
+<main>
+
+<section class="card">
+  <div class="sec-h"><span class="n">1</span><h2>Identificação</h2></div>
+  <p class="sec-sub">Dados que aparecem no cabeçalho do documento.</p>
+  <div class="grid">
+    <label class="f req"><span>Projeto</span><input data-k="proj.nome" placeholder="Nome do projeto"></label>
+    <label class="f"><span>ID no portal</span><input data-k="proj.id" placeholder="Ex.: 49"></label>
+    <label class="f req"><span>Gerente do projeto</span><input data-k="proj.gp" placeholder="Nome"></label>
+    <label class="f"><span>Sponsor</span><input data-k="proj.sponsor" placeholder="Nome"></label>
+    <label class="f req"><span>Data do lançamento</span><div class="dt"><input data-k="proj.data" type="date"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div></label>
+    <label class="f"><span>Área solicitante</span><input data-k="proj.area" placeholder="Ex.: Comercial"></label>
+  </div>
+</section>
+
+<section class="card">
+  <div class="sec-h"><span class="n">2</span><h2>Justificativa e objetivo</h2></div>
+  <p class="sec-sub">Qual problema ou oportunidade motiva o projeto, e o que ele deve alcançar.</p>
+  <div class="g2">
+    <label class="f"><span>Problema ou oportunidade</span><textarea data-k="just.problema"></textarea></label>
+    <label class="f req"><span>Objetivo do projeto</span><textarea data-k="just.objetivo"></textarea></label>
+  </div>
+</section>
+
+<section class="card">
+  <div class="sec-h"><span class="n">3</span><h2>Benefícios</h2></div>
+  <p class="sec-sub">Ganhos esperados para o negócio e como serão medidos.</p>
+  <table class="t" id="tBen"><thead><tr><th>Benefício</th><th style="width:30%">Indicador de medição</th><th style="width:20%">Meta</th><th style="width:40px"></th></tr></thead><tbody></tbody></table>
+  <button class="btn ghost add" type="button" data-add="ben">+ Adicionar benefício</button>
+</section>
+
+<section class="card">
+  <div class="sec-h"><span class="n">4</span><h2>Entregas e escopo</h2></div>
+  <p class="sec-sub">O que o projeto vai entregar e o que fica de fora.</p>
+  <table class="t" id="tEnt"><thead><tr><th>Entrega</th><th>Descrição</th><th style="width:170px">Data prevista</th><th style="width:40px"></th></tr></thead><tbody></tbody></table>
+  <button class="btn ghost add" type="button" data-add="ent">+ Adicionar entrega</button>
+  <div class="g2" style="margin-top:14px">
+    <label class="f"><span>Fora do escopo</span><textarea data-k="esc.fora"></textarea></label>
+    <label class="f"><span>Critérios de aceite</span><textarea data-k="esc.aceite"></textarea></label>
+  </div>
+</section>
+
+<section class="card">
+  <div class="sec-h"><span class="n">5</span><h2>Premissas, restrições e riscos</h2></div>
+  <p class="sec-sub">Premissas são o que tomamos como verdade. Restrições são limites que o projeto precisa respeitar. Riscos são eventos que podem afetar o projeto.</p>
+  <div class="g2">
+    <label class="f"><span>Premissas</span><textarea data-k="pr.premissas"></textarea></label>
+    <label class="f"><span>Restrições</span><textarea data-k="pr.restricoes"></textarea></label>
+  </div>
+  <table class="t" id="tRis" style="margin-top:14px"><thead><tr><th>Risco</th><th style="width:130px">Probabilidade</th><th style="width:130px">Impacto</th><th>Resposta</th><th style="width:40px"></th></tr></thead><tbody></tbody></table>
+  <button class="btn ghost add" type="button" data-add="ris">+ Adicionar risco</button>
+</section>
+
+<section class="card">
+  <div class="sec-h"><span class="n">6</span><h2>Equipe e papéis</h2></div>
+  <p class="sec-sub">Quem faz o quê, alinhado com a Matriz RACI (FORM05).</p>
+  <table class="t" id="tEq"><thead><tr><th style="width:28%">Nome</th><th style="width:26%">Papel</th><th>Área</th><th style="width:110px">Dedicação</th><th style="width:40px"></th></tr></thead><tbody></tbody></table>
+  <button class="btn ghost add" type="button" data-add="eq">+ Adicionar pessoa</button>
+</section>
+
+<section class="card">
+  <div class="sec-h"><span class="n">7</span><h2>Prazos e roadmap de implantação</h2></div>
+  <p class="sec-sub">Informe as datas de cada etapa usando o ícone de calendário. As etapas já vêm sugeridas: você pode excluir as que não se aplicam e adicionar outras. O mini cronograma se atualiza sozinho.</p>
+  <table class="t" id="tRoad"><thead><tr><th style="width:26%">Etapa</th><th style="width:170px">Início</th><th style="width:170px">Fim</th><th>Responsável</th><th style="width:40px"></th></tr></thead><tbody></tbody></table>
+  <button class="btn ghost add" type="button" id="btnEtapa">+ Adicionar etapa</button>
+  <div class="road">
+    <h3>Mini cronograma</h3>
+    <div class="gan" id="gan"></div>
+  </div>
+</section>
+
+<section class="card">
+  <div class="sec-h"><span class="n">8</span><h2>Governança e comunicação</h2></div>
+  <p class="sec-sub">Ritos combinados. Mudanças de escopo, prazo ou custo passam pela Gestão de Mudanças (FORM11).</p>
+  <div class="checks">
+    <label><input type="checkbox" data-k="gov.ritos" value="Reunião semanal de status"> Reunião semanal de status</label>
+    <label><input type="checkbox" data-k="gov.ritos" value="Status report mensal à diretoria"> Status report mensal à diretoria</label>
+    <label><input type="checkbox" data-k="gov.ritos" value="Comitê de projeto"> Comitê de projeto</label>
+    <label><input type="checkbox" data-k="gov.ritos" value="Retrospectiva por fase"> Retrospectiva por fase</label>
+  </div>
+  <div class="g2" style="margin-top:14px">
+    <label class="f"><span>Canal oficial</span><input data-k="gov.canal" placeholder="Ex.: Teams, pasta do projeto no SharePoint"></label>
+    <label class="f"><span>Quem aprova mudanças</span><input data-k="gov.aprova" placeholder="Ex.: Sponsor"></label>
+  </div>
+</section>
+
+<section class="card">
+  <div class="sec-h"><span class="n">9</span><h2>Aprovação</h2></div>
+  <p class="sec-sub">O lançamento só começa com a aprovação do Sponsor.</p>
+  <div class="sig" id="sigs"></div>
+  <p class="foot">Documento de referência do projeto. Deve ser arquivado na pasta do projeto no SharePoint.</p>
+</section>
+
+</main>
+
+<script>
+(function(){
+  const $ = s => document.querySelector(s);
+  const obrig = ['proj.nome','proj.gp','proj.data','just.objetivo'];
+  const CAL = '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>';
+  const data = (cls) => `<div class="dt"><input type="date" data-r="${cls}">${CAL}</div>`;
+  const PREDEF = ['Desenvolvimento','Testes','Homologação','Treinamento','Implantação','Go Live','Hypercare'];
+
+  const linhas = {
+    ben: {tb:'#tBen tbody', html: () => `<tr><td><input data-r="ben" placeholder="Ex.: Redução do tempo de faturamento"></td><td><input data-r="ind" placeholder="Como medir"></td><td><input data-r="meta" placeholder="Ex.: 30%"></td><td><button class="rm" type="button" title="Remover">✕</button></td></tr>`},
+    ent: {tb:'#tEnt tbody', html: () => `<tr><td><input data-r="entrega" placeholder="Nome da entrega"></td><td><input data-r="desc" placeholder="O que será entregue"></td><td>${data('data')}</td><td><button class="rm" type="button" title="Remover">✕</button></td></tr>`},
+    ris: {tb:'#tRis tbody', html: () => `<tr><td><input data-r="risco" placeholder="Evento de risco"></td><td><select data-r="prob"><option></option><option>Baixa</option><option>Média</option><option>Alta</option></select></td><td><select data-r="imp"><option></option><option>Baixo</option><option>Médio</option><option>Alto</option></select></td><td><input data-r="resp" placeholder="Como responder"></td><td><button class="rm" type="button" title="Remover">✕</button></td></tr>`},
+    eq:  {tb:'#tEq tbody', html: () => `<tr><td><input data-r="nome" placeholder="Nome"></td><td><input data-r="papel" placeholder="Ex.: Analista de testes"></td><td><input data-r="area" placeholder="Área"></td><td><input data-r="dedic" placeholder="%"></td><td><button class="rm" type="button" title="Remover">✕</button></td></tr>`},
+    road:{tb:'#tRoad tbody', html: () => `<tr><td><input data-r="etapa" placeholder="Nome da etapa"></td><td>${data('ini')}</td><td>${data('fim')}</td><td><input data-r="resp" placeholder="Responsável"></td><td><button class="rm" type="button" title="Remover">✕</button></td></tr>`}
+  };
+
+  function addLinha(tipo, dados){
+    const tb = document.querySelector(linhas[tipo].tb);
+    tb.insertAdjacentHTML('beforeend', linhas[tipo].html());
+    const tr = tb.lastElementChild;
+    if (dados) Object.entries(dados).forEach(([k,v]) => { const i = tr.querySelector(`[data-r="${k}"]`); if (i) i.value = v; });
+    tr.querySelectorAll('.dt .ic').forEach(ic => ic.addEventListener('click', () => { const i = ic.parentElement.querySelector('input'); try { i.showPicker(); } catch(e) { i.focus(); } }));
+    tr.addEventListener('input', atualiza); tr.addEventListener('change', atualiza);
+    tr.querySelector('.rm').addEventListener('click', () => { tr.remove(); atualiza(); });
+    return tr;
+  }
+  document.querySelectorAll('[data-add]').forEach(b => b.addEventListener('click', () => { addLinha(b.dataset.add); atualiza(); }));
+  $('#btnEtapa').addEventListener('click', () => { addLinha('road'); atualiza(); });
+
+  const fields = () => [...document.querySelectorAll('[data-k]')];
+  function coleta(){
+    const o = {v:1, tipo:'FORM11A', nome:'Lançamento do Projeto', campos:{}, tabelas:{}};
+    fields().forEach(el => {
+      const k = el.dataset.k;
+      if (el.type === 'checkbox') { if (!o.campos[k]) o.campos[k] = []; if (el.checked) o.campos[k].push(el.value); }
+      else o.campos[k] = el.value;
+    });
+    Object.keys(linhas).forEach(t => { o.tabelas[t] = []; document.querySelectorAll(linhas[t].tb + ' tr').forEach(tr => {
+      const r = {}; tr.querySelectorAll('[data-r]').forEach(i => r[i.dataset.r] = i.value); o.tabelas[t].push(r);
+    }); });
+    return o;
+  }
+  function aplica(o){
+    fields().forEach(el => {
+      const k = el.dataset.k, v = o.campos && o.campos[k];
+      if (el.type === 'checkbox') el.checked = !!(v && v.includes(el.value));
+      else el.value = v !== undefined ? v : '';
+    });
+    Object.keys(linhas).forEach(t => { document.querySelector(linhas[t].tb).innerHTML = ''; (o.tabelas && o.tabelas[t] || []).forEach(r => addLinha(t, r)); });
+    atualiza();
+  }
+
+  function atualiza(){
+    const pre = obrig.filter(k => { const el = document.querySelector(`[data-k="${k}"]`); return el && el.value.trim(); }).length;
+    $('#progTxt').textContent = `${pre} de ${obrig.length} itens obrigatórios`;
+    $('#progBar').style.width = (pre / obrig.length * 100) + '%';
+    desenhaGantt();
+  }
+  function desenhaGantt(){
+    const rows = [...document.querySelectorAll('#tRoad tbody tr')].map(tr => ({
+      nome: (tr.querySelector('[data-r="etapa"]').value || '(sem nome)'),
+      ini: tr.querySelector('[data-r="ini"]').value, fim: tr.querySelector('[data-r="fim"]').value,
+    }));
+    const com = rows.filter(r => r.ini && r.fim && r.fim >= r.ini);
+    const g = $('#gan');
+    if (!com.length) { g.innerHTML = '<div class="vazio">Informe início e fim de pelo menos uma etapa para ver o mini cronograma.</div>'; return; }
+    const d = s => new Date(s + 'T00:00:00').getTime();
+    const min = Math.min(...com.map(r => d(r.ini))), max = Math.max(...com.map(r => d(r.fim)));
+    const span = Math.max(1, max - min);
+    const pct = t => ((t - min) / span * 100);
+    const fmt = t => new Date(t).toLocaleDateString('pt-BR');
+    const cor = n => /go\s*live/i.test(n) ? 'go' : /hyper/i.test(n) ? 'hc' : '';
+    g.innerHTML = rows.map(r => {
+      if (!(r.ini && r.fim && r.fim >= r.ini)) return `<div class="row"><div class="nm">${escHtml(r.nome)}</div><div class="track"></div></div>`;
+      const a = pct(d(r.ini)), w = Math.max(1.2, pct(d(r.fim)) - a);
+      return `<div class="row" title="${escHtml(r.nome)}: ${fmt(d(r.ini))} a ${fmt(d(r.fim))}"><div class="nm">${escHtml(r.nome)}</div><div class="track"><div class="bar ${cor(r.nome)}" style="left:${a.toFixed(2)}%;width:${w.toFixed(2)}%"></div></div></div>`;
+    }).join('') + `<div class="axis"><span>${fmt(min)}</span><span>${fmt(max)}</span></div>`;
+  }
+  const escHtml = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+  fields().forEach(el => { el.addEventListener('input', atualiza); el.addEventListener('change', atualiza); });
+  document.querySelectorAll('.dt > .ic').forEach(ic => ic.addEventListener('click', () => { const i = ic.parentElement.querySelector('input'); try { i.showPicker(); } catch(e) { i.focus(); } }));
+
+  $('#sigs').innerHTML = ['Sponsor','Gerente do projeto','PMO'].map(f => `<div>${f} · nome e assinatura</div>`).join('');
+
+  $('#btnSave').addEventListener('click', () => {
+    const o = coleta(), nome = (o.campos['proj.nome'] || 'projeto').replace(/[^\w\-]+/g,'_');
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(o,null,2)],{type:'application/json'}));
+    a.download = `FORM11A_lancamento_${nome}.json`; a.click();
+  });
+  $('#btnLoad').addEventListener('click', () => $('#fileLoad').click());
+  $('#fileLoad').addEventListener('change', e => {
+    const f = e.target.files[0]; if (!f) return;
+    f.text().then(t => { try { const o = JSON.parse(t); if (o.tipo !== 'FORM11A') throw 0; aplica(o); } catch(err) { alert('Este arquivo não é um rascunho do FORM11A.'); } });
+    e.target.value = '';
+  });
+  $('#btnClear').addEventListener('click', () => { if (!confirm('Limpar todo o formulário?')) return; aplica({}); });
+  $('#btnPdf').addEventListener('click', () => window.print());
+
+  // etapas sugeridas (podem ser excluídas e ter outras incluídas)
+  PREDEF.forEach(n => addLinha('road', {etapa: n}));
+  addLinha('ben'); addLinha('ent'); addLinha('ris'); addLinha('eq');
+  atualiza();
+})();
+</script>
+</body>
+</html>
