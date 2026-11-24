@@ -931,6 +931,11 @@ body:not(.ro) .sr-wrap .sr-f[data-sr-edit]:hover,body:not(.ro) .sr-wrap .sr-av[d
 .dem-form label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;color:var(--muted)}
 .dem-form select{font:inherit;font-size:13px;font-weight:500;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface3);color:var(--hi)}
 .dem-acoes{grid-column:1/-1;display:flex;gap:10px;flex-wrap:wrap}
+.dem-form textarea{font:inherit;font-size:13px;font-weight:500;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface3);color:var(--hi);resize:vertical}
+.dem-form .w{grid-column:1/-1}
+.dem-info{border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:flex;flex-wrap:wrap;gap:6px 16px;margin:0}
+.dem-info legend{font-size:12px;padding:0 4px}
+.dem-chk{display:flex!important;flex-direction:row!important;align-items:center;gap:6px;font-weight:500;font-size:13px}
 </style>
 </head>
 <body>
@@ -4156,6 +4161,21 @@ const DEM_INTERVALO = 3 * 60 * 1000;
 const DEM_VISTAS_KEY = "portal_pmo_demandas_vistas";
 const DEM_STATUS = ["Pré escopo (Em Análise)", "Aguardando análise", "Backlog", "Aprovado", "Reprovado", "Cancelada", "Convertido em Projeto", "Convertido em Melhoria", "Repriorizado", "Bloqueado (Pendente Usuário)"];
 const DEM_PRIO = ["Urgente", "Alta", "Média", "Baixa"];
+const DEM_OCULTAS = ["TokenAjuste", "DadosSistema", "AuthorLookupId", "EditorLookupId", "ContentType", "ContentTypeId", "Edit", "AppAuthor", "AppEditor", "Modified", "Created", "ID", "Title", "LinkTitle", "LinkTitleNoMenu", "Attachments", "Author", "Editor", "ItemChildCount", "FolderChildCount"];
+let demColunas = [];
+const demNorm = t => String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+const demCol = nome => demColunas.find(c => demNorm(c.displayName) === demNorm(nome) || c.name === nome);
+const DEM_NO_FORM = ["Status", "Prioridade", "Justificativa da decisão", "Orientação ao solicitante", "Informações pendentes"];
+const DEM_INFO = ["Custo / orçamento", "Benefícios", "Escopo", "Prazo", "Processos impactados", "Riscos", "Outros"];
+const demLista = v => Array.isArray(v) ? v.map(String) : (v == null || v === "" ? [] : String(v).split(/\s*;\s*|\s*,\s*(?=[A-ZÁÉÍÓÚ])/).filter(Boolean));
+const demChave = v => Array.isArray(v) ? [...v].map(x => String(x).trim()).sort().join("|") : String(v == null ? "" : v).trim();
+const demMostra = col => !col.hidden && !DEM_OCULTAS.includes(col.name) && !/LookupId$/.test(col.name) && !col.name.startsWith("_")
+  && !DEM_NO_FORM.some(n => demNorm(n) === demNorm(col.displayName));
+async function demCarregarColunas(){
+  if (demColunas.length) return;
+  const j = await gxTodos(`/sites/${spSt.siteId}/lists/${demListaId}/columns?$select=name,displayName,hidden,readOnly,choice`);
+  demColunas = j.map(c => ({name: c.name, displayName: c.displayName || c.name, hidden: !!c.hidden, readOnly: !!c.readOnly, choices: (c.choice && c.choice.choices) || null, multi: !!(c.choice && c.choice.displayAs === "checkBoxes")}));
+}
 let demItens = [], demListaId = "", demBusca = "", demSel = null;
 const demTxt = v => Array.isArray(v) ? v.join(", ") : (v == null ? "" : (typeof v === "object" ? (v.Url || v.url || v.Description || "") : String(v)));
 const demUrl = v => {
@@ -4176,6 +4196,7 @@ async function demObterListaId(){
 }
 async function demCarregar(){
   const id = await demObterListaId();
+  await demCarregarColunas();
   const itens = await gxTodos(`/sites/${spSt.siteId}/lists/${id}/items?$expand=fields&$top=200`);
   demItens = itens.map(it => ({id: String(it.id), criado: it.createdDateTime, web: it.webUrl || "", campos: it.fields || {}}));
 }
@@ -4184,7 +4205,7 @@ async function demAtualizar(manual){
   if (perfil() !== "admin" || !spLigado()) { demRender(); return; }
   const st = $("demStatus");
   const f = $("demForm");
-  const sujo = f && [...f.querySelectorAll("select")].some(x => x.value !== x.dataset.orig);
+  const sujo = f && ([...f.querySelectorAll("select,textarea")].some(x => x.value !== x.dataset.orig) || [...f.querySelectorAll("input[type=checkbox]")].some(x => x.checked !== (x.dataset.orig === "1")));
   if (sujo && !manual) return;
   if (st) st.textContent = "Atualizando…";
   try {
@@ -4281,21 +4302,41 @@ function demRenderTabela(){
 function demRenderDetalhe(){
   const it = demItens.find(x => x.id === demSel);
   if (!it) { $("demDetalhe").innerHTML = ""; return; }
-  const pares = Object.entries(it.campos).filter(([k]) => !k.startsWith("@") && !k.startsWith("_"))
-    .map(([k, v]) => {
-      const u = demUrl(v);
-      const valor = u ? `<a class="pf-link" href="${esc(u)}" target="_blank" rel="noopener">${esc(u)}</a>` : esc(demTxt(v) || "—");
-      return `<dt>${esc(k)}</dt><dd>${valor}</dd>`;
-    }).join("");
-  const opts = (lista, atual) => (atual && !lista.includes(atual) ? [atual, ...lista] : lista)
-    .map(o => `<option ${o === atual ? "selected" : ""}>${esc(o)}</option>`).join("");
-  const stAtual = demTxt(it.campos.Status), prAtual = demTxt(it.campos.Prioridade);
+  const c = it.campos;
+  const nomeCol = n => (demCol(n) || {}).name || n;
+  const atual = n => demTxt(c[nomeCol(n)]);
+  const choices = (n, padrao) => (demCol(n) && demCol(n).choices) || padrao;
+  const opts = (lista, cur) => (cur && !lista.includes(cur) ? [cur, ...lista] : lista).map(o => `<option ${o === cur ? "selected" : ""}>${esc(o)}</option>`).join("");
+  const stAtual = atual("Status"), prAtual = atual("Prioridade");
+  const just = atual("Justificativa da decisão"), orient = atual("Orientação ao solicitante");
+  const colInfo = demCol("Informações pendentes");
+  let infoHtml = "";
+  if (!demColunas.length || colInfo) {
+    const bruto = c[(colInfo || {}).name || "InfoPendente"];
+    const multi = Array.isArray(bruto) || !!(colInfo && colInfo.multi);
+    const marcadas = demLista(bruto);
+    const base = (colInfo && colInfo.choices) || DEM_INFO;
+    const opcoes = [...base, ...marcadas.filter(m => !base.includes(m))];
+    infoHtml = multi
+      ? `<fieldset class="w dem-info" data-multi="1"><legend>Informações pendentes</legend>${opcoes.map(o => { const on = marcadas.includes(o); return `<label class="dem-chk"><input type="checkbox" name="info" value="${esc(o)}" ${on ? "checked" : ""} data-orig="${on ? 1 : 0}">${esc(o)}</label>`; }).join("")}</fieldset>`
+      : `<label>Informações pendentes<select name="info" data-orig="${esc(marcadas[0] || "")}"><option value="">—</option>${opcoes.map(o => `<option ${o === marcadas[0] ? "selected" : ""}>${esc(o)}</option>`).join("")}</select></label>`;
+  }
+  const pares = demColunas.length
+    ? demColunas.filter(demMostra).map(col => {
+        const v = c[col.name], u = demUrl(v);
+        const valor = u ? `<a class="pf-link" href="${esc(u)}" target="_blank" rel="noopener">${esc(u)}</a>` : esc(demTxt(v) || "—");
+        return `<dt>${esc(col.displayName)}</dt><dd>${valor}</dd>`;
+      }).join("")
+    : "";
   $("demDetalhe").innerHTML = `<div class="card dem-det">
-    <div class="dir-rh"><h3>Demanda #${esc(it.campos.ID || it.id)} · ${esc(demTxt(it.campos.Title) || "")}</h3>
+    <div class="dir-rh"><h3>Demanda #${esc(c.ID || it.id)} · ${esc(demTxt(c.Title) || "")}</h3>
       ${it.web ? `<a class="btn" href="${esc(it.web)}" target="_blank" rel="noopener">Abrir na lista</a>` : ""}</div>
     <form id="demForm" class="dem-form">
-      <label>Status<select name="Status" data-orig="${esc(stAtual)}">${opts(DEM_STATUS, stAtual)}</select></label>
-      <label>Prioridade<select name="Prioridade" data-orig="${esc(prAtual)}">${opts(DEM_PRIO, prAtual)}</select></label>
+      <label>Status<select name="Status" data-orig="${esc(stAtual)}">${opts(choices("Status", DEM_STATUS), stAtual)}</select></label>
+      <label>Prioridade<select name="Prioridade" data-orig="${esc(prAtual)}">${opts(choices("Prioridade", DEM_PRIO), prAtual)}</select></label>
+      <label class="w">Justificativa da decisão <span class="note" style="margin:0">(obrigatória para mudar o status)</span><textarea name="justificativa" rows="3" data-orig="${esc(just)}">${esc(just)}</textarea></label>
+      ${!demColunas.length || demCol("Orientação ao solicitante") ? `<label class="w">Orientação ao solicitante<textarea name="orientacao" rows="2" data-orig="${esc(orient)}">${esc(orient)}</textarea></label>` : ""}
+      ${infoHtml}
       <div class="dem-acoes">
         <button type="button" class="btn" data-dem-rapido="Aprovado">Aprovar</button>
         <button type="button" class="btn" data-dem-rapido="Reprovado">Reprovar</button>
@@ -4308,14 +4349,45 @@ function renderDemandas(){
   demRender();
   demAtualizar();
 }
-async function demGravar(campos){
+function demLerForm(){
+  const f = $("demForm");
+  if (!f) return {};
+  const r = {Status: f.elements.Status.value, Prioridade: f.elements.Prioridade.value,
+    "Justificativa da decisão": f.elements.justificativa.value};
+  if (f.elements.orientacao) r["Orientação ao solicitante"] = f.elements.orientacao.value;
+  if (f.querySelector(".dem-info[data-multi]")) r["Informações pendentes"] = [...f.querySelectorAll('input[name="info"]:checked')].map(x => x.value);
+  else if (f.elements.info) r["Informações pendentes"] = f.elements.info.value;
+  return r;
+}
+async function demSalvar(alt){
   const it = demItens.find(x => x.id === demSel);
   if (!it) return;
+  const valorBruto = nome => it.campos[(demCol(nome) || {}).name || nome];
+  const valorAtual = nome => demTxt(valorBruto(nome)).trim();
+  const novaJust = (alt["Justificativa da decisão"] || "").trim();
+  if (alt.Status !== undefined && alt.Status !== valorAtual("Status") && !novaJust) {
+    toast("Preencha a justificativa da decisão para mudar o status.");
+    return;
+  }
+  const mudancas = {};
+  Object.entries(alt).forEach(([k, v]) => {
+    if (v === undefined) return;
+    if (Array.isArray(v)) { if (demChave(v) !== demChave(demLista(valorBruto(k)))) mudancas[k] = v; }
+    else if (String(v).trim() !== valorAtual(k)) mudancas[k] = String(v).trim();
+  });
+  if (!Object.keys(mudancas).length) { toast("Nenhuma alteração para salvar."); return; }
+  const corpo = {};
+  for (const [nome, v] of Object.entries(mudancas)) {
+    const col = demCol(nome);
+    if (!col) { toast(`Coluna "${nome}" não encontrada na lista.`); return; }
+    if (Array.isArray(v)) corpo[col.name + "@odata.type"] = "Collection(Edm.String)";
+    corpo[col.name] = Array.isArray(v) ? v : (v === "" ? null : v);
+  }
   const num = it.campos.ID || it.id;
-  const resumo = Object.entries(campos).map(([k, v]) => `${k}: ${v}`).join("\n");
+  const resumo = Object.entries(mudancas).map(([k, v]) => `${k}: ${Array.isArray(v) ? (v.join(", ") || "(nenhuma)") : (v || "(vazio)")}`).join("\n");
   if (!confirm(`Alterar a demanda #${num}?\n\n${resumo}\n\nSe houver fluxos de e-mail ligados à lista, eles serão disparados.`)) return;
   try {
-    await gx("PATCH", `/sites/${spSt.siteId}/lists/${demListaId}/items/${it.id}/fields`, campos);
+    await gx("PATCH", `/sites/${spSt.siteId}/lists/${demListaId}/items/${it.id}/fields`, corpo);
     toast(`Demanda #${num} atualizada.`);
     await demCarregar();
     demRender();
@@ -4326,16 +4398,13 @@ async function demGravar(campos){
 $("demDetalhe").addEventListener("click", e => {
   const b = e.target.closest("[data-dem-rapido]");
   if (!b || perfil() !== "admin") return;
-  demGravar({Status: b.dataset.demRapido});
+  demSalvar({...demLerForm(), Status: b.dataset.demRapido});
 });
 $("demDetalhe").addEventListener("submit", e => {
   if (e.target.id !== "demForm") return;
   e.preventDefault();
   if (perfil() !== "admin") return;
-  const campos = {};
-  e.target.querySelectorAll("select").forEach(x => { if (x.value !== x.dataset.orig) campos[x.name] = x.value; });
-  if (!Object.keys(campos).length) { toast("Nenhuma alteração para salvar."); return; }
-  demGravar(campos);
+  demSalvar(demLerForm());
 });
 $("demAtualizar").addEventListener("click", () => demAtualizar(true));
 $("demBusca").addEventListener("input", e => { demBusca = e.target.value; demRenderTabela(); });
