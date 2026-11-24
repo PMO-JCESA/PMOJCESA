@@ -1041,7 +1041,15 @@ body:not(.ro) .sr-wrap .sr-f[data-sr-edit]:hover,body:not(.ro) .sr-wrap .sr-av[d
 .gd-qa-h i{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;background:var(--c);color:#fff;font-style:normal;font-weight:800;font-size:12.5px}
 .gd-qa-h b{color:var(--hi);font-size:15.5px}
 .gd-qa-h a{margin-left:auto;font-size:12.5px;font-weight:700;color:var(--teal-l);text-decoration:none}
-.gd-tb{width:100%;border-collapse:collapse;font-size:13px}
+.gd-tbw{overflow-x:auto;margin:0 -2px}
+.gd-tb .c1{width:104px}.gd-tb .c2{width:22%}.gd-tb .c4{width:24%}.gd-tb .c5{width:172px}
+.gd-qu{display:none;margin-top:3px;font-size:12px;color:var(--muted)}
+@media (max-width:1280px){.gd-tb .c4{display:none}.gd-qu{display:block}.gd-tb .c2{width:26%}}
+.gd-tb{width:100%;min-width:560px;table-layout:fixed;border-collapse:collapse;font-size:13px}
+.gd-tb th,.gd-tb td{white-space:normal;overflow-wrap:anywhere}
+:root.claro #userBox .btn{color:#0C1B38}
+.gd-tb td.r{white-space:nowrap}
+#guiaBusca{width:min(520px,100%)}
 .gd-tb th{text-align:left;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:800;padding:8px 10px;border-bottom:1px solid var(--line2)}
 .gd-tb td{padding:10px;border-bottom:1px solid var(--line);vertical-align:middle;color:var(--text)}
 .gd-tb td b{color:var(--hi)}
@@ -4685,8 +4693,8 @@ const guiaUrl = f => GUIA_DIR + f.f + "?v=" + GUIA_V;
 const guiaNInternos = s => s.forms.filter(f => !f.ext).length;
 const GUIA_TOTAL = GUIA_D.reduce((a, s) => a + guiaNInternos(s), 0);
 let guiaBusca = "";
-function guiaAbrirBtn(f, sm){
-  if (f.ext) return `<a class="btn${sm ? " sm" : ""}" href="${GUIA_SOLICITACAO}" target="_blank" rel="noopener" title="Formulário de solicitação (processo externo)">Formulário de solicitação ${GUIA_EXT}</a>`;
+function guiaAbrirBtn(f, sm, curto){
+  if (f.ext) return `<a class="btn${sm ? " sm" : ""}" href="${GUIA_SOLICITACAO}" target="_blank" rel="noopener" title="Formulário de solicitação (processo externo)">${curto ? "Abrir solicitação" : "Formulário de solicitação"} ${GUIA_EXT}</a>`;
   return `<a class="btn primary${sm ? " sm" : ""}" href="#/guia/form/${f.c}">Abrir ${GUIA_SETA}</a>`;
 }
 function guiaChip(cod){
@@ -4764,8 +4772,8 @@ function guiaRapidoLista(){
     const L = s.forms.filter(f => !q || (f.c + " " + f.n + " " + f.d + " " + f.w).toLowerCase().includes(q));
     if (!L.length) return "";
     return `<div class="card gd-qa" style="--c:${GUIA_COR[s.k]}"><div class="gd-qa-h"><i>${i + 1}</i><b>${esc(s.n)}</b><a href="#/guia/${s.k}">ver fluxo da etapa →</a></div>
-      <div class="tbl-wrap"><table class="gd-tb"><thead><tr><th style="width:96px">Código</th><th style="width:24%">Documento</th><th>Aplicação</th><th style="width:22%">Quando usar</th><th style="width:150px"></th></tr></thead><tbody>
-      ${L.map(f => `<tr><td><span class="gd-code">${esc(f.c)}</span></td><td><b>${esc(f.n)}</b></td><td>${esc(f.d)}</td><td>${esc(f.w)}</td><td class="r">${guiaAbrirBtn(f, true)}</td></tr>`).join("")}
+      <div class="gd-tbw"><table class="gd-tb"><thead><tr><th class="c1">Código</th><th class="c2">Documento</th><th class="c3">Aplicação</th><th class="c4">Quando usar</th><th class="c5"></th></tr></thead><tbody>
+      ${L.map(f => `<tr><td><span class="gd-code">${esc(f.c)}</span></td><td><b>${esc(f.n)}</b></td><td>${esc(f.d)}<small class="gd-qu">Quando usar: ${esc(f.w)}</small></td><td class="c4">${esc(f.w)}</td><td class="r">${guiaAbrirBtn(f, true, true)}</td></tr>`).join("")}
       </tbody></table></div></div>`;
   }).join("");
   return html || `<div class="card empty">Nenhum documento encontrado.</div>`;
