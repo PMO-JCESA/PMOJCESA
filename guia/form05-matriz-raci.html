@@ -164,12 +164,12 @@ table.rt tr.ph td.n{background:#EEF1F6;position:sticky}
 table.rt .phn{display:flex;gap:6px;align-items:center}
 table.rt .phn input{flex:1;min-width:0;padding:8px 10px;border:1px solid #CBD5E1;border-radius:8px;background:#fff;font-weight:700;outline:none}
 table.rt td.c{text-align:center}
-select.rc{width:62px;padding:7px 4px;border:1px solid #CBD5E1;border-radius:8px;background:#fff;font-weight:700;text-align:center;text-align-last:center;cursor:pointer}
-select.rc[data-v="R"]{background:#181F37;color:#fff;border-color:#181F37}
-select.rc[data-v="A"]{background:#EE1750;color:#fff;border-color:#EE1750}
-select.rc[data-v="A/R"]{background:linear-gradient(90deg,#EE1750 50%,#181F37 50%);color:#fff;border-color:#181F37}
-select.rc[data-v="C"]{background:#F59E0B;color:#fff;border-color:#F59E0B}
-select.rc[data-v="I"]{background:#3B82F6;color:#fff;border-color:#3B82F6}
+.rc{width:62px;padding:7px 4px;border:1px solid #CBD5E1;border-radius:8px;background:#fff;font-weight:700;text-align:center;text-align-last:center;cursor:pointer}
+.rc[data-v="R"]{background:#181F37;color:#fff;border-color:#181F37}
+.rc[data-v="A"]{background:#EE1750;color:#fff;border-color:#EE1750}
+.rc[data-v="A/R"]{background:linear-gradient(90deg,#EE1750 50%,#181F37 50%);color:#fff;border-color:#181F37}
+.rc[data-v="C"]{background:#F59E0B;color:#fff;border-color:#F59E0B}
+.rc[data-v="I"]{background:#3B82F6;color:#fff;border-color:#3B82F6}
 .rstat{font-size:11.5px;font-weight:600;white-space:nowrap}.rstat.ok{color:#047857}.rstat.bad{color:#B91C1C}
 .mxtools{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:14px 0 0}
 .legend{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px}
@@ -186,6 +186,30 @@ table.ck tr.ph td{background:#EEF1F6;font-weight:700}
 .warns li{background:#FEF3C7;border:1px solid #FCD34D;border-radius:8px;padding:9px 12px;font-size:12.5px;color:#92400E}
 .warns li.good{background:#ECFDF5;border-color:#6EE7B7;color:#065F46}
 @media screen and (max-width:980px){.legend{grid-template-columns:1fr 1fr}}
+
+/* ---------- RACI: matriz compacta com rolagem interna ---------- */
+.rc{width:46px;height:30px;padding:0;border:1px solid #CBD5E1;border-radius:7px;background:#fff;font-weight:700;font-size:13px;text-align:center;cursor:pointer;line-height:1}
+.rc:focus-visible{outline:2px solid #EE1750;outline-offset:1px}
+.mxwrap{max-height:calc(100vh - 235px);min-height:320px;overflow:auto}
+table.rt th,table.rt td{padding:3px 5px}
+table.rt thead th{position:sticky;top:0;z-index:3}
+table.rt thead th.l,table.rt td.n{min-width:230px}
+table.rt thead th.l{z-index:4}
+table.rt .rh input{width:84px;padding:4px 5px}
+table.rt td.n input{padding:5px 8px}
+table.rt .phn input{padding:5px 8px}
+table.rt td.c{width:64px}
+.legend{gap:8px;margin-bottom:10px}
+.lg{padding:5px 10px;grid-template-columns:26px 1fr;gap:0 8px}
+.lg i{width:26px;height:26px;grid-row:span 2}
+.lg b{font-size:12px}.lg small{font-size:10.5px}
+.mxtools{margin:0 0 8px!important}
+.sec-sub{margin-bottom:10px}
+table.rt{min-width:0;width:max-content}
+table.rt td.rstat,table.rt thead th:last-child{position:sticky;right:0;z-index:2;background:#fff;min-width:130px;box-shadow:-6px 0 8px -6px rgba(0,0,0,.25)}
+table.rt thead th:last-child{background:#181F37;z-index:4}
+table.rt tr.ph td:last-child{background:#EEF1F6}
+@media screen{html.gd-escuro table.rt td.rstat{background:#11244A}html.gd-escuro table.rt thead th:last-child{background:#24407A}html.gd-escuro table.rt tr.ph td:last-child{background:#183060}}
 /* =========== PDF =========== */
 #print{display:none}
 @page{size:A4 landscape;margin:8mm 10mm}
@@ -297,9 +321,9 @@ html.gd-escuro table.rt td.n input:focus,html.gd-escuro table.rt .phn input:focu
 html.gd-escuro table.rt tr.ph td{background:#183060}
 html.gd-escuro table.rt tr.ph td.n{background:#183060}
 html.gd-escuro table.rt .phn input{border:1px solid #547092;background:#0E1F42}
-html.gd-escuro select.rc{border:1px solid #547092;background:#0E1F42}
-html.gd-escuro select.rc[data-v="R"]{background:#24407A;border-color:#3A5A9E}
-html.gd-escuro select.rc[data-v="A/R"]{background:linear-gradient(90deg,#EE1750 50%,#24407A 50%);border-color:#3A5A9E}
+html.gd-escuro .rc{border:1px solid #547092;background:#0E1F42}
+html.gd-escuro .rc[data-v="R"]{background:#24407A;border-color:#3A5A9E}
+html.gd-escuro .rc[data-v="A/R"]{background:linear-gradient(90deg,#EE1750 50%,#24407A 50%);border-color:#3A5A9E}
 html.gd-escuro .rstat.ok{color:#7BF4D2}
 html.gd-escuro .rstat.bad{color:#EC8383}
 html.gd-escuro .lg{border:1px solid rgba(224,224,224,.13);background:#11244A}
@@ -448,7 +472,7 @@ html.gd-emb body{background:transparent}
     <div class="sec-h"><span class="n">2</span><h2>Matriz de Responsabilidades</h2></div>
     <p class="sec-sub">Para cada atividade, escolha o papel de cada pessoa ou área: <b>R</b>, <b>A</b>, <b>C</b> ou <b>I</b> (use <b>A/R</b> quando quem aprova também executa). Cada atividade precisa de <b>um único A</b> e de <b>pelo menos um R</b>.</p>
     <div class="legend" id="legend"></div>
-    <div class="mxtools" style="margin:0 0 10px"><button class="btn navy" type="button" data-ract="addRole">+ Adicionar coluna (ator)</button><button class="btn navy" type="button" data-ract="addPh">+ Adicionar fase</button><span class="hint">Role a tabela para o lado para ver todas as colunas.</span></div>
+    <div class="mxtools" style="margin:0 0 10px"><button class="btn navy" type="button" data-ract="addRole">+ Adicionar coluna (ator)</button><button class="btn navy" type="button" data-ract="addPh">+ Adicionar fase</button><span class="hint">Clique na célula para alternar R → A → A/R → C → I. Com a célula selecionada: teclas R, A, C, I, E (A/R), Delete e setas.</span></div>
     <div class="mxwrap"><table class="rt" id="rt"></table></div>
     <div class="mxtools"><button class="btn navy" type="button" data-ract="addRole">+ Adicionar coluna (ator)</button><button class="btn navy" type="button" data-ract="addPh">+ Adicionar fase</button></div>
     <div class="stepnav" data-nav="s-mx"></div>
@@ -508,7 +532,7 @@ const CATALOGO=['Aprovar TAP','Elaborar Business Case','Aprovar Orçamento','Def
 function buildStatic(){
   $('#acts').innerHTML=CATALOGO.map(x=>`<option value="${x}">`).join('');
   $('#steps').innerHTML=TABS.map(([id,l],i)=>`<a href="#${id}" data-tab="${id}"><b>${i+1}</b>${l}</a>`).join('');
-  $('#legend').innerHTML=RDEF.map(([k,t,d,q])=>`<div class="lg ${k}"><i>${k}</i><b>${t}</b><small>${q} — ${d}</small></div>`).join('');
+  $('#legend').innerHTML=RDEF.map(([k,t,d,q])=>`<div class="lg ${k}" title="${q} — ${d}"><i>${k}</i><b>${t}</b><small>${q}</small></div>`).join('');
   $('#'+LAST+' .stepnav').insertAdjacentHTML('beforebegin',`<div class="finish" style="margin-top:24px"><div><b>Matriz concluída?</b><span>Ao finalizar, o formulário é conferido e o PDF de uma página é gerado (Imprimir → Salvar como PDF).</span></div><button class="btn primary" type="button" id="btnFinish2">Finalizar e gerar PDF</button></div>`);
   $$('[data-nav]').forEach(n=>{
     const i=TABS.findIndex(t=>t[0]===n.dataset.nav),p=TABS[i-1],x=TABS[i+1];
@@ -520,12 +544,12 @@ function renderMx(){
   const head=`<thead><tr><th class="l">Atividade / entregável</th>${R.map((r,i)=>`<th><div class="rh"><input data-path="roles.${i}" placeholder="Papel"><button type="button" class="rx" data-ract="delRole" data-r="${i}" title="Remover coluna">×</button></div></th>`).join('')}<th><button type="button" class="btn sm navy" data-ract="addRole">+ ator</button></th><th>Check</th></tr></thead>`;
   const body=S.phases.map((p,pi)=>`<tr class="ph"><td class="n" colspan="1"><div class="phn"><input data-path="phases.${pi}.nome" placeholder="Nome da fase"><button type="button" class="btn sm navy" data-ract="addAct" data-p="${pi}">+ atividade</button><button type="button" class="btn sm danger" data-ract="delPh" data-p="${pi}" title="Remover fase">×</button></div></td><td colspan="${nc-1}"></td></tr>`
     +p.acts.map((a,ai)=>`<tr data-p="${pi}" data-a="${ai}"><td class="n"><div class="an"><input data-path="phases.${pi}.acts.${ai}.nome" list="acts" placeholder="Atividade / entregável"><button type="button" class="memx" data-ract="delAct" data-p="${pi}" data-a="${ai}" title="Remover atividade">×</button></div></td>
-      ${a.v.map((v,ri)=>`<td class="c"><select class="rc" data-path="phases.${pi}.acts.${ai}.v.${ri}">${OPTS.map(o=>`<option value="${o}">${o||'—'}</option>`).join('')}</select></td>`).join('')}<td></td><td class="rstat"></td></tr>`).join('')).join('');
+      ${a.v.map((v,ri)=>`<td class="c"><button type="button" class="rc" data-v="" data-path="phases.${pi}.acts.${ai}.v.${ri}" title="Clique para alternar (ou tecle R, A, C, I, E = A/R, Delete = limpar)">—</button></td>`).join('')}<td></td><td class="rstat"></td></tr>`).join('')).join('');
   $('#rt').innerHTML=head+`<tbody>${body}</tbody>`;
   fillValues('#rt');updStatus();
 }
 function fillValues(root){
-  $$(root+' [data-path]').forEach(e=>{const v=getP(e.dataset.path);e.value=v==null?'':v;if(e.classList.contains('rc'))e.dataset.v=e.value;});
+  $$(root+' [data-path]').forEach(e=>{const v=getP(e.dataset.path);if(e.classList.contains('rc')){e.dataset.v=v||'';e.textContent=v||'—';return;}e.value=v==null?'':v;});
 }
 function updStatus(){
   $$('#rt tbody tr[data-a]').forEach(tr=>{const a=S.phases[+tr.dataset.p].acts[+tr.dataset.a],td=tr.lastElementChild;
@@ -566,7 +590,16 @@ document.addEventListener('input',e=>{
   const t=e.target,p=t.dataset.path;if(!p)return;
   setP(p,t.value);t.classList.remove('invalid');renderLive();
 });
-document.addEventListener('change',e=>{const t=e.target;if(t.dataset.path){setP(t.dataset.path,t.value);if(t.classList.contains('rc'))t.dataset.v=t.value;t.classList.remove('invalid');renderLive();}});
+const setRc=(b,v)=>{setP(b.dataset.path,v);b.dataset.v=v;b.textContent=v||'—';renderLive();};
+document.addEventListener('click',e=>{const b=e.target.closest('button.rc');if(!b)return;const cur=getP(b.dataset.path)||'';setRc(b,OPTS[(OPTS.indexOf(cur)+1)%OPTS.length]);});
+document.addEventListener('keydown',e=>{const b=e.target.closest&&e.target.closest('button.rc');if(!b)return;
+  const k=e.key.toUpperCase(),m={R:'R',A:'A',C:'C',I:'I',E:'A/R',DELETE:'',BACKSPACE:'','0':''};
+  if(k in m){e.preventDefault();setRc(b,m[k]);return;}
+  const cell=b.closest('td'),tr=b.closest('tr');let nx=null;
+  if(e.key==='ArrowRight')nx=cell.nextElementSibling;else if(e.key==='ArrowLeft')nx=cell.previousElementSibling;
+  else if(e.key==='ArrowDown'||e.key==='ArrowUp'){let r=e.key==='ArrowDown'?tr.nextElementSibling:tr.previousElementSibling;while(r&&!r.dataset.a)r=e.key==='ArrowDown'?r.nextElementSibling:r.previousElementSibling;if(r)nx=r.children[[...tr.children].indexOf(cell)];}
+  const t=nx&&nx.querySelector('button.rc');if(t){e.preventDefault();t.focus();}});
+document.addEventListener('change',e=>{const t=e.target;if(t.dataset.path){setP(t.dataset.path,t.value);t.classList.remove('invalid');renderLive();}});
 $('#btnTeamAdd').onclick=addMember;
 ['#tNome','#tFunc'].forEach(s=>$(s).addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addMember();}}));
 $('#tNome').addEventListener('input',e=>e.target.classList.remove('invalid'));
@@ -595,6 +628,7 @@ function showTab(id){
   if(id==='s-chk')renderChk();
   if(id===LAST){const b=$('#btnFinish');b.disabled=false;b.title='Conferir e gerar o PDF';}
   window.scrollTo({top:0});
+  if(id==='s-mx'){const lg=$('#legend');if(lg)window.scrollTo({top:lg.getBoundingClientRect().top+window.scrollY-118});}
 }
 document.addEventListener('click',e=>{const a=e.target.closest('.steps a');if(a){e.preventDefault();showTab(a.dataset.tab);}});
 
