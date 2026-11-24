@@ -853,6 +853,9 @@ body:not(.ro) .sr-wrap .sr-f[data-sr-edit]:hover,body:not(.ro) .sr-wrap .sr-av[d
 .dir-resumo{padding:18px 20px;margin-bottom:8px}
 .dir-rh{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
 .dir-rh h3{margin:0;font-size:16px}
+.dir-rh-l{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.dir-upd{font-size:12px;font-weight:600;color:var(--muted)}
+.dir-ocu{font-size:12px;color:var(--muted);margin:-6px 0 12px}
 .dir-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}
 .dir-cols{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:16px}
 .dir-cols h4{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:10px 0 4px}
@@ -4848,9 +4851,13 @@ function dirContadorInner(){
   const abertos = dirOrdem().filter(r => !isConcluido(r));
   const nT = dirIncluidos(abertos, "tabela").length, nR = dirIncluidos(abertos, "reports").length;
   const links = tipo => `<button type="button" class="dir-lnk" data-dsel-all="${tipo}" data-val="1">Todos</button><button type="button" class="dir-lnk" data-dsel-all="${tipo}" data-val="0">Nenhum</button>`;
-  return `<span><b>Na tabela do PDF:</b> ${nT} de ${abertos.length} ${links("tabela")}</span>`
+  return `<span><b>No resumo e na tabela:</b> ${nT} de ${abertos.length} ${links("tabela")}</span>`
     + `<span class="dir-sep">·</span><span><b>Status reports no PDF e no e-mail:</b> ${nR} de ${abertos.length} ${links("reports")}</span>`;
 }
+/* Projetos desmarcados (ocultos) ficam fora da tabela e dos números do resumo */
+const dirBase = () => rows.filter(r => isConcluido(r) || !dirSel.tabela.includes(String(r.ID)));
+const dirNOcultos = () => rows.filter(r => !isConcluido(r) && dirSel.tabela.includes(String(r.ID))).length;
+function dirAtualizado(){ const d = new Date(); return `${dataBR(hojeISO())} às ${pad(d.getHours())}:${pad(d.getMinutes())}`; }
 const dirCorStatus = s => s === "Crítico" ? "var(--st3)" : s === "Atenção" ? "var(--st2)" : "var(--st5)";
 const nomePortfolio = () => { const d = new Date(); return `Portfolio_TI_Status_Report_${hojeISO()}_${pad(d.getHours())}${pad(d.getMinutes())}`; };
 function dirOrdem(){
@@ -4859,17 +4866,18 @@ function dirOrdem(){
     || (parseInt(a.ID, 10) || 0) - (parseInt(b.ID, 10) || 0));
 }
 function dirStats(){
-  const ativos = rows.filter(emAndamento), parados = rows.filter(isParalisado), concl = rows.filter(isConcluido);
+  const base = dirBase();
+  const ativos = base.filter(emAndamento), parados = base.filter(isParalisado), concl = base.filter(isConcluido);
   const venc = ativos.filter(r => prazo(r)?.tipo === "vencido").length;
-  const atras = rows.filter(r => String(r.Status).startsWith("3.")).length;
+  const atras = base.filter(r => String(r.Status).startsWith("3.")).length;
   const avg = media(ativos.map(r => dadosReport(r).avanco));
-  const riscos = rows.filter(r => !isConcluido(r)).flatMap(r => dadosReport(r).riscos.map(x => `#${r.ID} ${x.risco}`));
+  const riscos = base.filter(r => !isConcluido(r)).flatMap(r => dadosReport(r).riscos.map(x => `#${r.ID} ${x.risco}`));
   const resumoAuto = `${ativos.length} projeto(s) em andamento, ${concl.length} concluído(s) e ${parados.length} paralisado(s). `
     + (avg == null ? "Sem avanço registrado nos projetos ativos. " : `Avanço médio dos projetos ativos: ${avg}%. `)
     + (venc ? `${venc} projeto(s) com prazo vencido.` : "Nenhum prazo vencido.")
     + (atras ? ` ${atras} projeto(s) com status Atrasado.` : "");
   const riscosAuto = riscos.length ? riscos.slice(0, 6).join("; ") + (riscos.length > 6 ? ` (+${riscos.length - 6})` : "") : "Nenhum risco registrado nos status reports.";
-  return {total: rows.length, ativos: ativos.length, concl: concl.length, parados: parados.length, venc, atras, avg,
+  return {total: base.length, ocultos: rows.length - base.length, ativos: ativos.length, concl: concl.length, parados: parados.length, venc, atras, avg,
     statusAuto: venc || atras ? "Atenção" : "Saudável", resumoAuto, riscosAuto};
 }
 function dirTextos(st){
@@ -4898,7 +4906,7 @@ function dirLinha(r, comCheck){
     + `<td><span class="dir-st" style="--c:${pacCor(r.Status)}">${esc(statusLabel(r.Status) || "—")}</span></td>`
     + `<td>${d.avanco == null ? "—" : d.avanco + "%"}</td><td>${pz ? esc(pz.texto) : r.Fim ? "Fim " + esc(dataBR(r.Fim)) : "—"}</td></tr>`;
 }
-const dirTabela = (lista, comCheck) => `<table class="dir-tb"><thead><tr>${comCheck ? `<th style="width:44px">Incluir</th>` : ""}<th>ID</th><th>Projeto</th><th>Responsável</th><th>Fase</th><th>Status</th><th>Avanço</th><th>Prazo</th></tr></thead><tbody>${lista.map(r => dirLinha(r, comCheck)).join("")}</tbody></table>`;
+const dirTabela = (lista, comCheck) => `<table class="dir-tb"><thead><tr>${comCheck ? `<th style="width:52px" title="Desmarque para ocultar o projeto da tabela e dos números do resumo">Incluir</th>` : ""}<th>ID</th><th>Projeto</th><th>Responsável</th><th>Fase</th><th>Status</th><th>Avanço</th><th>Prazo</th></tr></thead><tbody>${lista.map(r => dirLinha(r, comCheck)).join("")}</tbody></table>`;
 function dirSheetHtml(r){
   return srSheetHtml(r, dadosReport(r)).replace(' id="srSheet"', "").replace(/ data-sr-edit="[^"]*"/g, "");
 }
@@ -4919,7 +4927,7 @@ function dirFormHtml(st){
   </form>`;
 }
 function dirGraficosHtml(){
-  const todos = rows, abertos = rows.filter(r => !isConcluido(r));
+  const todos = dirBase(), abertos = todos.filter(r => !isConcluido(r));
   const barras = lista => { const m = Math.max(1, ...lista.map(x => x.n));
     return lista.map(x => `<div class="dg-row"><span class="dg-lbl">${esc(x.l)}</span><span class="dg-trk"><i style="width:${Math.round(x.n / m * 100)}%;background:${x.c}"></i></span><b>${x.n}</b></div>`).join(""); };
   const porStatus = STATUS_OPTS.map(s => ({l: statusLabel(s) || s, n: todos.filter(r => String(r.Status) === s).length, c: pacCor(s)}));
@@ -4937,6 +4945,18 @@ function dirGraficosHtml(){
     </div>
   </div>`;
 }
+function dirNumsHtml(){
+  const st = dirStats(), t = dirTextos(st);
+  return `<div class="dir-rh"><div class="dir-rh-l"><h3>Resumo do portfólio</h3><span class="dir-upd">Atualizado em ${dirAtualizado()}</span></div><span class="dir-st" style="--c:${dirCorStatus(t.statusGeral)}">Status geral: ${esc(t.statusGeral)}</span></div>
+      ${st.ocultos ? `<p class="dir-ocu">${st.ocultos} projeto(s) oculto(s) não entram nos números deste resumo.</p>` : ""}
+      <div class="dir-kpis">${dirKpisList(st, t).map(([l, v, s, c]) => kc(l, v, s, c)).join("")}</div>
+      ${dirGraficosHtml()}
+      <div class="dir-cols">
+        <div><h4>Resumo executivo</h4><p>${esc(t.resumo)}</p><h4>Principais riscos</h4><p>${esc(t.riscos)}</p></div>
+        <div><h4>Decisões necessárias</h4><p>${esc(t.decisoes || "—")}</p><h4>Próximos marcos</h4><p>${esc(t.marcos || "—")}</p></div>
+      </div>`;
+}
+function dirAtualizaNums(){ const n = $("dirNums"); if (n) n.innerHTML = dirNumsHtml(); const c = $("dirContagem"); if (c) c.innerHTML = dirContadorInner(); }
 function renderDiretoria(){
   const box = $("baseDir");
   if (perfil() !== "admin") { box.innerHTML = `<div class="card empty">O Report Diretoria é exclusivo do Administrador.</div>`; return; }
@@ -4949,17 +4969,11 @@ function renderDiretoria(){
       <button class="btn" data-dir="pdf">Baixar PDF do portfólio</button>
       <button class="btn" data-dir="html">Baixar HTML do portfólio</button>
       ${dirEditando ? "" : `<button class="btn navy" data-dir="editar">Editar manualmente</button>`}
-      <span class="note" style="margin:0">Atualizado em ${dataBR(hojeISO())}${t.manuais ? ` · ${t.manuais} campo(s) manual(is)` : ""}</span>
+      ${t.manuais ? `<span class="note" style="margin:0">${t.manuais} campo(s) manual(is)</span>` : ""}
     </div>
     ${dirEditando ? dirFormHtml(st) : ""}
     <div class="card dir-resumo">
-      <div class="dir-rh"><h3>Resumo do portfólio</h3><span class="dir-st" style="--c:${dirCorStatus(t.statusGeral)}">Status geral: ${esc(t.statusGeral)}</span></div>
-      <div class="dir-kpis">${dirKpisList(st, t).map(([l, v, s, c]) => kc(l, v, s, c)).join("")}</div>
-      ${dirGraficosHtml()}
-      <div class="dir-cols">
-        <div><h4>Resumo executivo</h4><p>${esc(t.resumo)}</p><h4>Principais riscos</h4><p>${esc(t.riscos)}</p></div>
-        <div><h4>Decisões necessárias</h4><p>${esc(t.decisoes || "—")}</p><h4>Próximos marcos</h4><p>${esc(t.marcos || "—")}</p></div>
-      </div>
+      <div id="dirNums">${dirNumsHtml()}</div>
       <div class="dir-cont" id="dirContagem">${dirContadorInner()}</div>
       <div class="tbl-wrap">${abertos.length ? dirTabela(abertos, true) : `<p class="note" style="margin:0">Nenhum projeto em aberto.</p>`}</div>
       ${concl ? `<p class="note dir-rod">${concl} projeto(s) concluído(s) não aparecem aqui. Estão em Projetos concluídos.</p>` : ""}
@@ -4975,8 +4989,12 @@ const PF_CSS = `html,body{display:block !important;height:auto !important;overfl
 .pf-top span{font-size:12px;color:var(--muted)}
 .pf-bar{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:14px;font-weight:700}
 .pf-wrap{overflow:auto}
-.pf-link{color:#4697A8;font-weight:700;text-decoration:none}
-.pf-link:hover{text-decoration:underline}`;
+.pf-btn{display:inline-flex;align-items:center;gap:8px;padding:5px 12px;border-radius:999px;border:1px solid color-mix(in srgb,#4697A8 60%,transparent);background:color-mix(in srgb,#4697A8 16%,transparent);color:inherit;font-weight:700;font-size:12.5px;text-decoration:none;line-height:1.3}
+.pf-btn::after{content:"›";font-size:15px;line-height:1;color:#4697A8}
+.pf-btn:hover{background:color-mix(in srgb,#4697A8 32%,transparent)}
+.pf-acts{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:0 0 12px}
+.pf-ent{display:inline-flex;align-items:center;gap:8px;text-decoration:none}
+.pf-ent b{display:inline-block;min-width:22px;padding:1px 8px;border-radius:999px;background:color-mix(in srgb,#3E8E57 30%,transparent);font-size:12px;text-align:center}`;
 const PF_JS = `function pfMostra(){
   var h = (location.hash || '#home').slice(1);
   var alvo = document.getElementById(h);
@@ -4993,7 +5011,7 @@ function gerarHtmlPortfolio(){
   const css = [...document.styleSheets].map(ss => { let out = []; try { out = [...ss.cssRules].map(x => x.cssText); } catch (e) {} return out.join("\n"); }).join("\n");
   const linha = r => {
     const d = dadosReport(r), pz = prazo(r), nome = esc(r["Título"]);
-    return `<tr><td>#${esc(r.ID)}</td><td>${comReport.has(String(r.ID)) ? `<a class="pf-link" href="#r-${esc(r.ID)}">${nome}</a>` : nome}</td>`
+    return `<tr><td>#${esc(r.ID)}</td><td>${comReport.has(String(r.ID)) ? `<a class="pf-btn" href="#r-${esc(r.ID)}" title="Abrir o status report">${nome}</a>` : nome}</td>`
       + `<td>${esc(r["Responsável TI"] || "—")}</td><td>${esc(faseNome(faseMacro(r.Fase)) || "—")}</td>`
       + `<td><span class="dir-st" style="--c:${pacCor(r.Status)}">${esc(statusLabel(r.Status) || "—")}</span></td>`
       + `<td>${d.avanco == null ? "—" : d.avanco + "%"}</td><td>${pz ? esc(pz.texto) : r.Fim ? "Fim " + esc(dataBR(r.Fim)) : "—"}</td></tr>`;
@@ -5001,24 +5019,33 @@ function gerarHtmlPortfolio(){
   const tabela = tab.length
     ? `<div class="tbl-wrap"><table class="dir-tb"><thead><tr><th>ID</th><th>Projeto</th><th>Responsável</th><th>Fase</th><th>Status</th><th>Avanço</th><th>Prazo</th></tr></thead><tbody>${tab.map(linha).join("")}</tbody></table></div>`
     : `<p class="note">Nenhum projeto selecionado para a tabela.</p>`;
+  const entregues = rows.filter(isConcluido).sort((a, b) => String(b.Fim || "").localeCompare(String(a.Fim || "")) || (parseInt(b.ID, 10) || 0) - (parseInt(a.ID, 10) || 0));
+  const tabEnt = entregues.length
+    ? `<div class="tbl-wrap"><table class="dir-tb"><thead><tr><th>ID</th><th>Projeto</th><th>Responsável</th><th>Início</th><th>Fim</th></tr></thead><tbody>${entregues.map(r => `<tr><td>#${esc(r.ID)}</td><td>${esc(r["Título"])}</td><td>${esc(r["Responsável TI"] || "—")}</td><td>${r.Inicio ? esc(dataBR(r.Inicio)) : "—"}</td><td>${r.Fim ? esc(dataBR(r.Fim)) : "—"}</td></tr>`).join("")}</tbody></table></div>`
+    : `<p class="note">Nenhum projeto entregue.</p>`;
+  const atual = dirAtualizado();
   const home = `<section class="pf-view" id="home">
-    <div class="pf-top"><h1>Portfólio de TI · Status Report</h1><span>JCE SA · Portal PMO · Atualizado em ${dataBR(hojeISO())}</span></div>
+    <div class="pf-top"><h1>Portfólio de TI · Status Report</h1><span>JCE SA · Portal PMO</span></div>
     <div class="card dir-resumo">
-      <div class="dir-rh"><h3>Resumo do portfólio</h3><span class="dir-st" style="--c:${dirCorStatus(t.statusGeral)}">Status geral: ${esc(t.statusGeral)}</span></div>
+      <div class="dir-rh"><div class="dir-rh-l"><h3>Resumo do portfólio</h3><span class="dir-upd">Atualizado em ${atual}</span></div><span class="dir-st" style="--c:${dirCorStatus(t.statusGeral)}">Status geral: ${esc(t.statusGeral)}</span></div>
       <div class="dir-kpis">${dirKpisList(st, t).map(([l, v, s2, c]) => kc(l, v, s2, c)).join("")}</div>
       ${dirGraficosHtml()}
       <div class="dir-cols">
         <div><h4>Resumo executivo</h4><p>${esc(t.resumo)}</p><h4>Principais riscos</h4><p>${esc(t.riscos)}</p></div>
         <div><h4>Decisões necessárias</h4><p>${esc(t.decisoes || "—")}</p><h4>Próximos marcos</h4><p>${esc(t.marcos || "—")}</p></div>
       </div>
+      <div class="pf-acts"><a class="btn pf-ent" href="#entregues">Projetos entregues <b>${entregues.length}</b></a></div>
       ${tabela}
-      ${rep.length ? `<p class="note dir-rod">Clique no nome de um projeto para abrir o status report dele.</p>` : ""}
+      ${rep.length ? `<p class="note dir-rod">Clique no botão de um projeto para abrir o status report dele.</p>` : ""}
     </div>
   </section>`;
   const reports = rep.map(r => `<section class="pf-view" id="r-${esc(r.ID)}" hidden>
     <div class="pf-bar"><a class="btn" href="#home">← Voltar à home</a><span>#${esc(r.ID)} · ${esc(r["Título"])}</span></div>
     <div class="pf-wrap">${dirSheetHtml(r)}</div>
-  </section>`).join("");
+  </section>`).join("") + `<section class="pf-view" id="entregues" hidden>
+    <div class="pf-bar"><a class="btn" href="#home">← Voltar à home</a><span>Projetos entregues · ${entregues.length}</span></div>
+    <div class="card dir-resumo">${tabEnt}</div>
+  </section>`;
   return `<!DOCTYPE html>
 <html lang="pt-BR" class="${document.documentElement.classList.contains("claro") ? "claro" : ""}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Portfólio de TI · Status Report ${esc(dataBR(hojeISO()))}</title>${PAC_FONTE}
@@ -5057,7 +5084,7 @@ $("baseDir").addEventListener("click", e => {
   dirSel[tipo] = marcar ? [] : dirOrdem().filter(r => !isConcluido(r)).map(r => String(r.ID));
   dirSalvarSel();
   document.querySelectorAll(`input[data-dsel="${tipo}"]`).forEach(c => { c.checked = marcar; });
-  $("dirContagem").innerHTML = dirContadorInner();
+  dirAtualizaNums();
 });
 $("baseDir").addEventListener("change", e => {
   const c = e.target;
@@ -5067,7 +5094,7 @@ $("baseDir").addEventListener("change", e => {
   if (!c.checked) ex.push(id);
   dirSel[tipo] = ex;
   dirSalvarSel();
-  $("dirContagem").innerHTML = dirContadorInner();
+  dirAtualizaNums();
 });
 $("baseDir").addEventListener("submit", e => {
   if (e.target.id !== "dirForm") return;
