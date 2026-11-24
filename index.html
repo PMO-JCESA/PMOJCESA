@@ -920,6 +920,13 @@ body:not(.ro) .sr-wrap .sr-f[data-sr-edit]:hover,body:not(.ro) .sr-wrap .sr-av[d
 .dir-sr-row{display:flex;gap:10px;align-items:flex-start;margin-bottom:10px}
 .dir-sr-row .dir-sr{flex:1;min-width:0;margin:0}
 .dir-chk{display:flex;align-items:center;height:52px;padding:0 2px}
+.dem-linha{cursor:pointer}
+.dem-linha:hover td{background:color-mix(in srgb,var(--teal) 10%,transparent)}
+.dem-linha.on td{background:color-mix(in srgb,var(--teal) 18%,transparent)}
+.dem-det{margin-top:14px}
+.dem-dl{display:grid;grid-template-columns:240px 1fr;gap:7px 16px;font-size:13px;margin:0}
+.dem-dl dt{color:var(--muted);font-weight:700}
+.dem-dl dd{margin:0;color:var(--hi);word-break:break-word}
 </style>
 </head>
 <body>
@@ -965,6 +972,7 @@ body:not(.ro) .sr-wrap .sr-f[data-sr-edit]:hover,body:not(.ro) .sr-wrap .sr-av[d
     <button class="tab" data-tab="lista"><svg viewBox="0 0 24 24"><path d="M9 6h12M9 12h12M9 18h12"/><path d="M4 6h.01M4 12h.01M4 18h.01"/></svg>Lista</button>
     <button class="tab" data-tab="gestao"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="5" height="16" rx="1.5"/><rect x="10" y="4" width="5" height="11" rx="1.5"/><rect x="17" y="4" width="4" height="7" rx="1.5"/></svg>Gestão</button>
     <button class="tab" data-tab="emails"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>E-mails<span class="tab-badge" id="emBadge" hidden></span></button>
+    <button class="tab" data-tab="demandas"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1M9 13l2 2 4-4"/></svg>Demandas</button>
     <button class="tab" data-tab="perfil"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>Perfil</button>
     <button class="tab" data-tab="base"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>Base</button>
     <button class="tab sub" data-tab="base/diretoria"><svg viewBox="0 0 24 24"><path d="M4 20V11M10 20V5M16 20v-6M22 20H2"/></svg>Report Diretoria</button>
@@ -1040,6 +1048,16 @@ body:not(.ro) .sr-wrap .sr-f[data-sr-edit]:hover,body:not(.ro) .sr-wrap .sr-av[d
 
   <!-- GESTÃO: KANBAN DO PROJETO -->
   <section id="v-gestao-projeto" class="view"></section>
+
+  <!-- DEMANDAS (admin) -->
+  <section id="v-demandas" class="view">
+    <div class="page-h"><div><span class="eyebrow">Gestão de demandas</span><h1>Demandas</h1><p>Solicitações da lista SolicitacoesPMO do SharePoint. A tela atualiza sozinha a cada 5 minutos.</p></div>
+      <div class="acts"><span class="note" id="demStatus" style="margin:0"></span><button class="btn" id="demAtualizar">Atualizar agora</button></div></div>
+    <div id="demResumo"></div>
+    <div class="toolbar"><input type="search" id="demBusca" placeholder="Buscar por título, setor, status, tipo ou prioridade…" aria-label="Buscar demandas"></div>
+    <div id="demTabela"></div>
+    <div id="demDetalhe"></div>
+  </section>
 
   <!-- BASE -->
   <section id="v-base" class="view">
@@ -1792,7 +1810,7 @@ function bloqueado(){ if (podeEditar()) return false; if (spBloqueado()) { toast
 function viewPermitida(v){
   const p = perfil();
   if (p === "admin") return true;
-  if (p === "gp") return v !== "base";
+  if (p === "gp") return v !== "base" && v !== "demandas";
   if (p === "resp") return ["gestao","gestao-projeto"].includes(v);
   return ["gestao","gestao-projeto","concluidos"].includes(v);
 }
@@ -1802,7 +1820,7 @@ function aplicarPerfil(){
   document.body.classList.toggle("ro", !podeEditar());
   document.querySelectorAll(".tab").forEach(tb => {
     const k = tb.dataset.tab;
-    tb.hidden = (p === "viewer" || p === "resp") ? k !== "gestao" : ((k === "base" || k.startsWith("base/")) && p !== "admin");
+    tb.hidden = (p === "viewer" || p === "resp") ? k !== "gestao" : ((k === "base" || k.startsWith("base/") || k === "demandas") && p !== "admin");
   });
   document.body.classList.toggle("resp", p === "resp");
   if (p !== "viewer") autor = sessao.nome;
@@ -2108,7 +2126,7 @@ function route(){
   if (typeof novoForm !== "undefined") novoForm = null;
   const h = location.hash.replace(/^#\/?/, "") || "home";
   const [v, id, idTarefa] = h.split("/");
-  let view = ["home","lista","gestao","base","projeto","editar","concluidos","perfil","emails"].includes(v) ? v : (perfil() === "viewer" ? "gestao" : "home");
+  let view = ["home","lista","gestao","base","projeto","editar","concluidos","perfil","emails","demandas"].includes(v) ? v : (perfil() === "viewer" ? "gestao" : "home");
   if (view === "gestao" && id) view = "gestao-projeto";
   if (["projeto","editar","gestao-projeto"].includes(view) && !achar(id)) view = view === "gestao-projeto" ? "gestao" : "home";
   if (!viewPermitida(view)) { toast("Seu perfil não tem acesso a esta área."); location.hash = viewInicial(); return; }
@@ -2123,6 +2141,7 @@ function route(){
   else if (view === "projeto") renderProjeto(id);
   else if (view === "editar") renderEditar(id);
   else if (view === "concluidos") renderConcluidos();
+  else if (view === "demandas") renderDemandas();
   else if (view === "perfil") renderPerfil();
   else if (view === "emails") renderEmails();
   $("v-" + view).classList.add("active");
@@ -4124,6 +4143,139 @@ $("v-home").addEventListener("click", e => {
   if (b.dataset.homeExp === "outlook") { if (perfil() === "admin") enviarComPdf("home"); return; }
   exportarHome(b.dataset.homeExp);
 });
+
+/* ================= DEMANDAS (admin): lista SolicitacoesPMO do SharePoint, atualiza sozinha ================= */
+const DEM_LISTA = "SolicitacoesPMO";
+const DEM_FINAIS = ["Reprovado", "Cancelada", "Convertido em Projeto", "Convertido em Melhoria"];
+const DEM_CORES = ["#4697A8", "#2B8DA3", "#C07F2A", "#3E8E57", "#ED174F", "#77777A", "#7D879C", "#5BBCD1", "#C39366", "#A87436"];
+const DEM_INTERVALO = 5 * 60 * 1000;
+let demItens = [], demListaId = "", demBusca = "", demSel = null;
+const demTxt = v => Array.isArray(v) ? v.join(", ") : (v == null ? "" : (typeof v === "object" ? (v.Url || v.url || v.Description || "") : String(v)));
+const demUrl = v => {
+  if (!v) return "";
+  if (typeof v === "object") return v.Url || v.url || "";
+  const m = String(v).match(/https?:\/\/[^\s,]+/);
+  return m ? m[0] : "";
+};
+const demDataBR = iso => { const d = iso ? new Date(iso) : null; return d && !isNaN(d) ? `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}` : "—"; };
+async function demObterListaId(){
+  if (demListaId) return demListaId;
+  if (!spSt.siteId) spSt.siteId = (await gx("GET", `/sites/${SP.host}:${SP.sitePath}?$select=id`)).id;
+  const listas = await gxTodos(`/sites/${spSt.siteId}/lists?$select=id,name,displayName`);
+  const l = listas.find(x => x.name === DEM_LISTA) || listas.find(x => /solicita/i.test(x.displayName || "") && /pmo/i.test(x.displayName || ""));
+  if (!l) throw new Error("lista SolicitacoesPMO não encontrada neste site");
+  demListaId = l.id;
+  return demListaId;
+}
+async function demCarregar(){
+  const id = await demObterListaId();
+  const itens = await gxTodos(`/sites/${spSt.siteId}/lists/${id}/items?$expand=fields&$top=200`);
+  demItens = itens.map(it => ({id: String(it.id), criado: it.createdDateTime, web: it.webUrl || "", campos: it.fields || {}}));
+}
+function demHora(){ const d = new Date(); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; }
+async function demAtualizar(){
+  if (perfil() !== "admin" || !spLigado()) { demRender(); return; }
+  const st = $("demStatus");
+  if (st) st.textContent = "Atualizando…";
+  try {
+    await demCarregar();
+    demRender();
+    if (st) st.textContent = "Atualizado às " + demHora() + " · atualização automática a cada 5 min";
+  } catch (e) {
+    if (st) st.textContent = "Não foi possível atualizar: " + (e.message || e);
+  }
+}
+function demAgrupa(fn){
+  const m = {};
+  demItens.forEach(it => { const k = demTxt(fn(it.campos)) || "Não informado"; m[k] = (m[k] || 0) + 1; });
+  return Object.entries(m).sort((a, b) => b[1] - a[1]).map(([l, n], i) => ({l, n, c: DEM_CORES[i % DEM_CORES.length]}));
+}
+function demBarras(lista){
+  const max = Math.max(1, ...lista.map(x => x.n));
+  return lista.length ? lista.map(x => `<div class="dg-row"><span class="dg-lbl" title="${esc(x.l)}">${esc(x.l)}</span><span class="dg-trk"><i style="width:${Math.round(x.n / max * 100)}%;background:${x.c}"></i></span><b>${x.n}</b></div>`).join("") : `<p class="note" style="margin:0">Sem dados.</p>`;
+}
+function demMeses(){
+  const hoje = new Date(), meses = [];
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
+    meses.push({ano: d.getFullYear(), mes: d.getMonth(), l: `${pad(d.getMonth() + 1)}/${String(d.getFullYear()).slice(2)}`, n: 0});
+  }
+  demItens.forEach(it => {
+    const d = new Date(it.criado);
+    const m = meses.find(x => x.ano === d.getFullYear() && x.mes === d.getMonth());
+    if (m) m.n++;
+  });
+  return meses.map((m, i) => ({l: m.l, n: m.n, c: "#4697A8"}));
+}
+function demRender(){
+  const resumo = $("demResumo");
+  if (perfil() !== "admin") { resumo.innerHTML = `<div class="card empty">Área exclusiva do Administrador.</div>`; $("demTabela").innerHTML = ""; $("demDetalhe").innerHTML = ""; return; }
+  if (!spLigado()) { resumo.innerHTML = `<div class="card empty">Entre com sua conta Microsoft (indicador do topo) para ver as demandas.</div>`; $("demTabela").innerHTML = ""; $("demDetalhe").innerHTML = ""; return; }
+  if (!demItens.length) { resumo.innerHTML = `<div class="card empty">Nenhuma demanda cadastrada na lista ainda.</div>`; $("demTabela").innerHTML = ""; $("demDetalhe").innerHTML = ""; return; }
+  const total = demItens.length;
+  const abertas = demItens.filter(it => !DEM_FINAIS.includes(demTxt(it.campos.Status))).length;
+  const limite = Date.now() - 30 * 864e5;
+  const ult30 = demItens.filter(it => new Date(it.criado).getTime() >= limite).length;
+  const reprov = demItens.filter(it => demTxt(it.campos.Status) === "Reprovado").length;
+  resumo.innerHTML = `
+    <div class="dir-kpis">
+      ${kc("Demandas", total, "cadastradas na lista", "var(--teal)")}
+      ${kc("Em aberto", abertas, "em análise ou backlog", "var(--st1)")}
+      ${kc("Últimos 30 dias", ult30, "criadas no período", "var(--st5)")}
+      ${kc("Reprovadas", reprov, "não seguem", "var(--st3)")}
+      ${kc("Encerradas", total - abertas, "reprovadas, canceladas ou convertidas", "var(--st4)")}
+    </div>
+    <div class="dg-grid">
+      <div class="dg-card"><h4>Demandas por status</h4>${demBarras(demAgrupa(c => c.Status))}</div>
+      <div class="dg-card"><h4>Demandas por prioridade</h4>${demBarras(demAgrupa(c => c.Prioridade))}</div>
+      <div class="dg-card"><h4>Demandas por tipo</h4>${demBarras(demAgrupa(c => c.Tipo))}</div>
+      <div class="dg-card"><h4>Demandas por setor</h4>${demBarras(demAgrupa(c => c.Setor).slice(0, 8))}</div>
+      <div class="dg-card"><h4>Criadas por mês (12 meses)</h4>${demBarras(demMeses())}</div>
+      <div class="dg-card"><h4>Por benefício estratégico</h4>${demBarras(demAgrupa(c => c.BeneficioEstrategico))}</div>
+    </div>`;
+  demRenderTabela();
+  demRenderDetalhe();
+}
+function demRenderTabela(){
+  const q = demBusca.trim().toLowerCase();
+  const lista = demItens
+    .filter(it => !q || [it.campos.Title, it.campos.Setor, it.campos.Status, it.campos.Tipo, it.campos.Prioridade].map(demTxt).join(" ").toLowerCase().includes(q))
+    .sort((a, b) => new Date(b.criado) - new Date(a.criado));
+  $("demTabela").innerHTML = lista.length
+    ? `<div class="tbl-wrap"><table class="dir-tb"><thead><tr><th>ID</th><th>Título</th><th>Status</th><th>Prioridade</th><th>Tipo</th><th>Setor</th><th>Criada em</th><th>PDF</th></tr></thead><tbody>${lista.map(it => {
+        const c = it.campos, pdf = demUrl(c.FormularioPDF);
+        return `<tr class="dem-linha${demSel === it.id ? " on" : ""}" data-dem="${esc(it.id)}"><td>#${esc(c.ID || it.id)}</td><td>${esc(demTxt(c.Title) || "—")}</td><td>${esc(demTxt(c.Status) || "—")}</td><td>${esc(demTxt(c.Prioridade) || "—")}</td><td>${esc(demTxt(c.Tipo) || "—")}</td><td>${esc(demTxt(c.Setor) || "—")}</td><td>${demDataBR(it.criado)}</td><td>${pdf ? `<a class="pf-link" href="${esc(pdf)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Abrir PDF</a>` : "—"}</td></tr>`;
+      }).join("")}</tbody></table></div>`
+    : `<p class="note" style="margin:0">Nenhuma demanda encontrada.</p>`;
+}
+function demRenderDetalhe(){
+  const it = demItens.find(x => x.id === demSel);
+  if (!it) { $("demDetalhe").innerHTML = ""; return; }
+  const pares = Object.entries(it.campos).filter(([k]) => !k.startsWith("@") && !k.startsWith("_"))
+    .map(([k, v]) => {
+      const u = demUrl(v);
+      const valor = u ? `<a class="pf-link" href="${esc(u)}" target="_blank" rel="noopener">${esc(u)}</a>` : esc(demTxt(v) || "—");
+      return `<dt>${esc(k)}</dt><dd>${valor}</dd>`;
+    }).join("");
+  $("demDetalhe").innerHTML = `<div class="card dem-det">
+    <div class="dir-rh"><h3>Demanda #${esc(it.campos.ID || it.id)} · ${esc(demTxt(it.campos.Title) || "")}</h3>
+      ${it.web ? `<a class="btn" href="${esc(it.web)}" target="_blank" rel="noopener">Abrir na lista</a>` : ""}</div>
+    <dl class="dem-dl">${pares}</dl></div>`;
+}
+function renderDemandas(){
+  demRender();
+  demAtualizar();
+}
+$("demAtualizar").addEventListener("click", demAtualizar);
+$("demBusca").addEventListener("input", e => { demBusca = e.target.value; demRenderTabela(); });
+$("demTabela").addEventListener("click", e => {
+  const l = e.target.closest("[data-dem]");
+  if (!l) return;
+  demSel = demSel === l.dataset.dem ? null : l.dataset.dem;
+  demRenderTabela();
+  demRenderDetalhe();
+});
+setInterval(() => { const v = $("v-demandas"); if (v && v.classList.contains("active")) demAtualizar(); }, DEM_INTERVALO);
 
 /* ================= REPORT DIRETORIA (admin): resumo do portfólio + status reports ================= */
 const DIR_KEY = "portal_gp_diretoria_v1";
