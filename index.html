@@ -930,7 +930,23 @@ body:not(.ro) .sr-wrap .sr-f[data-sr-edit]:hover,body:not(.ro) .sr-wrap .sr-av[d
 .dem-form{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:end;margin:4px 0 16px}
 .dem-form label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;color:var(--muted)}
 .dem-form select{font:inherit;font-size:13px;font-weight:500;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface3);color:var(--hi)}
-.dem-acoes{grid-column:1/-1;display:flex;gap:10px;flex-wrap:wrap}
+.dem-acoes{grid-column:1/-1;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:12px}
+.dem-dica{font-size:12px;color:var(--muted);font-weight:600}
+.dem-sec{margin:0 0 18px}
+.dem-sec>h4{margin:0 0 10px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.dem-campo{display:flex;flex-direction:column;gap:6px}
+.dem-rot{font-size:12px;font-weight:700;color:var(--muted)}
+.dem-atual{display:block;padding:8px 10px;border-radius:8px;border:1px dashed var(--line);color:var(--hi);font-weight:600;font-size:13px}
+.dem-req{font-weight:500;color:var(--muted);font-size:11px}
+.dem-req.on{color:var(--st2)}
+.dem-form textarea.inval{border-color:var(--st3);box-shadow:0 0 0 2px rgba(237,23,79,.25)}
+.dem-info.destaque{border-color:var(--st2);background:rgba(224,164,88,.08)}
+.dem-aviso{padding:10px 12px;border-radius:8px;border:1px solid var(--st2);background:rgba(224,164,88,.10);font-size:13px;margin:0 0 14px;color:var(--hi)}
+.dem-longo{white-space:pre-wrap;max-height:240px;overflow:auto;background:var(--surface3);border-radius:8px;padding:8px 10px;font-size:12.5px}
+.dem-linha.atraso td:first-child{box-shadow:inset 3px 0 0 var(--st3)}
+.dem-tag{display:inline-block;font-size:10.5px;font-weight:700;padding:1px 6px;border-radius:999px;border:1px solid var(--st2);color:var(--st2);margin-left:6px;white-space:nowrap}
+.dem-tag.atr{border-color:var(--st3);color:var(--st3)}
+.dem-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle}
 .dem-form textarea{font:inherit;font-size:13px;font-weight:500;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface3);color:var(--hi);resize:vertical}
 .dem-form .w{grid-column:1/-1}
 .dem-info{border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:flex;flex-wrap:wrap;gap:6px 16px;margin:0}
@@ -4156,28 +4172,79 @@ $("v-home").addEventListener("click", e => {
 /* ================= DEMANDAS (admin): lista SolicitacoesPMO do SharePoint, atualiza sozinha ================= */
 const DEM_LISTA = "SolicitacoesPMO";
 const DEM_FINAIS = ["Reprovado", "Cancelada", "Convertido em Projeto", "Convertido em Melhoria"];
+/* RN-PMO-001: o que espera ação do PMO (badge), prazos de alerta (RL-18 / F4) e regra RL-01 */
+const DEM_ACAO_PMO = ["Pré escopo (Em Análise)", "Aguardando análise", "Repriorizado"];
+const DEM_ATRASO = {"Pré escopo (Em Análise)": 5, "Aguardando análise": 5, "Backlog": 30};
+const DEM_MIN = 5;
+const DEM_MSG_RL01 = "Para mudar o status, preencha a Justificativa da decisão e a Orientação ao solicitante (mínimo 5 caracteres cada).";
 const DEM_CORES = ["#4697A8", "#2B8DA3", "#C07F2A", "#3E8E57", "#ED174F", "#77777A", "#7D879C", "#5BBCD1", "#C39366", "#A87436"];
 const DEM_INTERVALO = 3 * 60 * 1000;
 const DEM_VISTAS_KEY = "portal_pmo_demandas_vistas";
 const DEM_STATUS = ["Pré escopo (Em Análise)", "Aguardando análise", "Backlog", "Aprovado", "Reprovado", "Cancelada", "Convertido em Projeto", "Convertido em Melhoria", "Repriorizado", "Bloqueado (Pendente Usuário)"];
-const DEM_PRIO = ["Urgente", "Alta", "Média", "Baixa"];
-const DEM_OCULTAS = ["TokenAjuste", "DadosSistema", "AuthorLookupId", "EditorLookupId", "ContentType", "ContentTypeId", "Edit", "AppAuthor", "AppEditor", "Modified", "Created", "ID", "Title", "LinkTitle", "LinkTitleNoMenu", "Attachments", "Author", "Editor", "ItemChildCount", "FolderChildCount"];
-let demColunas = [];
-const demNorm = t => String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
-const demCol = nome => demColunas.find(c => demNorm(c.displayName) === demNorm(nome) || c.name === nome);
-const DEM_NO_FORM = ["Status", "Prioridade", "Justificativa da decisão", "Orientação ao solicitante", "Informações pendentes"];
 const DEM_INFO = ["Custo / orçamento", "Benefícios", "Escopo", "Prazo", "Processos impactados", "Riscos", "Outros"];
+/* Campos da lista: nome exibido e nomes internos possíveis */
+const DEM_CAMPOS = {
+  status: ["Status"],
+  just: ["Justificativa da decisão", "JustificativaDecisao"],
+  orient: ["Orientação ao solicitante", "OrientacaoSolicitante"],
+  info: ["Informações pendentes", "InfoPendente", "InformacoesPendentes"],
+  notif: ["Status notificado", "StatusNotificado"],
+  desde: ["Status desde", "StatusDesde"],
+  decPor: ["Decidido por", "DecididoPor"],
+  decEm: ["Decidido em", "DecididoEm"],
+  ultJust: ["Última justificativa", "UltimaJustificativa"],
+  ultOrient: ["Última orientação", "UltimaOrientacao"],
+  hist: ["Histórico de decisões", "Histórico", "HistoricoDecisoes", "Historico"],
+  pdf: ["Formulário (PDF)", "FormularioPDF"],
+  token: ["Token de complemento", "TokenAjuste", "Token"],
+  dados: ["Dados do formulário", "DadosSistema", "DadosFormulario"],
+  tipo: ["Tipo"], setor: ["Setor"], prio: ["Prioridade"], benef: ["Benefício estratégico", "BeneficioEstrategico"]
+};
+/* Campos mostrados em outro bloco ou que pertencem aos fluxos (não entram em "Dados da solicitação") */
+const DEM_FORA_DADOS = ["status", "just", "orient", "info", "notif", "desde", "decPor", "decEm", "ultJust", "ultOrient", "hist", "pdf", "token", "dados"];
+const DEM_OCULTAS = ["TokenAjuste", "DadosSistema", "AuthorLookupId", "EditorLookupId", "ContentType", "ContentTypeId", "Edit", "AppAuthor", "AppEditor", "Modified", "Created", "ID", "Title", "LinkTitle", "LinkTitleNoMenu", "Attachments", "Author", "Editor", "ItemChildCount", "FolderChildCount", "ComplianceAssetId", "DocIcon"];
+let demColunas = [], demCache = {};
+const demNorm = t => String(t || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+function demAchar(chave){
+  if (chave in demCache) return demCache[chave];
+  const cands = DEM_CAMPOS[chave] || [chave];
+  let col = null;
+  for (const n of cands) { col = demColunas.find(c => c.name === n || demNorm(c.displayName) === demNorm(n)); if (col) break; }
+  if (!col) for (const n of cands) {
+    if (demNorm(n).length <= 8) continue;
+    col = demColunas.find(c => demNorm(c.displayName).startsWith(demNorm(n)));
+    if (col) break;
+  }
+  if (demColunas.length) demCache[chave] = col || null;
+  return col || null;
+}
+const demNomeInterno = chave => { const col = demAchar(chave); return col ? col.name : ((DEM_CAMPOS[chave] || [chave]).find(n => !/\s/.test(n)) || chave); };
+function demValor(it, chave){
+  const c = (it && it.campos) || it || {};
+  const col = demAchar(chave);
+  if (col) return c[col.name];
+  for (const n of (DEM_CAMPOS[chave] || [chave])) if (c[n] !== undefined) return c[n];
+  return undefined;
+}
+const demExiste = (it, chave) => demColunas.length ? !!demAchar(chave) : demValor(it, chave) !== undefined;
 const demLista = v => Array.isArray(v) ? v.map(String) : (v == null || v === "" ? [] : String(v).split(/\s*;\s*|\s*,\s*(?=[A-ZÁÉÍÓÚ])/).filter(Boolean));
 const demChave = v => Array.isArray(v) ? [...v].map(x => String(x).trim()).sort().join("|") : String(v == null ? "" : v).trim();
-const demMostra = col => !col.hidden && !DEM_OCULTAS.includes(col.name) && !/LookupId$/.test(col.name) && !col.name.startsWith("_")
-  && !DEM_NO_FORM.some(n => demNorm(n) === demNorm(col.displayName));
+const demMostra = col => !col.hidden && !col.readOnly && !DEM_OCULTAS.includes(col.name) && !/LookupId$/.test(col.name) && !col.name.startsWith("_")
+  && !DEM_FORA_DADOS.some(k => demAchar(k) === col);
 async function demCarregarColunas(){
   if (demColunas.length) return;
   const j = await gxTodos(`/sites/${spSt.siteId}/lists/${demListaId}/columns?$select=name,displayName,hidden,readOnly,choice`);
+  demCache = {};
   demColunas = j.map(c => ({name: c.name, displayName: c.displayName || c.name, hidden: !!c.hidden, readOnly: !!c.readOnly, choices: (c.choice && c.choice.choices) || null, multi: !!(c.choice && c.choice.displayAs === "checkBoxes")}));
 }
 let demItens = [], demListaId = "", demBusca = "", demSel = null;
 const demTxt = v => Array.isArray(v) ? v.join(", ") : (v == null ? "" : (typeof v === "object" ? (v.Url || v.url || v.Description || "") : String(v)));
+const demTexto = v => {
+  const t = demTxt(v);
+  if (!/<[a-z][\s\S]*>/i.test(t)) return t;
+  const h = t.replace(/<br\s*\/?>/gi, "\n").replace(/<\/(p|div|li|tr)>/gi, "\n");
+  return new DOMParser().parseFromString(h, "text/html").body.textContent.replace(/\n{3,}/g, "\n\n").trim();
+};
 const demUrl = v => {
   if (!v) return "";
   if (typeof v === "object") return v.Url || v.url || "";
@@ -4185,6 +4252,16 @@ const demUrl = v => {
   return m ? m[0] : "";
 };
 const demDataBR = iso => { const d = iso ? new Date(iso) : null; return d && !isNaN(d) ? `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}` : "—"; };
+const demDataHoraBR = v => { const d = v instanceof Date ? v : (v ? new Date(v) : null); return d && !isNaN(d) ? `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}` : (v ? String(v) : "—"); };
+const demStatus = it => demTxt(demValor(it, "status")).trim();
+const demNotif = it => { const v = demValor(it, "notif"); return v === undefined || v === null ? null : demTxt(v).trim(); };
+const demPendenteFluxo = it => { const n = demNotif(it); return !!n && n !== demStatus(it); };
+const demDesde = it => { const v = demTxt(demValor(it, "desde")); const d = new Date(v || it.criado); return isNaN(d) ? null : d; };
+const demDias = it => { const d = demDesde(it); return d ? Math.max(0, Math.floor((Date.now() - d.getTime()) / 864e5)) : null; };
+const demAtrasado = it => { const lim = DEM_ATRASO[demStatus(it)]; const n = demDias(it); return lim != null && n != null && n > lim; };
+const demBloqueado = s => /^bloqueado/i.test(String(s || "").trim());
+const demOk = t => String(t || "").replace(/\s/g, "").length >= DEM_MIN;
+const demCorStatus = s => { const i = DEM_STATUS.indexOf(s); return DEM_CORES[(i < 0 ? 6 : i) % DEM_CORES.length]; };
 async function demObterListaId(){
   if (demListaId) return demListaId;
   if (!spSt.siteId) spSt.siteId = (await gx("GET", `/sites/${SP.host}:${SP.sitePath}?$select=id`)).id;
@@ -4198,7 +4275,7 @@ async function demCarregar(){
   const id = await demObterListaId();
   await demCarregarColunas();
   const itens = await gxTodos(`/sites/${spSt.siteId}/lists/${id}/items?$expand=fields&$top=200`);
-  demItens = itens.map(it => ({id: String(it.id), criado: it.createdDateTime, web: it.webUrl || "", campos: it.fields || {}}));
+  demItens = itens.map(it => ({id: String(it.id), criado: it.createdDateTime, alterado: it.lastModifiedDateTime || "", web: it.webUrl || "", campos: it.fields || {}}));
 }
 function demHora(){ const d = new Date(); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; }
 async function demAtualizar(manual){
@@ -4217,10 +4294,10 @@ async function demAtualizar(manual){
     if (st) st.textContent = "Não foi possível atualizar: " + (e.message || e);
   }
 }
-function demAgrupa(fn){
+function demAgrupa(chave){
   const m = {};
-  demItens.forEach(it => { const k = demTxt(fn(it.campos)) || "Não informado"; m[k] = (m[k] || 0) + 1; });
-  return Object.entries(m).sort((a, b) => b[1] - a[1]).map(([l, n], i) => ({l, n, c: DEM_CORES[i % DEM_CORES.length]}));
+  demItens.forEach(it => { const k = demTxt(demValor(it, chave)) || "Não informado"; m[k] = (m[k] || 0) + 1; });
+  return Object.entries(m).sort((a, b) => b[1] - a[1]).map(([l, n], i) => ({l, n, c: chave === "status" ? demCorStatus(l) : DEM_CORES[i % DEM_CORES.length]}));
 }
 function demBarras(lista){
   const max = Math.max(1, ...lista.map(x => x.n));
@@ -4237,25 +4314,30 @@ function demMeses(){
     const m = meses.find(x => x.ano === d.getFullYear() && x.mes === d.getMonth());
     if (m) m.n++;
   });
-  return meses.map((m, i) => ({l: m.l, n: m.n, c: "#4697A8"}));
+  return meses.map(m => ({l: m.l, n: m.n, c: "#4697A8"}));
 }
 function demAtualizarBadge(){
   const b = $("demBadge");
   if (!b) return;
-  const abertas = demItens.filter(it => !DEM_FINAIS.includes(demTxt(it.campos.Status))).length;
-  const mostra = perfil() === "admin" && spLigado() && abertas > 0;
+  const n = demItens.filter(it => DEM_ACAO_PMO.includes(demStatus(it))).length;
+  const mostra = perfil() === "admin" && spLigado() && n > 0;
   b.hidden = !mostra;
-  b.textContent = mostra ? String(abertas) : "";
-  b.title = abertas + " solicitação(ões) em aberto";
+  b.textContent = mostra ? String(n) : "";
+  b.title = n + " solicitação(ões) aguardando o PMO";
 }
 function demAvisaNovas(){
   let vistas = null;
   try { vistas = JSON.parse(localStorage.getItem(DEM_VISTAS_KEY)); } catch (e) {}
-  if (Array.isArray(vistas)) {
-    const novas = demItens.filter(it => !vistas.includes(it.id) && !DEM_FINAIS.includes(demTxt(it.campos.Status)));
-    if (novas.length) toast(novas.length === 1 ? "Nova solicitação recebida na lista de Demandas." : `${novas.length} novas solicitações recebidas na lista de Demandas.`);
+  if (Array.isArray(vistas)) vistas = Object.fromEntries(vistas.map(id => [id, ""]));
+  if (vistas && typeof vistas === "object") {
+    const novas = demItens.filter(it => !(it.id in vistas) && DEM_ACAO_PMO.includes(demStatus(it))).length;
+    const compl = demItens.filter(it => demBloqueado(vistas[it.id]) && demStatus(it) === "Aguardando análise").length;
+    const msgs = [];
+    if (novas) msgs.push(novas === 1 ? "Nova solicitação recebida na lista de Demandas." : `${novas} novas solicitações recebidas na lista de Demandas.`);
+    if (compl) msgs.push(compl === 1 ? "Complemento recebido: uma demanda bloqueada voltou para Aguardando análise." : `Complemento recebido: ${compl} demandas bloqueadas voltaram para Aguardando análise.`);
+    if (msgs.length) toast(msgs.join(" "));
   }
-  try { localStorage.setItem(DEM_VISTAS_KEY, JSON.stringify(demItens.map(it => it.id))); } catch (e) {}
+  try { localStorage.setItem(DEM_VISTAS_KEY, JSON.stringify(Object.fromEntries(demItens.map(it => [it.id, demStatus(it)])))); } catch (e) {}
 }
 function demRender(){
   demAtualizarBadge();
@@ -4264,25 +4346,28 @@ function demRender(){
   if (!spLigado()) { resumo.innerHTML = `<div class="card empty">Entre com sua conta Microsoft (indicador do topo) para ver as demandas.</div>`; $("demTabela").innerHTML = ""; $("demDetalhe").innerHTML = ""; return; }
   if (!demItens.length) { resumo.innerHTML = `<div class="card empty">Nenhuma demanda cadastrada na lista ainda.</div>`; $("demTabela").innerHTML = ""; $("demDetalhe").innerHTML = ""; return; }
   const total = demItens.length;
-  const abertas = demItens.filter(it => !DEM_FINAIS.includes(demTxt(it.campos.Status))).length;
-  const limite = Date.now() - 30 * 864e5;
-  const ult30 = demItens.filter(it => new Date(it.criado).getTime() >= limite).length;
-  const reprov = demItens.filter(it => demTxt(it.campos.Status) === "Reprovado").length;
+  const acao = demItens.filter(it => DEM_ACAO_PMO.includes(demStatus(it))).length;
+  const bloq = demItens.filter(it => demBloqueado(demStatus(it))).length;
+  const atraso = demItens.filter(demAtrasado).length;
+  const encerr = demItens.filter(it => DEM_FINAIS.includes(demStatus(it))).length;
+  const pend = demItens.filter(demPendenteFluxo).length;
+  const temPrio = demItens.some(it => demTxt(demValor(it, "prio")));
   resumo.innerHTML = `
+    ${pend ? `<div class="dem-aviso"><b>${pend} decisão(ões) com e-mail pendente.</b> O Status ainda é diferente do Status notificado: o Fluxo 2 não terminou de registrar. Se continuar assim por mais de alguns minutos, confira se o fluxo está ligado.</div>` : ""}
     <div class="dir-kpis">
       ${kc("Demandas", total, "cadastradas na lista", "var(--teal)")}
-      ${kc("Em aberto", abertas, "em análise ou backlog", "var(--st1)")}
-      ${kc("Últimos 30 dias", ult30, "criadas no período", "var(--st5)")}
-      ${kc("Reprovadas", reprov, "não seguem", "var(--st3)")}
-      ${kc("Encerradas", total - abertas, "reprovadas, canceladas ou convertidas", "var(--st4)")}
+      ${kc("Aguardam o PMO", acao, "pré escopo, aguardando análise ou repriorizado", "var(--st1)")}
+      ${kc("Bloqueadas", bloq, "aguardam o complemento do solicitante", "var(--st2)")}
+      ${kc("Em atraso", atraso, "mais de 5 dias em análise ou 30 em backlog", "var(--st3)")}
+      ${kc("Encerradas", encerr, "reprovadas, canceladas ou convertidas", "var(--st4)")}
     </div>
     <div class="dg-grid">
-      <div class="dg-card"><h4>Demandas por status</h4>${demBarras(demAgrupa(c => c.Status))}</div>
-      <div class="dg-card"><h4>Demandas por prioridade</h4>${demBarras(demAgrupa(c => c.Prioridade))}</div>
-      <div class="dg-card"><h4>Demandas por tipo</h4>${demBarras(demAgrupa(c => c.Tipo))}</div>
-      <div class="dg-card"><h4>Demandas por setor</h4>${demBarras(demAgrupa(c => c.Setor).slice(0, 8))}</div>
+      <div class="dg-card"><h4>Demandas por status</h4>${demBarras(demAgrupa("status"))}</div>
+      <div class="dg-card"><h4>Demandas por tipo</h4>${demBarras(demAgrupa("tipo"))}</div>
+      <div class="dg-card"><h4>Demandas por setor</h4>${demBarras(demAgrupa("setor").slice(0, 8))}</div>
       <div class="dg-card"><h4>Criadas por mês (12 meses)</h4>${demBarras(demMeses())}</div>
-      <div class="dg-card"><h4>Por benefício estratégico</h4>${demBarras(demAgrupa(c => c.BeneficioEstrategico))}</div>
+      <div class="dg-card"><h4>Por benefício estratégico</h4>${demBarras(demAgrupa("benef"))}</div>
+      ${temPrio ? `<div class="dg-card"><h4>Demandas por prioridade</h4>${demBarras(demAgrupa("prio"))}</div>` : ""}
     </div>`;
   demRenderTabela();
   demRenderDetalhe();
@@ -4290,12 +4375,16 @@ function demRender(){
 function demRenderTabela(){
   const q = demBusca.trim().toLowerCase();
   const lista = demItens
-    .filter(it => !q || [it.campos.Title, it.campos.Setor, it.campos.Status, it.campos.Tipo, it.campos.Prioridade].map(demTxt).join(" ").toLowerCase().includes(q))
+    .filter(it => !q || [it.campos.Title, demValor(it, "setor"), demStatus(it), demValor(it, "tipo"), demValor(it, "prio")].map(demTxt).join(" ").toLowerCase().includes(q))
     .sort((a, b) => new Date(b.criado) - new Date(a.criado));
   $("demTabela").innerHTML = lista.length
-    ? `<div class="tbl-wrap"><table class="dir-tb"><thead><tr><th>ID</th><th>Título</th><th>Status</th><th>Prioridade</th><th>Tipo</th><th>Setor</th><th>Criada em</th><th>PDF</th></tr></thead><tbody>${lista.map(it => {
-        const c = it.campos, pdf = demUrl(c.FormularioPDF);
-        return `<tr class="dem-linha${demSel === it.id ? " on" : ""}" data-dem="${esc(it.id)}"><td>#${esc(c.ID || it.id)}</td><td>${esc(demTxt(c.Title) || "—")}</td><td>${esc(demTxt(c.Status) || "—")}</td><td>${esc(demTxt(c.Prioridade) || "—")}</td><td>${esc(demTxt(c.Tipo) || "—")}</td><td>${esc(demTxt(c.Setor) || "—")}</td><td>${demDataBR(it.criado)}</td><td>${pdf ? `<a class="pf-link" href="${esc(pdf)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Abrir PDF</a>` : "—"}</td></tr>`;
+    ? `<div class="tbl-wrap"><table class="dir-tb"><thead><tr><th>ID</th><th>Título</th><th>Status</th><th>No status</th><th>Tipo</th><th>Setor</th><th>Criada em</th><th>PDF</th></tr></thead><tbody>${lista.map(it => {
+        const c = it.campos, pdf = demUrl(demValor(it, "pdf")), st = demStatus(it), dias = demDias(it), atr = demAtrasado(it);
+        return `<tr class="dem-linha${demSel === it.id ? " on" : ""}${atr ? " atraso" : ""}" data-dem="${esc(it.id)}"><td>#${esc(c.ID || it.id)}</td><td>${esc(demTxt(c.Title) || "—")}</td>`
+          + `<td><i class="dem-dot" style="background:${demCorStatus(st)}"></i>${esc(st || "—")}${demPendenteFluxo(it) ? `<span class="dem-tag" title="O Fluxo 2 ainda não registrou esta decisão">e-mail pendente</span>` : ""}</td>`
+          + `<td>${dias == null ? "—" : dias + (dias === 1 ? " dia" : " dias")}${atr ? `<span class="dem-tag atr">atrasado</span>` : ""}</td>`
+          + `<td>${esc(demTxt(demValor(it, "tipo")) || "—")}</td><td>${esc(demTxt(demValor(it, "setor")) || "—")}</td><td>${demDataBR(it.criado)}</td>`
+          + `<td>${pdf ? `<a class="pf-link" href="${esc(pdf)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Abrir PDF</a>` : "—"}</td></tr>`;
       }).join("")}</tbody></table></div>`
     : `<p class="note" style="margin:0">Nenhuma demanda encontrada.</p>`;
 }
@@ -4303,47 +4392,87 @@ function demRenderDetalhe(){
   const it = demItens.find(x => x.id === demSel);
   if (!it) { $("demDetalhe").innerHTML = ""; return; }
   const c = it.campos;
-  const nomeCol = n => (demCol(n) || {}).name || n;
-  const atual = n => demTxt(c[nomeCol(n)]);
-  const choices = (n, padrao) => (demCol(n) && demCol(n).choices) || padrao;
-  const opts = (lista, cur) => (cur && !lista.includes(cur) ? [cur, ...lista] : lista).map(o => `<option ${o === cur ? "selected" : ""}>${esc(o)}</option>`).join("");
-  const stAtual = atual("Status"), prAtual = atual("Prioridade");
-  const just = atual("Justificativa da decisão"), orient = atual("Orientação ao solicitante");
-  const colInfo = demCol("Informações pendentes");
+  const st = demStatus(it), notif = demNotif(it), dias = demDias(it), desde = demDesde(it);
+  const colSt = demAchar("status"), colInfo = demAchar("info");
+  const temOrient = demExiste(it, "orient") || !demColunas.length;
+  const temInfo = demExiste(it, "info") || !demColunas.length;
+  const baseSt = (colSt && colSt.choices) || DEM_STATUS;
+  const optsSt = (st && !baseSt.includes(st) ? [st, ...baseSt] : baseSt).map(o => `<option ${o === st ? "selected" : ""}>${esc(o)}</option>`).join("");
+  const just = demTxt(demValor(it, "just")), orient = demTxt(demValor(it, "orient"));
   let infoHtml = "";
-  if (!demColunas.length || colInfo) {
-    const bruto = c[(colInfo || {}).name || "InfoPendente"];
-    const multi = Array.isArray(bruto) || !!(colInfo && colInfo.multi);
+  if (temInfo) {
+    const bruto = demValor(it, "info");
+    const multi = Array.isArray(bruto) || !!(colInfo && colInfo.multi) || !colInfo;
     const marcadas = demLista(bruto);
     const base = (colInfo && colInfo.choices) || DEM_INFO;
     const opcoes = [...base, ...marcadas.filter(m => !base.includes(m))];
+    const dica = `<span class="dem-req" id="demInfoDica" hidden>marque o que falta: vai no e-mail de bloqueio e fica destacado no formulário de complemento</span>`;
     infoHtml = multi
-      ? `<fieldset class="w dem-info" data-multi="1"><legend>Informações pendentes</legend>${opcoes.map(o => { const on = marcadas.includes(o); return `<label class="dem-chk"><input type="checkbox" name="info" value="${esc(o)}" ${on ? "checked" : ""} data-orig="${on ? 1 : 0}">${esc(o)}</label>`; }).join("")}</fieldset>`
-      : `<label>Informações pendentes<select name="info" data-orig="${esc(marcadas[0] || "")}"><option value="">—</option>${opcoes.map(o => `<option ${o === marcadas[0] ? "selected" : ""}>${esc(o)}</option>`).join("")}</select></label>`;
+      ? `<fieldset class="w dem-info" data-multi="1"><legend>Informações pendentes ${dica}</legend>${opcoes.map(o => { const on = marcadas.includes(o); return `<label class="dem-chk"><input type="checkbox" name="info" value="${esc(o)}" ${on ? "checked" : ""} data-orig="${on ? 1 : 0}">${esc(o)}</label>`; }).join("")}</fieldset>`
+      : `<label class="w dem-info">Informações pendentes ${dica}<select name="info" data-orig="${esc(marcadas[0] || "")}"><option value="">—</option>${opcoes.map(o => `<option ${o === marcadas[0] ? "selected" : ""}>${esc(o)}</option>`).join("")}</select></label>`;
   }
-  const pares = demColunas.length
+  const linha = (rotulo, valor, longo) => `<dt>${esc(rotulo)}</dt><dd${longo ? ' class="dem-longo"' : ""}>${valor}</dd>`;
+  const txt = k => esc(demTexto(demValor(it, k)) || "—");
+  let decPor = demTxt(demValor(it, "decPor"));
+  if (!decPor && demAchar("decPor") && c[demAchar("decPor").name + "LookupId"]) decPor = "usuário #" + c[demAchar("decPor").name + "LookupId"];
+  const pdf = demUrl(demValor(it, "pdf"));
+  const acomp = [
+    demExiste(it, "desde") || desde ? linha("Status desde", desde ? `${demDataHoraBR(desde)} · ${dias} ${dias === 1 ? "dia" : "dias"} no status${demAtrasado(it) ? ` <span class="dem-tag atr">atrasado</span>` : ""}` : "—") : "",
+    demExiste(it, "notif") ? linha("Status notificado", esc(notif || "—")) : "",
+    demExiste(it, "decPor") ? linha("Decidido por", esc(decPor || "—")) : "",
+    demExiste(it, "decEm") ? linha("Decidido em", esc(demValor(it, "decEm") ? demDataHoraBR(demTxt(demValor(it, "decEm"))) : "—")) : "",
+    demExiste(it, "ultJust") ? linha("Última justificativa", txt("ultJust")) : "",
+    demExiste(it, "ultOrient") ? linha("Última orientação", txt("ultOrient")) : "",
+    demExiste(it, "hist") ? linha("Histórico de decisões", txt("hist"), true) : "",
+    demExiste(it, "pdf") ? linha("Formulário (PDF)", pdf ? `<a class="pf-link" href="${esc(pdf)}" target="_blank" rel="noopener">Abrir PDF</a>` : "—") : ""
+  ].join("");
+  const dados = demColunas.length
     ? demColunas.filter(demMostra).map(col => {
-        const v = c[col.name], u = demUrl(v);
-        const valor = u ? `<a class="pf-link" href="${esc(u)}" target="_blank" rel="noopener">${esc(u)}</a>` : esc(demTxt(v) || "—");
-        return `<dt>${esc(col.displayName)}</dt><dd>${valor}</dd>`;
+        const v = c[col.name], u = demUrl(v), t = demTexto(v);
+        const longo = t.length > 160 || t.includes("\n");
+        return linha(col.displayName, u ? `<a class="pf-link" href="${esc(u)}" target="_blank" rel="noopener">${esc(u)}</a>` : esc(t || "—"), longo);
       }).join("")
     : "";
+  let aviso = "";
+  if (demPendenteFluxo(it)) {
+    const min = it.alterado ? (Date.now() - new Date(it.alterado).getTime()) / 6e4 : 0;
+    aviso = `<div class="dem-aviso"><b>E-mail pendente.</b> O Status (${esc(st)}) ainda é diferente do Status notificado (${esc(notif)}): o Fluxo 2 não terminou de registrar a decisão.${min > 10 ? " Já passaram mais de 10 minutos: confira se o fluxo está ligado." : " Costuma levar alguns segundos."}</div>`;
+  }
   $("demDetalhe").innerHTML = `<div class="card dem-det">
     <div class="dir-rh"><h3>Demanda #${esc(c.ID || it.id)} · ${esc(demTxt(c.Title) || "")}</h3>
       ${it.web ? `<a class="btn" href="${esc(it.web)}" target="_blank" rel="noopener">Abrir na lista</a>` : ""}</div>
-    <form id="demForm" class="dem-form">
-      <label>Status<select name="Status" data-orig="${esc(stAtual)}">${opts(choices("Status", DEM_STATUS), stAtual)}</select></label>
-      <label>Prioridade<select name="Prioridade" data-orig="${esc(prAtual)}">${opts(choices("Prioridade", DEM_PRIO), prAtual)}</select></label>
-      <label class="w">Justificativa da decisão <span class="note" style="margin:0">(obrigatória para mudar o status)</span><textarea name="justificativa" rows="3" data-orig="${esc(just)}">${esc(just)}</textarea></label>
-      ${!demColunas.length || demCol("Orientação ao solicitante") ? `<label class="w">Orientação ao solicitante<textarea name="orientacao" rows="2" data-orig="${esc(orient)}">${esc(orient)}</textarea></label>` : ""}
+    ${aviso}
+    <section class="dem-sec"><h4>Decidir</h4>
+    <form id="demForm" class="dem-form" novalidate>
+      <div class="dem-campo"><span class="dem-rot">Status atual</span><span class="dem-atual"><i class="dem-dot" style="background:${demCorStatus(st)}"></i>${esc(st || "—")}${dias != null ? ` · ${dias} ${dias === 1 ? "dia" : "dias"}` : ""}</span></div>
+      <label>Novo status<select name="Status" data-orig="${esc(st)}">${optsSt}</select></label>
+      <label class="w">Justificativa da decisão <span class="dem-req">mínimo 5 caracteres para mudar o status</span><textarea name="justificativa" rows="3" data-orig="${esc(just)}">${esc(just)}</textarea></label>
+      ${temOrient ? `<label class="w">Orientação ao solicitante <span class="dem-req">mínimo 5 caracteres para mudar o status · vai no e-mail ao solicitante</span><textarea name="orientacao" rows="2" data-orig="${esc(orient)}">${esc(orient)}</textarea></label>` : ""}
       ${infoHtml}
-      <div class="dem-acoes">
-        <button type="button" class="btn" data-dem-rapido="Aprovado">Aprovar</button>
-        <button type="button" class="btn" data-dem-rapido="Reprovado">Reprovar</button>
-        <button type="submit" class="btn primary">Salvar alterações</button>
-      </div>
-    </form>
-    <dl class="dem-dl">${pares}</dl></div>`;
+      <div class="dem-acoes"><span class="dem-dica" id="demDica"></span><button type="submit" class="btn primary">Registrar decisão</button></div>
+    </form></section>
+    ${acomp ? `<section class="dem-sec"><h4>Acompanhamento</h4><dl class="dem-dl">${acomp}</dl></section>` : ""}
+    ${dados ? `<section class="dem-sec"><h4>Dados da solicitação</h4><dl class="dem-dl">${dados}</dl></section>` : ""}
+  </div>`;
+  demDicas();
+}
+function demDicas(){
+  const f = $("demForm");
+  const it = demItens.find(x => x.id === demSel);
+  if (!f || !it) return;
+  const novo = f.elements.Status.value;
+  const muda = novo !== (demNotif(it) || demStatus(it));
+  const bloq = demBloqueado(novo);
+  const fs = f.querySelector(".dem-info");
+  if (fs) fs.classList.toggle("destaque", bloq && muda);
+  const di = $("demInfoDica");
+  if (di) di.hidden = !(bloq && muda);
+  f.querySelectorAll(".dem-req").forEach(x => x.classList.toggle("on", muda));
+  const d = $("demDica");
+  if (d) d.textContent = !muda
+    ? "Status sem mudança: salvar não envia e-mail ao solicitante."
+    : bloq ? "Ao registrar, o Fluxo 2 envia ao solicitante o e-mail com as pendências e o botão de complemento."
+    : "Ao registrar, o Fluxo 2 envia o e-mail da decisão ao solicitante.";
 }
 function renderDemandas(){
   demRender();
@@ -4352,54 +4481,58 @@ function renderDemandas(){
 function demLerForm(){
   const f = $("demForm");
   if (!f) return {};
-  const r = {Status: f.elements.Status.value, Prioridade: f.elements.Prioridade.value,
-    "Justificativa da decisão": f.elements.justificativa.value};
-  if (f.elements.orientacao) r["Orientação ao solicitante"] = f.elements.orientacao.value;
-  if (f.querySelector(".dem-info[data-multi]")) r["Informações pendentes"] = [...f.querySelectorAll('input[name="info"]:checked')].map(x => x.value);
-  else if (f.elements.info) r["Informações pendentes"] = f.elements.info.value;
+  const r = {status: f.elements.Status.value, just: f.elements.justificativa.value};
+  if (f.elements.orientacao) r.orient = f.elements.orientacao.value;
+  if (f.querySelector(".dem-info[data-multi]")) r.info = [...f.querySelectorAll('input[name="info"]:checked')].map(x => x.value);
+  else if (f.elements.info) r.info = f.elements.info.value;
   return r;
 }
+const DEM_ROTULOS = {status: "Status", just: "Justificativa da decisão", orient: "Orientação ao solicitante", info: "Informações pendentes"};
 async function demSalvar(alt){
   const it = demItens.find(x => x.id === demSel);
-  if (!it) return;
-  const valorBruto = nome => it.campos[(demCol(nome) || {}).name || nome];
-  const valorAtual = nome => demTxt(valorBruto(nome)).trim();
-  const novaJust = (alt["Justificativa da decisão"] || "").trim();
-  if (alt.Status !== undefined && alt.Status !== valorAtual("Status") && !novaJust) {
-    toast("Preencha a justificativa da decisão para mudar o status.");
-    return;
+  if (!it || !alt.status) return;
+  const f = $("demForm");
+  const muda = alt.status !== (demNotif(it) || demStatus(it));
+  // RL-01: mudar o status exige justificativa e orientação com 5+ caracteres (sem contar espaços)
+  if (muda) {
+    const faltaJ = !demOk(alt.just), faltaO = alt.orient !== undefined && !demOk(alt.orient);
+    if (f) { f.elements.justificativa.classList.toggle("inval", faltaJ); if (f.elements.orientacao) f.elements.orientacao.classList.toggle("inval", faltaO); }
+    if (faltaJ || faltaO) { toast(DEM_MSG_RL01); return; }
   }
-  const mudancas = {};
-  Object.entries(alt).forEach(([k, v]) => {
-    if (v === undefined) return;
-    if (Array.isArray(v)) { if (demChave(v) !== demChave(demLista(valorBruto(k)))) mudancas[k] = v; }
-    else if (String(v).trim() !== valorAtual(k)) mudancas[k] = String(v).trim();
-  });
-  if (!Object.keys(mudancas).length) { toast("Nenhuma alteração para salvar."); return; }
+  const mud = {};
+  if (alt.status !== demStatus(it)) mud.status = alt.status;
+  ["just", "orient"].forEach(k => { if (alt[k] !== undefined && alt[k].trim() !== demTxt(demValor(it, k)).trim()) mud[k] = alt[k].trim(); });
+  if (alt.info !== undefined) {
+    const atual = demLista(demValor(it, "info"));
+    if (Array.isArray(alt.info) ? demChave(alt.info) !== demChave(atual) : alt.info !== (atual[0] || "")) mud.info = alt.info;
+  }
+  if (!Object.keys(mud).length) { toast("Nenhuma alteração para salvar."); return; }
+  const semInfo = Array.isArray(alt.info) ? !alt.info.length : !alt.info;
+  if (muda && demBloqueado(alt.status) && alt.info !== undefined && semInfo
+      && !confirm("Nenhuma informação pendente marcada.\n\nO e-mail de bloqueio vai sem a lista do que falta. Registrar mesmo assim?")) return;
   const corpo = {};
-  for (const [nome, v] of Object.entries(mudancas)) {
-    const col = demCol(nome);
-    if (!col) { toast(`Coluna "${nome}" não encontrada na lista.`); return; }
-    if (Array.isArray(v)) corpo[col.name + "@odata.type"] = "Collection(Edm.String)";
-    corpo[col.name] = Array.isArray(v) ? v : (v === "" ? null : v);
+  for (const [k, v] of Object.entries(mud)) {
+    if (demColunas.length && !demAchar(k)) { toast(`Coluna "${DEM_ROTULOS[k]}" não encontrada na lista.`); return; }
+    const nome = demNomeInterno(k);
+    if (Array.isArray(v)) corpo[nome + "@odata.type"] = "Collection(Edm.String)";
+    corpo[nome] = Array.isArray(v) ? v : (v === "" ? null : v);
   }
   const num = it.campos.ID || it.id;
-  const resumo = Object.entries(mudancas).map(([k, v]) => `${k}: ${Array.isArray(v) ? (v.join(", ") || "(nenhuma)") : (v || "(vazio)")}`).join("\n");
-  if (!confirm(`Alterar a demanda #${num}?\n\n${resumo}\n\nSe houver fluxos de e-mail ligados à lista, eles serão disparados.`)) return;
+  const linhas = Object.entries(mud).map(([k, v]) => k === "status" ? `Status: ${demStatus(it) || "—"} → ${v}` : `${DEM_ROTULOS[k]}: ${Array.isArray(v) ? (v.join(", ") || "(nenhuma)") : (v || "(vazio)")}`);
+  const rodape = muda ? "O Fluxo 2 enviará o e-mail ao solicitante e registrará a decisão no histórico." : "O status não muda: nenhum e-mail será enviado.";
+  if (!confirm(`Registrar decisão na demanda #${num}?\n\n${linhas.join("\n")}\n\n${rodape}`)) return;
   try {
     await gx("PATCH", `/sites/${spSt.siteId}/lists/${demListaId}/items/${it.id}/fields`, corpo);
-    toast(`Demanda #${num} atualizada.`);
+    toast(muda ? `Decisão registrada na demanda #${num}. O Fluxo 2 vai enviar o e-mail ao solicitante.` : `Demanda #${num} atualizada.`);
     await demCarregar();
     demRender();
+    if (muda) { setTimeout(() => demAtualizar(false), 20000); setTimeout(() => demAtualizar(false), 60000); }
   } catch (e) {
-    toast("Não foi possível salvar: " + (e.message || e));
+    toast("A lista recusou a alteração: " + (e.message || e));
   }
 }
-$("demDetalhe").addEventListener("click", e => {
-  const b = e.target.closest("[data-dem-rapido]");
-  if (!b || perfil() !== "admin") return;
-  demSalvar({...demLerForm(), Status: b.dataset.demRapido});
-});
+$("demDetalhe").addEventListener("change", e => { if (e.target.name === "Status" || e.target.name === "info") demDicas(); });
+$("demDetalhe").addEventListener("input", e => { if (e.target.classList && e.target.classList.contains("inval")) e.target.classList.remove("inval"); });
 $("demDetalhe").addEventListener("submit", e => {
   if (e.target.id !== "demForm") return;
   e.preventDefault();
