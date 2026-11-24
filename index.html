@@ -3796,7 +3796,7 @@ function srSheetHtml(r, d){
             <div class="sr-l">Avanço global</div>
             <div class="sr-v">${av == null ? "—" : av + "%"}</div>
             <div class="sr-bar"><i style="width:${av ?? 0}%"></i></div>
-            <div class="sr-s">${d.avancoMedia ? "Média das fases (informado manualmente)" : d.avancoManual ? "Informado manualmente" : av == null ? "Sem tarefas para calcular" : "Calculado pelas tarefas e atividades"}</div>
+            ${d.avancoMedia ? "" : `<div class="sr-s">${d.avancoManual ? "Informado manualmente" : av == null ? "Sem tarefas para calcular" : "Calculado pelas tarefas e atividades"}</div>`}
           </div>
           <div class="sr-sem">${sem.map(([l, v]) => `<div><span class="sr-lbl">${l}</span>${srTag(v)}</div>`).join("")}</div>
           <div>
