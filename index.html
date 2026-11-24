@@ -1998,7 +1998,7 @@ function ajustarLogin(){
   $("loginForm").querySelector('[data-lg="email"]').hidden = !(p === "gp" || p === "resp");
   $("lgEmails").innerHTML = (p === "resp" ? emailsEquipe().map(e => `<option value="${esc(e)}">${esc(nomeCompletoDe(e))}</option>`)
     : cadastros.gerentes.filter(g => g.email).map(g => `<option value="${esc(g.email)}">${esc(g.nome)}</option>`)).join("");
-  $("loginForm").querySelector('[data-lg="senha"]').hidden = p === "viewer";
+  $("loginForm").querySelector('[data-lg="senha"]').hidden = p === "viewer" || p === "resp";
   $("loginForm").querySelector('[data-lg="viewer"]').hidden = p !== "viewer";
   $("lgErro").textContent = "";
 }
@@ -2029,7 +2029,6 @@ $("loginForm").addEventListener("submit", e => {
   } else if (p === "resp") {
     if (!email) return erro("Informe o seu e-mail.");
     if (!emailsEquipe().includes(email)) return erro("E-mail não encontrado entre as pessoas das tarefas. Peça ao gerente do projeto.");
-    if (!senhaRespOk(senha)) return erro("Senha incorreta.");
     nova = {perfil: "resp", nome: nomeCompletoDe(email), email};
   } else {
     nova = {perfil: "viewer", nome: "Visualizador", email: ""};
