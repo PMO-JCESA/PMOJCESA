@@ -1021,6 +1021,7 @@ buildStatic();$('#btnFinish').onclick=finish;$('#btnFinish2').onclick=finish;fil
     try { const b = new Uint8Array(await file.slice(0, 5).arrayBuffer()); return String.fromCharCode(...b).startsWith('%PDF'); } catch (e) { return false; }
   }
   const LIM = 1.5 * 1024 * 1024;
+  let spOn = false;
   function concluir(){
     draftMode = false;
     $$('.invalid').forEach(e => e.classList.remove('invalid'));
@@ -1028,11 +1029,14 @@ buildStatic();$('#btnFinish').onclick=finish;$('#btnFinish2').onclick=finish;fil
     if (E.length) { finish(); return; }
     showModal('<h3>Concluir e arquivar no portal</h3><p>O documento está completo. Para arquivar, gere o PDF e depois anexe aqui o arquivo salvo.</p>'
       + '<div class="gd-pdfbox"><div class="st"><b>1. Gerar o PDF</b><span>Na janela de impressão escolha <b>Salvar como PDF</b>.</span><div style="margin-top:8px"><button class="btn primary" type="button" id="gdGerar">Gerar PDF</button></div></div>'
-      + '<div class="st"><b>2. Anexar o PDF salvo</b><input type="file" id="gdPdf" accept="application/pdf,.pdf"><div id="gdPdfMsg" style="margin-top:6px"></div></div></div>'
+      + (spOn
+        ? '<div class="st"><b>2. Escolher o PDF na pasta do projeto</b><span>Salve o PDF na pasta do projeto no SharePoint e escolha-o aqui.</span><div style="margin-top:8px"><button class="btn primary" type="button" id="gdPick">Escolher da pasta do projeto</button></div></div></div>'
+        : '<div class="st"><b>2. Anexar o PDF salvo</b><input type="file" id="gdPdf" accept="application/pdf,.pdf"><div id="gdPdfMsg" style="margin-top:6px"></div></div></div>')
       + '<div class="acts"><button class="btn" type="button" id="gdCancel">Voltar e revisar</button></div>');
     $('#gdCancel').onclick = closeModal;
     $('#gdGerar').onclick = () => { doPrint(false); };
-    $('#gdPdf').onchange = async ev => {
+    if ($('#gdPick')) $('#gdPick').onclick = () => { post({t: 'pickpdf', estado: JSON.parse(JSON.stringify(S))}); };
+    if ($('#gdPdf')) $('#gdPdf').onchange = async ev => {
       const f = ev.target.files[0], msg = $('#gdPdfMsg');
       if (!f) return;
       if (!(await ehPdf(f))) { msg.innerHTML = '<span class="err">Este arquivo não é um PDF válido. Gere o PDF pelo passo 1 e anexe o arquivo salvo.</span>'; ev.target.value = ''; return; }
@@ -1051,7 +1055,7 @@ buildStatic();$('#btnFinish').onclick=finish;$('#btnFinish2').onclick=finish;fil
     if (!m || !m.gd || e.source !== parent) return;
     if (m.t === 'init') {
       if (m.std) { const a0 = document.querySelector('.gpback'); if (a0) { a0.dataset.gdHash = '#/gestao/' + (m.proj ? m.proj.id : ''); a0.textContent = '← Documentos do projeto'; } return; }
-      ativo = true; ro = !!m.ro; projNome = (m.proj && m.proj.nome) || '';
+      ativo = true; spOn = !!m.sp; ro = !!m.ro; projNome = (m.proj && m.proj.nome) || '';
       if (ro) {
         document.body.classList.add('gd-ro');
         document.addEventListener('beforeinput', ev => ev.preventDefault(), true);

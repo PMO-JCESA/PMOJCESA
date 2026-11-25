@@ -1589,6 +1589,7 @@ function parseMoeda(txt){
 const fmtMoeda = n => n.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 
 /* ================= MODELO DE DADOS ================= */
+const FLX_DESC_SOLIC = "Concluído automaticamente quando a solicitação é carregada na aba Documentos (a solicitação já chega salva e homologada).";
 function normalizarTarefa(t){
   return {
     id: t.id || uid(),
@@ -1610,6 +1611,7 @@ function normalizarTarefa(t){
     dependencias: normDeps(t.dependencias),
     criadoEm: t.criadoEm || new Date().toISOString(),
     ...(t.doc ? {doc: String(t.doc)} : {}),
+    ...(t.doc === "FORM01" && t.descricao && /FORM01|formul[aá]rio/i.test(t.descricao) ? {descricao: FLX_DESC_SOLIC} : {}),
     ...(t.origem ? {origem: String(t.origem)} : {}),
     ...(t.obrig ? {obrig: true} : {}),
     ...(t.vinc ? {vinc: true} : {}),
@@ -1730,6 +1732,7 @@ function normalizar(d){
   r.report = d.report && typeof d.report === "object" ? d.report : {};
   if (d.faseAntesConclusao) r.faseAntesConclusao = String(d.faseAntesConclusao);
   if (d.fluxo && typeof d.fluxo === "object") r.fluxo = d.fluxo;
+  if (typeof d.pastaSp === "string" && d.pastaSp) r.pastaSp = d.pastaSp;
   if (d._sp) r._sp = String(d._sp);
   return r;
 }
@@ -2369,13 +2372,14 @@ $("v-emails").addEventListener("change", e => {
 const fasesFechadas = new Set();
 function route(){
   if (!sessao) { mostrarLogin(); return; }
-  if (autoMover()) salvar();
+  if (autoMover() | flxReparar()) salvar();
   closeDrawer();
   if (typeof novoForm !== "undefined") novoForm = null;
   const h = location.hash.replace(/^#\/?/, "") || "home";
   const [v, id, idTarefa, idExtra, idModo] = h.split("/");
   let view = ["home","lista","gestao","base","projeto","editar","concluidos","perfil","demandas","guia"].includes(v) ? v : (perfil() === "viewer" ? "gestao" : "home");
   if (view === "gestao" && id) view = "gestao-projeto";
+  { const pidAtual = view === "gestao-projeto" ? id : ""; if (pidAtual !== flxPidGuia) { flxGuiaAberto.clear(); flxPidGuia = pidAtual; } }
   if (view === "guia" && !(id === "form" && idExtra && achar(idExtra))) { location.hash = idExtra && achar(idExtra) ? "#/gestao/" + idExtra : viewInicial(); return; }
   if (["projeto","editar","gestao-projeto"].includes(view) && !achar(id)) view = view === "gestao-projeto" ? "gestao" : "home";
   if (!viewPermitida(view)) { toast("Seu perfil não tem acesso a esta área."); location.hash = viewInicial(); return; }
@@ -3012,7 +3016,7 @@ function ntExtrasHtml(){
     </div>
     <div class="nt-panel">
       <h5>Anexos <small>${d.anexos.length ? d.anexos.length + " arquivo(s)" : "nenhum"}</small></h5>
-      <input type="file" multiple data-nt-anx>
+      ${anexoBotaoHtml("novo")}
       ${d.anexos.map(a => `<div class="nt-li"><span>${anexoNomeHtml(a)} <small class="note" style="margin:0">${a.tam ? Math.round(a.tam / 1024) + " KB" : ""}${a.dataUrl ? "" : " · sem conteúdo salvo (arquivo grande)"}</small></span><button type="button" class="del" data-nt-act="anx-del" data-aid="${esc(a.id)}" title="Remover">✕</button></div>`).join("")}
     </div>
     <div class="nt-panel">
@@ -4787,7 +4791,7 @@ setInterval(() => demAtualizar(false), DEM_INTERVALO);
 setTimeout(() => demAtualizar(false), 10000);
 
 /* ================= GUIA DO PROJETO (PMO e GP): ciclo de vida, fluxos e formulários ================= */
-const GUIA_V = "74";
+const GUIA_V = "81";
 const GUIA_DIR = "guia/";
 const GUIA_SOLICITACAO = "https://pmo-jcesa.github.io/SOLICIT_PROJ_MELHORIAS/";
 const GUIA_D = [{"k":"ini","n":"Iniciação","sub":"Solicitação e formalização do projeto","entra":"Solicitação do setor (FORM01)","sai":"Projeto autorizado","desc":"A demanda entra pelo setor, é justificada e o projeto é formalizado com stakeholders, governança e papéis definidos.","acts":[{"t":"Receber a Solicitação","d":"A demanda chega do setor pelo formulário de solicitação (FORM01) e entra na lista de Demandas do PMO.","r":"Área solicitante, PMO","f":"FORM01"},{"t":"Criar a Pasta do Projeto","d":"Criar a pasta do projeto na biblioteca PMO-Projetos do SharePoint. Os PDFs e documentos do projeto ficam nela.","r":"PMO, GP","f":"","lk":"https://nordtechmaquinas.sharepoint.com/sites/PortalTecnologia/Documentos%20Compartilhados/Forms/AllItems.aspx?id=%2Fsites%2FPortalTecnologia%2FDocumentos%20Compartilhados%2FPMO%2DProjetos%2F01%2EProjetos&viewid=039abd9b%2D3b27%2D489f%2Db785%2Dea30496c7b96&viewpath=%2Fsites%2FProjetosJCE%2FDocumentos%20Compartilhados%2FForms%2FAllItems%2Easpx&share=cgo3PmX7TnPwSrcDOmaE7tQFEgUDm3YnaEXOseXRa0qaYkkFRg","lkt":"Abrir a pasta no SharePoint"},{"t":"Elaborar Business Case","d":"Justificativa formal do investimento, custos, benefícios e retorno esperado.","r":"GP, PMO, Sponsor","f":"FORM02"},{"t":"Registrar Stakeholders","d":"Identificação e análise das partes interessadas no projeto.","r":"GP, PMO","f":"FORM03"},{"t":"Definir Governança","d":"Organização interna do projeto e fluxo de decisão por nível.","r":"GP, PMO","f":"FORM04"},{"t":"Definir Papéis","d":"Criação da Matriz RACI com as responsabilidades de cada ator.","r":"GP, PMO","f":"FORM05"},{"t":"Obter Autorização","d":"Assinatura formal do Sponsor autorizando o início do projeto.","r":"Sponsor","f":""}],"forms":[{"c":"FORM01","n":"Solicitação de Projeto","d":"Entrada das demandas dos setores (equivalente ao TAP). Chega pelo formulário de solicitação e é analisada pelo PMO em Demandas; não é responsabilidade do GP.","w":"Recebido pelo PMO antes do início do projeto.","tipo":"Controle","at":"Específica","f":"","ext":1},{"c":"FORM02","n":"Business Case","d":"Justificativa financeira e estratégica do projeto.","w":"Após a solicitação ser aceita pelo PMO.","tipo":"Controle","at":"Específica","f":"form02-business-case.html"},{"c":"FORM03","n":"Registro de Stakeholders","d":"Partes interessadas, influência e interesse.","w":"Ao formalizar o projeto.","tipo":"Controle","at":"Contínua","f":"form03-registro-de-stakeholders.html"},{"c":"FORM04","n":"Governança do Projeto","d":"Organização interna e fluxo de decisão.","w":"Ao formalizar o projeto.","tipo":"Controle","at":"Específica","f":"form04-governanca-do-projeto.html"},{"c":"FORM05","n":"Matriz RACI","d":"Responsável, Aprovador, Consultado e Informado por atividade.","w":"Ao definir os papéis da equipe.","tipo":"Controle","at":"Específica","f":"form05-matriz-raci.html"}]},{"k":"pla","n":"Planejamento","sub":"Estruturação e baseline","entra":"Projeto autorizado","sai":"Plano do projeto aprovado (baseline)","desc":"Define o que será entregue, os requisitos, o custo, os riscos e como a comunicação vai funcionar.","acts":[{"t":"Levantar Escopo","d":"Delimitação do que está dentro e fora do projeto.","r":"GP, Equipe","f":"FORM06"},{"t":"Levantar Requisitos","d":"Requisitos funcionais, não funcionais e regras de negócio.","r":"GP, Área de negócio","f":"FORM07"},{"t":"Definir Cronograma","d":"Cronograma detalhado do projeto no Portal PMO, na aba Gestão.","r":"GP, Equipe","f":"","lk":"#/gestao","lkt":"Abrir a Gestão"},{"t":"Elaborar Orçamento","d":"Detalhamento do orçamento por categoria.","r":"GP, PMO","f":"FORM08"},{"t":"Identificar Riscos","d":"Probabilidade, impacto e plano de resposta.","r":"GP, Equipe","f":"FORM09"},{"t":"Planejar Comunicação","d":"Quem recebe o quê, quando e por qual canal.","r":"GP","f":"FORM10"},{"t":"Aprovar Baseline","d":"Aprovação do escopo, prazo e custo de referência.","r":"Sponsor, Comitê","f":""}],"forms":[{"c":"FORM06","n":"Levantamento de Escopo","d":"O que está dentro e fora do escopo.","w":"Início do planejamento.","tipo":"Controle","at":"Específica","f":"form06-levantamento-de-escopo.html"},{"c":"FORM07","n":"Levantamento de Requisitos","d":"Requisitos funcionais, não funcionais e regras de negócio.","w":"Depois do escopo.","tipo":"Controle","at":"Específica","f":"form07-levantamento-de-requisitos.html"},{"c":"FORM08","n":"Detalhamento do Orçamento","d":"Orçamento por categoria com gráficos.","w":"Antes de aprovar a baseline.","tipo":"Controle","at":"Contínua","f":"form08-detalhamento-do-orcamento.html"},{"c":"FORM09","n":"Matriz de Riscos","d":"Riscos, probabilidade, impacto e resposta.","w":"Antes de aprovar a baseline.","tipo":"Controle","at":"Contínua","f":"form09-matriz-de-riscos.html"},{"c":"FORM10","n":"Plano de Comunicação","d":"Público, frequência e canal de cada comunicação.","w":"Antes de aprovar a baseline.","tipo":"Controle","at":"Específica","f":"form10-plano-de-comunicacao.html"}]},{"k":"exe","n":"Execução","sub":"Construção das entregas","entra":"Plano do projeto aprovado","sai":"Entregas concluídas","desc":"Construção das entregas. Toda mudança de escopo, prazo ou custo passa pela Gestão de Mudanças, o único registro que guarda histórico.","acts":[{"t":"Kick off","d":"Formalizar o Kick off do projeto: benefícios, entregas, premissas, restrições, riscos e o roadmap de implantação, aprovado pelo Sponsor.","r":"GP, PMO, Sponsor","f":"FORM11A"},{"t":"Executar Entregas","d":"Desenvolvimento dos pacotes de trabalho conforme o escopo.","r":"GP, Equipe","f":""},{"t":"Gerenciar Equipe","d":"Coordenação, motivação e resolução de conflitos.","r":"GP","f":""},{"t":"Gerenciar Mudanças","d":"Abertura e decisão das Change Requests no portal.","r":"GP, Sponsor","f":"FORM11"},{"t":"Garantir Qualidade","d":"Inspeção contínua e validação técnica das entregas.","r":"GP, Qualidade","f":""},{"t":"Gerenciar Fornecedores","d":"Acompanhamento de contratos e entregas de terceiros.","r":"GP","f":""},{"t":"Comunicar Progresso","d":"Atualização dos stakeholders sobre o andamento.","r":"GP","f":""}],"forms":[{"c":"FORM11A","n":"Kick off","d":"Benefícios, entregas, premissas, restrições, riscos, equipe e roadmap de implantação com mini cronograma.","w":"No início da execução, antes da primeira entrega.","tipo":"Controle","at":"Específica","f":"form11a-kick-off.html"},{"c":"FORM11","n":"Gestão de Mudanças","d":"Portal por projeto: Change Requests, painel de gestão e PDFs. Único com histórico salvo.","w":"Durante todo o projeto, a cada mudança.","tipo":"Controle","at":"Contínua","f":"form11-gestao-de-mudancas.html"}]},{"k":"hom","n":"Homologação e Testes","sub":"Testes, aceite e Go-Live","entra":"Entregas concluídas","sai":"Aceite do Go-Live","desc":"Testes, aceite do negócio, preparação da virada e implantação em produção.","acts":[{"t":"Realizar Testes","d":"Testes funcionais e de integração das entregas.","r":"Qualidade","f":"FORM12"},{"t":"Corrigir Não Conformidades","d":"Ajustes dos defeitos encontrados nos testes.","r":"Equipe, GP","f":""},{"t":"Obter Aceite dos Testes","d":"Aprovação formal das entregas pelo negócio.","r":"Cliente, Sponsor","f":"FORM13"},{"t":"Planejar Cutover e Rollback","d":"Roteiro da virada e plano de reversão.","r":"GP, TI","f":"FORM14 · FORM15"},{"t":"Autorizar Go-Live","d":"Autorização formal para implantar em produção.","r":"Sponsor, Comitê","f":"FORM16"},{"t":"Implantar e Estabilizar","d":"Deploy em produção e acompanhamento (Hypercare).","r":"TI, GP","f":""},{"t":"Obter Aceite de Implantação","d":"Validação pós-implantação e início da operação.","r":"Sponsor, Cliente","f":"FORM17"}],"forms":[{"c":"FORM12","n":"Relatório de Testes","d":"Resultados, casos aprovados/reprovados e defeitos.","w":"Ao fim da rodada de testes.","tipo":"Report","at":"Específica","f":"form12-relatorio-de-testes.html"},{"c":"FORM13","n":"Termo de Aceite dos Testes","d":"Aceite formal das entregas pelo negócio.","w":"Após os testes aprovados.","tipo":"Controle","at":"Específica","f":"form13-termo-de-aceite-dos-testes.html"},{"c":"FORM14","n":"Plano de Cutover","d":"Sequência e responsáveis pela virada.","w":"Antes da implantação.","tipo":"Controle","at":"Específica","f":"form14-plano-de-cutover.html"},{"c":"FORM15","n":"Plano de Rollback","d":"Passos para reverter em caso de falha.","w":"Antes da implantação.","tipo":"Controle","at":"Específica","f":"form15-plano-de-rollback.html"},{"c":"FORM16","n":"Termo de Aceite do Go Live","d":"Autorização para implantar em produção.","w":"Antes da virada.","tipo":"Controle","at":"Específica","f":"form16-termo-de-aceite-do-go-live.html"},{"c":"FORM17","n":"Termo de Aceite de Implantação","d":"Validação pós-implantação.","w":"Depois da virada.","tipo":"Controle","at":"Específica","f":"form17-termo-de-aceite-de-implantacao.html"}]},{"k":"enc","n":"Encerramento","sub":"Formalização e lições aprendidas","entra":"Aceite do Go-Live","sai":"Projeto encerrado e arquivado","desc":"Registro das lições, verificação do escopo entregue e arquivamento dos PDFs nas pastas do projeto no SharePoint.","acts":[{"t":"Ajustes Pós Go-Live","d":"Suporte imediato e estabilização da solução.","r":"Equipe, GP","f":""},{"t":"Encerrar Pagamentos e Contratos","d":"Finalização das pendências financeiras e com fornecedores.","r":"GP, PMO","f":""},{"t":"Passagem para Sustentação","d":"Treinamentos, documentos técnicos e acessos entregues à sustentação, com evidências.","r":"GP, Sustentação","f":"FORM18"},{"t":"Lições Aprendidas","d":"Registro dos aprendizados para os próximos projetos.","r":"GP","f":"FORM19"},{"t":"Termo de Encerramento","d":"Verificação da entrega do escopo e assinaturas.","r":"GP, Sponsor","f":"FORM20"},{"t":"Arquivar o Projeto","d":"Salvar os PDFs nas pastas do projeto no SharePoint e concluir o projeto no Portal PMO.","r":"GP","f":"","lk":"#/gestao","lkt":"Abrir a Gestão"}],"forms":[{"c":"FORM18","n":"Termo de Passagem para Sustentação","d":"Checklist da transição para a operação (treinamentos, documentação, acessos) com evidências e aceite da sustentação.","w":"Ao fim da operação assistida.","tipo":"Controle","at":"Específica","f":"form18-termo-de-passagem-para-sustentacao.html"},{"c":"FORM19","n":"Lições Aprendidas","d":"O que manter, o que ajustar e plano de ação.","w":"Após o Go-Live.","tipo":"Controle","at":"Específica","f":"form19-licoes-aprendidas.html"},{"c":"FORM20","n":"Termo de Encerramento do Projeto","d":"Confirma se todos os pontos do escopo foram entregues.","w":"Último documento do projeto.","tipo":"Controle","at":"Específica","f":"form20-termo-de-encerramento-do-projeto.html"}]}];
@@ -4970,7 +4974,7 @@ const FLX_PRIO = {MUST: "Prioritário", SHOULD: "Em atenção", COULD: "Em linha
 const flxPasta = () => { const a = (GUIA_D[0].acts || []).find(x => x.lk); return a ? a.lk : ""; };
 const fluxoAtivo = r => !!(r && r.fluxo && r.fluxo.ativo);
 const flxDoc = (r, c) => (r && r.fluxo && r.fluxo.docs && r.fluxo.docs[c]) || null;
-const flxConcl = (r, c) => { if (c === "FORM01") return !fluxoAtivo(r) || !!(r.fluxo && r.fluxo.solic); const d = flxDoc(r, c); return !!(d && (d.ok || d.na)); };
+const flxConcl = (r, c) => { if (c === "FORM01") return !fluxoAtivo(r) || !!(r.fluxo && r.fluxo.solic && r.fluxo.solic.arquivo); const d = flxDoc(r, c); return !!(d && (d.ok || d.na)); };
 const flxEscopoOk = r => !fluxoAtivo(r) || flxConcl(r, "FORM06");
 const flxReqOk = r => !fluxoAtivo(r) || (flxConcl(r, "FORM06") && flxConcl(r, "FORM07"));
 /* Segurança: fase que já tem tarefas criadas à mão nunca é bloqueada (projetos em andamento não perdem acesso) */
@@ -5011,7 +5015,7 @@ function fluxoCriarCards(r, qual){
     lista[fase].forEach(({a, key}) => {
       if (r.tarefas.some(x => x.origem === key)) return;
       const ext = a.f === "FORM01";
-      const desc = a.d + (a.lk ? "\nPasta do projeto: " + a.lk : "");
+      const desc = ext ? FLX_DESC_SOLIC : a.d + (a.lk ? "\nPasta do projeto: " + a.lk : "");
       const t = flxNovoCard(r, fase, a.t, {descricao: desc, origem: key, obrig: true, doc: /^FORM\d+A?$/.test(a.f || "") ? a.f : (a.f || "").split(" · ")[0] || ""});
       n++;
     });
@@ -5217,16 +5221,47 @@ function flxReqLista(r, E){
   const cont = {};
   return S2.req.filter(x => (String(x.nome || "") + (x.desc || "") + (x.prio || "") + (x.cat || "") + (x.orig || "")).trim()).map(x => {
     cont[x.t] = (cont[x.t] || 0) + 1;
-    return {id: (FLX_PREF[x.t] || "RF") + "-" + String(cont[x.t]).padStart(3, "0"), t: x.t, nome: x.nome || "", desc: x.desc || "", prio: x.prio || ""};
+    return {id: (FLX_PREF[x.t] || "RF") + "-" + String(cont[x.t]).padStart(3, "0"), t: x.t, nome: x.nome || "", desc: x.desc || "", prio: x.prio || "", hist: String(x.hist || "").trim(), crit: String(x.crit || "").trim()};
   });
+}
+const flxHistSlug = h => flxSemAcento(h).replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+const FLX_ORD_PRIO = ["MUST", "SHOULD", "COULD", "WONT", ""];
+/* Agrupa a lista de requisitos em histórias (mesmo nome) e itens soltos */
+function flxReqGrupos(lista){
+  const hs = {}, out = [];
+  lista.forEach(q => {
+    if (!q.hist) { out.push({tipo: "req", id: q.id, itens: [q]}); return; }
+    const k = flxHistSlug(q.hist);
+    if (!hs[k]) { hs[k] = {tipo: "hist", id: "H:" + k, slug: k, nome: q.hist, itens: []}; out.push(hs[k]); }
+    hs[k].itens.push(q);
+  });
+  return out;
+}
+const flxOrigemGrupo = g => g.tipo === "hist" ? "hist:" + g.slug : "req:" + g.id;
+const flxPrioGrupo = g => g.itens.map(q => q.prio || "").sort((a, b) => FLX_ORD_PRIO.indexOf(a) - FLX_ORD_PRIO.indexOf(b))[0] || "";
+function flxAtividadesHist(g){
+  const at = [];
+  g.itens.forEach(q => at.push(`${q.id} · ${q.nome}`));
+  g.itens.forEach(q => q.crit.split(/\n+/).map(x => x.trim()).filter(Boolean).forEach(c => at.push(`Critério de aceite (${q.id}): ${c}`)));
+  return at;
 }
 function flxGerarCardsReq(r, ids){
   const lista = flxReqLista(r);
-  let nc = 0, na = 0;
-  lista.forEach(q => {
-    if (!ids.includes(q.id) || r.tarefas.some(x => x.origem === "req:" + q.id)) return;
-    flxNovoCard(r, "execucao", `${q.id} · ${q.nome}`, {descricao: q.desc, origem: "req:" + q.id, doc: "FORM07", prioridade: FLX_PRIO[q.prio] || "Em linha"});
-    nc++;
+  let nc = 0, na = 0, nh = 0;
+  flxReqGrupos(lista).forEach(g => {
+    if (!ids.includes(g.id)) return;
+    const orig = flxOrigemGrupo(g);
+    let t = r.tarefas.find(x => x.origem === orig);
+    if (g.tipo === "hist") {
+      const desc = "História / épico do Levantamento de Requisitos.\n\nRequisitos:\n" + g.itens.map(q => `- ${q.id} ${q.nome}${q.desc ? ": " + q.desc.replace(/\n+/g, " ") : ""}`).join("\n");
+      if (!t) { t = flxNovoCard(r, "execucao", `História · ${g.nome}`, {descricao: desc, origem: orig, doc: "FORM07", prioridade: FLX_PRIO[flxPrioGrupo(g)] || "Em linha"}); nh++; nc++; }
+      flxAtividadesHist(g).forEach(tx => { if (!t.atividades.some(a => a.texto === tx)) t.atividades.push({id: uid(), texto: tx, feito: false, dependencias: []}); });
+      t.reqs = [...new Set([...(t.reqs || []), ...g.itens.map(q => q.id)])]; t.vinc = true;
+    } else if (!t) {
+      const q = g.itens[0];
+      t = flxNovoCard(r, "execucao", `${q.id} · ${q.nome}`, {descricao: q.desc, origem: orig, doc: "FORM07", prioridade: FLX_PRIO[q.prio] || "Em linha"});
+      t.reqs = [q.id]; t.vinc = true; nc++;
+    }
   });
   /* Todos os requisitos viram atividades de validação no card de testes (ação obrigatória ligada aos requisitos) */
   const teste = r.tarefas.find(x => x.origem === "guia:hom:0");
@@ -5235,8 +5270,8 @@ function flxGerarCardsReq(r, ids){
     if (!teste.atividades.some(a => a.texto === tx)) { teste.atividades.push({id: uid(), texto: tx, feito: false, dependencias: []}); na++; }
   });
   r.fluxo.reqCards = true;
-  registrar(r, `Fluxo guiado: ${nc} requisito(s) viraram cards e ${na} atividade(s) de validação foram ligadas aos testes`);
-  return {nc, na};
+  registrar(r, `Fluxo guiado: ${nc} card(s) criados a partir dos requisitos (${nh} história(s)) e ${na} atividade(s) de validação foram ligadas aos testes`);
+  return {nc, na, nh};
 }
 
 /* ---------- Conclusão de documentos ---------- */
@@ -5301,14 +5336,19 @@ function flxResultadoHtml(r, cod, res){
 function flxReqModal(r){
   const lista = flxReqLista(r);
   if (!lista.length) { flxModal(`<h3>Requisitos</h3><p>Não há requisitos salvos no Levantamento de Requisitos.</p><div class="flx-acts"><button class="btn primary" data-flx="fechar">Fechar</button></div>`); return; }
-  const linhas = lista.map(q => {
-    const ja = r.tarefas.some(x => x.origem === "req:" + q.id);
-    return `<label class="flx-req"><input type="checkbox" data-flx-req="${esc(q.id)}" ${ja ? "checked disabled" : (q.prio === "MUST" ? "checked" : "")}>
-      <span class="flx-id">${esc(q.id)}</span><span><b>${esc(q.nome)}</b>${q.prio ? ` <small class="note" style="margin:0">· ${esc(q.prio)}</small>` : ""}${ja ? ` <small class="note" style="margin:0">· já é card</small>` : ""}</span></label>`;
+  const linhas = flxReqGrupos(lista).map(g => {
+    const ja = r.tarefas.some(x => x.origem === flxOrigemGrupo(g));
+    const must = g.itens.some(q => q.prio === "MUST");
+    const marca = ja ? "checked disabled" : (must ? "checked" : "");
+    if (g.tipo === "req") { const q = g.itens[0];
+      return `<label class="flx-req"><input type="checkbox" data-flx-req="${esc(g.id)}" ${marca}>
+        <span class="flx-id">${esc(q.id)}</span><span><b>${esc(q.nome)}</b>${q.prio ? ` <small class="note" style="margin:0">· ${esc(q.prio)}</small>` : ""}${ja ? ` <small class="note" style="margin:0">· já é card</small>` : ""}</span></label>`; }
+    return `<label class="flx-req"><input type="checkbox" data-flx-req="${esc(g.id)}" ${marca}>
+      <span class="flx-id">História</span><span><b>${esc(g.nome)}</b> <small class="note" style="margin:0">· ${g.itens.length} requisito(s)${flxPrioGrupo(g) ? " · " + esc(flxPrioGrupo(g)) : ""}${ja ? " · já é card (atualiza ao confirmar)" : ""}</small><br><small class="note" style="margin:0">${g.itens.map(q => esc(q.id)).join(", ")}</small></span></label>`;
   }).join("");
   flxModal(`
-    <h3>Quais requisitos viram cards?</h3>
-    <p class="note" style="margin:0 0 8px">Os escolhidos entram na fase Execução, já ligados ao Levantamento de Requisitos. Todos os requisitos entram como atividades de validação no card de testes. Você pode editar ou excluir qualquer card depois.</p>
+    <h3>Quais histórias e requisitos viram cards?</h3>
+    <p class="note" style="margin:0 0 8px">Requisitos com a mesma história viram um único card, com os requisitos e os critérios de aceite como atividades. Requisitos sem história viram um card cada. Os escolhidos entram na fase Execução, já ligados ao Levantamento de Requisitos. Todos os requisitos entram como atividades de validação no card de testes. Você pode editar ou excluir qualquer card depois.</p>
     <div class="flx-reqs">${linhas}</div>
     <div class="flx-acts"><button class="btn" data-flx="req-todos">Marcar todos</button><button class="btn primary" data-flx="req-ok">Criar cards selecionados</button><button class="btn" data-flx="ir-docs">Decidir depois</button></div>`);
 }
@@ -5331,9 +5371,9 @@ function flxDocHtml(r, f){
     acoes = `<a class="btn sm primary" href="${url}">${st.k === "ok" ? "Ver / editar" : st.k === "and" ? "Continuar" : "Preencher"}</a>`;
   } else {
     acoes = `<a class="btn sm" href="${url}">${st.k === "pmo" || !edit ? "Consultar" : "Abrir formulário"}</a>`;
-    if (edit && st.k !== "pmo" && st.k !== "ok" && st.k !== "na") acoes += ` <label class="btn sm primary flx-file">Anexar PDF final<input type="file" accept="application/pdf,.pdf" data-flx-evid="${f.c}" hidden></label>`;
+    if (edit && st.k !== "pmo" && st.k !== "ok" && st.k !== "na") acoes += spLigado() ? ` <button type="button" class="btn sm primary" data-pa-abrir="evid:${f.c}" title="Escolha o PDF já salvo na pasta do projeto">Anexar PDF final (pasta do projeto)</button>` : ` <label class="btn sm primary flx-file">Anexar PDF final<input type="file" accept="application/pdf,.pdf" data-flx-evid="${f.c}" hidden></label>`;
   }
-  if (edit && st.k === "ok" && !f.ext && fluxoAtivo(r)) acoes += ` <label class="btn sm flx-file" title="Aprovação feita fora do portal (e-mail, Teams): guarde a evidência">Anexar evidência de aprovação<input type="file" data-flx-aprov="${f.c}" hidden></label>`;
+  if (edit && st.k === "ok" && !f.ext && fluxoAtivo(r)) acoes += spLigado() ? ` <button type="button" class="btn sm" data-pa-abrir="aprov:${f.c}" title="Escolha a evidência já salva na pasta do projeto">Anexar evidência de aprovação (pasta do projeto)</button>` : ` <label class="btn sm flx-file" title="Aprovação feita fora do portal (e-mail, Teams): guarde a evidência">Anexar evidência de aprovação<input type="file" data-flx-aprov="${f.c}" hidden></label>`;
   if (fluxoAtivo(r) && edit && st.k !== "bloq" && st.k !== "ok" && st.k !== "na" && st.k !== "pmo" && !f.ext && !FLX_BASE.includes(f.c) && f.c !== "FORM20") acoes += ` <button class="btn sm" data-flx="na" data-cod="${f.c}">Não se aplica</button>`;
   const card = flxCardDoc(r, f.c);
   const evid = card ? card.anexos.filter(a => a.flx === f.c) : [];
@@ -5389,6 +5429,7 @@ function flxFaseBloqHtml(r, f){
     <span class="note" style="margin:0">Libera após concluir Escopo e Requisitos.</span><button class="btn sm" data-flx="ir-docs">Ver documentos</button></div></section>`;
 }
 const flxGuiaAberto = new Set();
+let flxPidGuia = "";
 const flxGuiaLink = f => `<button class="btn sm ${flxGuiaAberto.has(f.key) ? "on" : ""}" data-flx="guia-fase" data-fase="${f.key}" title="Ver o processo desta fase">Guia da fase</button>`;
 function flxGuiaFaseHtml(r, fase, semDocs){
   if (!flxGuiaAberto.has(fase)) return "";
@@ -5416,6 +5457,7 @@ function flxBadgeCard(t){
   if (t.obrig) b.push(`<span class="tag flx-tag ob" title="Ação obrigatória do guia">Obrigatório</span>`);
   if (t.origem && t.origem.startsWith("guia:") && !t.vinc && t.bucket !== "concluido" && t.bucket !== "cancelado") b.push(`<span class="tag flx-tag pend" title="O GP precisa entrar no card e vincular as informações">Vincular</span>`);
   if (t.origem && t.origem.startsWith("req:")) b.push(`<span class="tag flx-tag rq">${esc(t.origem.slice(4))}</span>`);
+  if (t.origem && t.origem.startsWith("hist:")) b.push(`<span class="tag flx-tag rq">História</span>`);
   return b.join("");
 }
 function flxDrawerHtml(r, t){
@@ -5424,12 +5466,17 @@ function flxDrawerHtml(r, t){
   const ok = !t.doc || flxConcl(r, t.doc);
   const evid = t.anexos.filter(a => a.flx);
   const reqs = flxReqLista(r);
+  if (t.doc === "FORM01") return `<div class="dr-sec flx-dr"><h4>Solicitação</h4>
+    <div class="flx-drline"><b>Receber a Solicitação</b><span class="flx-badge ${ok ? "ok" : "disp"}">${ok ? "Concluído" : "Aguardando"}</span></div>
+    <p class="note" style="margin:6px 0">${ok ? "Solicitação carregada. O arquivo está anexado a este card." : "Este card se conclui sozinho quando a solicitação é carregada na aba Documentos."}</p>
+    ${ok ? "" : `<a class="btn sm primary" href="#/gestao/${esc(r.ID)}" data-flx="ir-docs" data-pid="${esc(r.ID)}">Ir para Documentos</a>`}</div>`;
   const guia = t.origem && t.origem.startsWith("guia:");
   const vinc = guia ? `<div class="flx-vinc"><h5>Vínculo de informações ${t.vinc ? `<span class="flx-badge ok">Vinculado</span>` : `<span class="flx-badge and">Pendente</span>`}</h5>
       <p class="note" style="margin:0 0 6px">Marque os requisitos que esta ação atende e confirme. O documento e os anexos do card já ficam ligados.</p>
       ${reqs.length ? `<div class="flx-vreqs">${reqs.map(q => `<label><input type="checkbox" data-flx-vreq="${esc(q.id)}" ${(t.reqs || []).includes(q.id) ? "checked" : ""}> <b>${esc(q.id)}</b> ${esc(q.nome)}</label>`).join("")}</div>` : `<p class="note" style="margin:0">Nenhum requisito salvo ainda.</p>`}
       <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm primary" data-flx="vinc-ok">${t.vinc ? "Atualizar vínculo" : "Confirmar vínculo"}</button>${t.vinc ? `<button class="btn sm" data-flx="vinc-desfaz">Desfazer</button>` : ""}</div></div>` : "";
   return `<div class="dr-sec flx-dr"><h4>Documento e vínculos</h4>
+    ${t.origem && t.origem.startsWith("hist:") ? `<p class="note" style="margin:0 0 6px">História do Levantamento de Requisitos (FORM07): ${esc((t.reqs || []).join(", "))}.</p>` : ""}
     ${t.origem && t.origem.startsWith("req:") ? `<p class="note" style="margin:0 0 6px">Requisito <b>${esc(t.origem.slice(4))}</b>, origem: Levantamento de Requisitos (FORM07).</p>` : ""}
     ${f ? `<div class="flx-drline"><span class="gd-code">${esc(f.c)}</span><b>${esc(f.n)}</b><span class="flx-badge ${ok ? "ok" : "disp"}">${ok ? "Concluído" : "Pendente"}</span></div>
       <p class="note" style="margin:6px 0">${ok ? "O PDF e as evidências ficam anexados a este card." : "Este card só pode ser concluído depois que o documento for concluído."}${evid.length ? " " + evid.length + " arquivo(s) de evidência." : ""}</p>
@@ -5588,12 +5635,13 @@ async function flxSpRender(){
 async function flxSpIniciar(r){
   flxSp = {caminho: [], itens: [], erro: "", pid: r.ID};
   const box = $("flxSpBox"); if (!box) return;
-  box.innerHTML = `<p class="note" style="margin:6px 0">Carregando a pasta…</p>`;
+  box.innerHTML = `<p class="note" style="margin:6px 0">Procurando a pasta do projeto…</p>`;
   try {
+    flxPa = {ctx: "solic", pid: r.ID, base: [], caminho: [], itens: [], sel: {}, fixa: false, erro: ""};
+    const achada = await flxPaAcharPasta(r);
+    flxPa = null;
+    flxSp.caminho = achada || [];
     await flxSpListar();
-    const nt = flxSemAcento(r["Título"] || "").replace(/[^a-z0-9]+/g, " ").trim();
-    const alvo = flxSp.itens.filter(it => it.folder && (new RegExp("(^|[^0-9])0*" + r.ID + "([^0-9]|$)").test(it.name) || (nt.length > 5 && flxSemAcento(it.name).replace(/[^a-z0-9]+/g, " ").includes(nt.slice(0, 18)))));
-    if (alvo.length === 1) { flxSp.caminho = [alvo[0].name]; await flxSpListar(); }
   } catch (e) { flxSp.erro = "Não foi possível abrir a pasta: " + e.message; flxSp.itens = []; }
   box.innerHTML = flxSpHtml();
 }
@@ -5612,25 +5660,154 @@ async function flxSolicEscolher(buf, nome, tam, extra){
   const msg = $("flxSolMsg");
   if (msg) msg.innerHTML = `<b>${esc(nome)}</b> selecionado. ${n ? n + " campo(s) reconhecido(s): revise abaixo e confirme." : esc(res.erro || "Nenhum campo reconhecido: preencha abaixo.")}`;
 }
+
+/* ---------- Anexos dos cards: somente arquivos da pasta do projeto no SharePoint ---------- */
+const anexoBotaoHtml = ctx => spLigado()
+  ? `<div style="margin-bottom:10px"><button type="button" class="btn sm primary" data-pa-abrir="${ctx}">Anexar da pasta do projeto</button> <small class="note" style="margin:0">Só aparecem os documentos salvos na pasta do projeto no SharePoint.</small></div>`
+  : `<p class="note" style="margin:0 0 10px">Conecte o portal ao SharePoint para anexar documentos da pasta do projeto.</p>`;
+let flxPa = null;
+const flxPaRel = () => [FLX_RAIZ_SOLIC].concat(flxPa.base, flxPa.caminho).join("/");
+async function flxPaListar(){
+  if (!spSt.siteId) spSt.siteId = (await gx("GET", `/sites/${SP.host}:${SP.sitePath}?$select=id`)).id;
+  const url = `/sites/${spSt.siteId}/drive/root:/${flxPaRel().split("/").map(encodeURIComponent).join("/")}:/children?$select=id,name,folder,file,size,webUrl&$top=200`;
+  return (await gxTodos(url)).sort((a, b) => (!!b.folder - !!a.folder) || a.name.localeCompare(b.name, "pt-BR"));
+}
+async function flxPaAcharPasta(r){
+  if (r.pastaSp) return r.pastaSp.split("/");
+  const nt = flxSemAcento(r["Título"] || "").replace(/[^a-z0-9]+/g, " ").trim();
+  const bate = it => it.folder && (new RegExp("(^|[^0-9])0*" + r.ID + "([^0-9]|$)").test(it.name) || (nt.length > 5 && flxSemAcento(it.name).replace(/[^a-z0-9]+/g, " ").includes(nt.slice(0, 18))));
+  flxPa.base = []; flxPa.caminho = [];
+  const raiz = await flxPaListar();
+  let hit = raiz.find(bate);
+  if (hit) return [hit.name];
+  for (const ano of raiz.filter(x => x.folder).slice(0, 8)) {
+    flxPa.base = [ano.name];
+    try { hit = (await flxPaListar()).find(bate); } catch (e) { hit = null; }
+    if (hit) return [ano.name, hit.name];
+  }
+  return null;
+}
+function flxPaHtml(){
+  const cam = flxPa.base.concat(flxPa.caminho);
+  const topo = flxPa.fixa ? flxPa.base.length : 0;
+  const crumb = (flxPa.fixa ? [flxPa.base[flxPa.base.length - 1]] : [FLX_RAIZ_SOLIC.split("/").pop()]).concat(flxPa.caminho)
+    .map((c, i) => `<button type="button" class="btn sm" data-pa-nav="${i}">${esc(c)}</button>`).join(" › ");
+  const lista = flxPa.erro ? `<p class="note" style="margin:6px 0;color:#f3b0a8">${esc(flxPa.erro)}</p>`
+    : flxPa.itens.length ? flxPa.itens.map((it, i) => it.folder
+      ? `<button type="button" class="flx-spi" data-pa-pasta="${i}"><span>📁</span><b>${esc(it.name)}</b></button>`
+      : `<label class="flx-spi"><input type="checkbox" data-pa-sel="${i}" ${flxPa.sel[it.id] ? "checked" : ""}><span>📄</span><b>${esc(it.name)}</b><small>${Math.max(1, Math.round((it.size || 0) / 1024))} KB</small></label>`).join("")
+      : `<p class="note" style="margin:6px 0">Pasta vazia.</p>`;
+  const n = Object.keys(flxPa.sel).length;
+  return `<h3>Anexar da pasta do projeto</h3>
+    <p class="note" style="margin:0 0 6px">${flxPa.fixa ? "Escolha os documentos já salvos na pasta deste projeto." : "Não encontrei a pasta deste projeto automaticamente. Navegue até ela e confirme."}</p>
+    <div class="flx-spc">${crumb}</div><div class="flx-spl" style="max-height:260px">${lista}</div>
+    <div class="flx-acts">${flxPa.fixa ? "" : `<button type="button" class="btn" data-pa-definir>Esta é a pasta do projeto</button>`}<button type="button" class="btn" data-pa-fechar>Cancelar</button><button type="button" class="btn primary" data-pa-ok ${n ? "" : "disabled"}>Anexar ${n ? n + " arquivo(s)" : ""}</button></div>`;
+}
+async function flxPaRender(){
+  flxModal(`<p class="note">Carregando a pasta…</p>`);
+  try { flxPa.erro = ""; flxPa.itens = await flxPaListar(); } catch (e) { flxPa.erro = "Não foi possível abrir a pasta: " + e.message; flxPa.itens = []; }
+  flxModal(flxPaHtml());
+}
+async function flxPaAbrir(ctx, pidForce, estado){
+  const pid = pidForce || (ctx === "drawer" ? (drawerCtx && drawerCtx.pid) : currentProjId()), r = achar(pid);
+  const unico = /^(evid|aprov|doc):/.test(ctx);
+  if (!r) return;
+  flxPa = {ctx, pid, unico, estado, base: [], caminho: [], itens: [], sel: {}, fixa: false, erro: ""};
+  flxModal(`<p class="note">Procurando a pasta do projeto…</p>`);
+  try {
+    const achada = await flxPaAcharPasta(r);
+    if (achada) { flxPa.base = achada; flxPa.caminho = []; flxPa.fixa = true; }
+    else { flxPa.base = []; flxPa.caminho = []; }
+  } catch (e) { flxPa.base = []; flxPa.caminho = []; }
+  await flxPaRender();
+}
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-pa-abrir],[data-pa-nav],[data-pa-pasta],[data-pa-fechar],[data-pa-ok],[data-pa-definir]");
+  if (!b) return;
+  e.preventDefault();
+  if (b.dataset.paAbrir) { await flxPaAbrir(b.dataset.paAbrir); return; }
+  if (!flxPa) return;
+  if (b.dataset.paFechar !== undefined) { flxFechar(); flxPa = null; return; }
+  if (b.dataset.paNav !== undefined) { flxPa.caminho = flxPa.caminho.slice(0, +b.dataset.paNav); await flxPaRender(); return; }
+  if (b.dataset.paPasta !== undefined) { const it = flxPa.itens[+b.dataset.paPasta]; if (it) { flxPa.caminho.push(it.name); await flxPaRender(); } return; }
+  if (b.dataset.paDefinir !== undefined) {
+    const r = achar(flxPa.pid); if (!r) return;
+    r.pastaSp = flxPa.caminho.join("/"); flxPa.base = flxPa.caminho.slice(); flxPa.caminho = []; flxPa.fixa = true; salvar();
+    await flxPaRender(); return;
+  }
+  if (b.dataset.paOk !== undefined) {
+    const novos = Object.values(flxPa.sel).map(it => ({id: uid(), nome: it.name, tam: it.size || 0, tipo: "", url: it.webUrl || "", itemId: it.id, doPrj: true}));
+    if (flxPa.unico) {
+      const r = achar(flxPa.pid), [modo, cod] = flxPa.ctx.split(":"), arq = novos[0];
+      if (!r || !arq) return;
+      if (modo === "doc") {
+        if (!/\.pdf$/i.test(arq.nome)) { toast("Escolha o documento final em PDF."); return; }
+        arq.tipo = "application/pdf";
+        const res = flxConcluir(r, cod, flxPa.estado, arq);
+        flxUltima = {pid: r.ID, cod, an: res.an, novos: res.novos};
+        flxRef = null; pVisao = "docs"; flxFechar(); flxPa = null;
+        if (location.hash === "#/gestao/" + r.ID) route(); else location.hash = "#/gestao/" + r.ID;
+        return;
+      }
+      if (modo === "evid") {
+        if (!/\.pdf$/i.test(arq.nome)) { toast("Escolha o documento final em PDF."); return; }
+        arq.tipo = "application/pdf";
+        flxConcluirEvid(r, cod, arq);
+        toast("Documento concluído e PDF anexado ao card.");
+      } else {
+        flxAnexarNoCard(r, cod, arq, "Aprovação – ");
+        registrar(r, `Evidência de aprovação anexada ao documento ${cod}`);
+        salvar(); toast("Evidência de aprovação anexada ao card.");
+      }
+      flxFechar(); flxPa = null; route();
+    } else if (flxPa.ctx === "drawer") {
+      const t = drawerCtx && acharTarefa(achar(flxPa.pid), drawerCtx.tid); if (!t) return;
+      t.anexos.push(...novos); flxFechar(); flxPa = null; depoisAlterar();
+    } else if (novoForm) {
+      novoForm.anexos.push(...novos); flxFechar(); flxPa = null;
+      const form = document.querySelector("form[data-nt]"); if (form) ntRefresh(form);
+    }
+  }
+});
+document.addEventListener("change", e => {
+  const c = e.target.closest("[data-pa-sel]"); if (!c || !flxPa) return;
+  const it = flxPa.itens[+c.dataset.paSel]; if (!it) return;
+  if (flxPa.unico) { flxPa.sel = {}; document.querySelectorAll("[data-pa-sel]").forEach(x => { if (x !== c) x.checked = false; }); }
+  if (c.checked) flxPa.sel[it.id] = it; else delete flxPa.sel[it.id];
+  const ok = document.querySelector("[data-pa-ok]"), n = Object.keys(flxPa.sel).length;
+  if (ok) { ok.disabled = !n; ok.textContent = "Anexar" + (n ? " " + n + " arquivo(s)" : ""); }
+});
 async function flxSolicModal(r){
-  const s0 = (r.fluxo && r.fluxo.solic && r.fluxo.solic.campos) || {};
+  const s0 = (r.fluxo && ((r.fluxo.solic && r.fluxo.solic.campos) || r.fluxo.rascunhoSolic)) || {};
   flxSolicArq = null;
   const sp = typeof spLigado === "function" && spLigado();
   flxModal(`
     <h3>Carregar solicitação</h3>
-    <p class="note" style="margin:0 0 10px">Escolha o arquivo da solicitação na pasta de documentos. As informações dele preenchem o Levantamento de Escopo, que depois você refina.</p>
+    <p class="note" style="margin:0 0 10px">Escolha o arquivo da solicitação (obrigatório): ele é anexado ao card e a solicitação só conta como carregada depois disso. As informações dele preenchem o Levantamento de Escopo, que depois você refina.</p>
     <div class="flx-sol"><b>1. Pasta de documentos do SharePoint</b>
       ${sp ? `<div id="flxSpBox"></div>` : `<p class="note" style="margin:4px 0 0">Conecte o portal ao SharePoint (botão no topo) para navegar pela pasta de documentos. Enquanto isso, use o arquivo do computador.</p>`}</div>
-    <div class="flx-sol"><b>2. Arquivo do computador (alternativa)</b>
-      <input type="file" accept="application/pdf,.pdf,application/json,.json" id="flxSolArq" style="margin-top:6px"></div>
+    ${sp ? "" : `<div class="flx-sol"><b>2. Arquivo do computador (alternativa)</b>
+      <input type="file" accept="application/pdf,.pdf,application/json,.json" id="flxSolArq" style="margin-top:6px"></div>`}
     <p id="flxSolMsg" class="note" style="margin:4px 0"></p>
     <div class="flx-sol"><b>3. Dados da solicitação (revise ou preencha)</b>
       <div class="flx-sol-g">${FLX_SOLIC_CAMPOS.map(([k, l, t]) => `<label class="${t === "area" ? "w" : ""}"><span>${esc(l)}</span>${t === "area" ? `<textarea rows="2" data-flx-sc="${k}">${esc(s0[k] || "")}</textarea>` : `<input type="text" data-flx-sc="${k}" value="${esc(s0[k] || (k === "titulo" ? r["Título"] || "" : ""))}">`}</label>`).join("")}</div></div>
     <div class="flx-acts"><button class="btn" data-flx="fechar">Cancelar</button><button class="btn primary" data-flx="solic-ok">Confirmar e ir ao repositório</button></div>`);
   if (sp) await flxSpIniciar(r);
 }
+/* Solicitação sem arquivo salvo não vale: volta a "não carregada" e o card reabre */
+function flxReparar(){
+  let n = 0;
+  rows.forEach(r => {
+    if (!fluxoAtivo(r)) return;
+    const sl = r.fluxo.solic, t = flxCardDoc(r, "FORM01");
+    if (sl && !sl.arquivo) { r.fluxo.rascunhoSolic = sl.campos || {}; delete r.fluxo.solic; n++; }
+    if (!r.fluxo.solic && t && t.bucket === "concluido") { setBucket(t, "backlog"); t.vinc = false; n++; }
+  });
+  return n;
+}
 async function flxSolicSalvar(r, campos, arq, origem){
   if (!r.fluxo) return;
+  if (!arq || !arq.nome) { toast("Escolha o arquivo da solicitação (na pasta do SharePoint ou do computador): sem o arquivo ela não é carregada."); return; }
   const ant = r.fluxo.solic;
   r.fluxo.solic = {em: new Date().toISOString(), por: autor, origem, campos, arquivo: arq ? {nome: arq.nome, tam: arq.tam, url: arq.url || ""} : (ant && ant.arquivo) || null};
   const t = flxCardDoc(r, "FORM01");
@@ -5672,7 +5849,7 @@ window.addEventListener("message", e => {
     const chave = r.ID + "|" + cod, pend = flxPend[chave];
     delete flxPend[chave];
     const estado = d && (d.rascunho || d.dados) ? (d.rascunho && !d.ok ? d.rascunho : d.dados) : null;
-    flxEnviar(c.fr, {t: "init", proj: {id: r.ID, nome: r["Título"]}, estado, patch: pend || (estado ? (cod === "FORM06" && r.fluxo.solic ? flxDeSolic(r.fluxo.solic.campos) : null) : flxPrefillInicial(cod, r)), ro: !podeEditar() || pmo});
+    flxEnviar(c.fr, {t: "init", sp: spLigado(), proj: {id: r.ID, nome: r["Título"]}, estado, patch: pend || (estado ? (cod === "FORM06" && r.fluxo.solic ? flxDeSolic(r.fluxo.solic.campos) : null) : flxPrefillInicial(cod, r)), ro: !podeEditar() || pmo});
   } else if (m.t === "buscar") {
     flxBuscarIr(r, cod, m.estado);
   } else if (m.t === "draft") {
@@ -5681,6 +5858,9 @@ window.addEventListener("message", e => {
     r.fluxo.docs[cod] = Object.assign(d, {ok: false, dados: m.estado, em: new Date().toISOString(), por: autor});
     salvar();
     toast("Rascunho salvo no portal.");
+  } else if (m.t === "pickpdf") {
+    if (!podeEditar()) return;
+    flxPaAbrir("doc:" + cod, r.ID, m.estado);
   } else if (m.t === "done") {
     if (!podeEditar() || !m.pdf || !m.pdf.nome) return;
     const res = flxConcluir(r, cod, m.estado, m.pdf);
@@ -5780,7 +5960,7 @@ document.addEventListener("click", async e => {
       arq = {nome: f.name, tam: f.size, tipo: f.type, dataUrl: grande ? "" : await lerArquivo(f)};
       if (/json/i.test(f.type) || /\.json$/i.test(f.name)) { try { Object.assign(campos, Object.assign(flxCanon(JSON.parse(await f.text())), campos)); } catch (x) {} }
     }
-    if (!f && !Object.keys(campos).length) { toast("Informe os dados, escolha uma solicitação ou anexe o arquivo."); return; }
+    if (!arq) { toast("Escolha o arquivo da solicitação na pasta do SharePoint ou no computador."); return; }
     await flxSolicSalvar(r, campos, arq, arq ? "arquivo " + arq.nome : "preenchimento no portal");
     return;
   }
@@ -5799,7 +5979,7 @@ document.addEventListener("click", async e => {
     const ids = [...document.querySelectorAll("[data-flx-req]:checked:not(:disabled)")].map(x => x.dataset.flxReq);
     const res = flxGerarCardsReq(r, ids);
     salvar(); flxFechar(); pVisao = "kanban";
-    toast(`${res.nc} card(s) criados em Execução; ${res.na} atividade(s) de validação ligadas aos testes.`);
+    toast(`${res.nc} card(s) criados em Execução (${res.nh} história(s)); ${res.na} atividade(s) de validação ligadas aos testes.`);
     if (location.hash === "#/gestao/" + r.ID) route(); else location.hash = "#/gestao/" + r.ID;
     return;
   }
@@ -6650,7 +6830,7 @@ function renderDrawer(){
     ${flxDrawerHtml(r, t)}
     <div class="dr-sec">
       <h4>Anexos</h4>
-      <input type="file" multiple data-f="anexos" style="margin-bottom:10px">
+      ${anexoBotaoHtml("drawer")}
       ${t.anexos.length ? t.anexos.map(a => `
         <div class="alist" style="margin:0">
           <div style="display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
@@ -7426,22 +7606,83 @@ $("corpoBase").addEventListener("click", e => {
   salvar();
   renderBase();
 });
-$("btnNovo").addEventListener("click", () => {
+const NP_DATA = (iso, d) => { const x = new Date(iso + "T12:00:00"); x.setDate(x.getDate() + d); return x.toISOString().slice(0, 10); };
+function npDistintos(col){ return [...new Set(rows.map(r => String(r[col] || "").trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR")); }
+function npModalHtml(){
+  const maxId = Math.max(0, ...rows.map(r => parseInt(r.ID, 10) || 0)), hoje = hojeISO();
+  const lista = (c, extra) => `<select name="${c}" data-np="${c}"><option value="">— selecione —</option>${[...new Set([...(LISTAS[c] || []), ...(extra || [])])].map(o => `<option>${esc(o)}</option>`).join("")}</select>`;
+  const eu = cadastros.gerentes.find(g => semAcento(g.nome) === semAcento(autor));
+  const gerSel = (c, v) => cadSelectHtml("gerentes", v || "", `name="${c}" data-np="${c}"`);
+  const f = (rot, html, cls, dica) => `<div class="fld ${cls || ""}"><label>${rot}</label>${html}${dica ? `<small class="note">${dica}</small>` : ""}</div>`;
+  return `<h3>Novo projeto <small style="font-weight:400;opacity:.7">· ID #${maxId + 1}</small></h3>
+    <p class="note" style="margin:0 0 10px">Escolha nas listas para manter o cadastro padronizado. Tudo pode ser ajustado depois na Base.</p>
+    <form id="npForm" autocomplete="off"><div class="fgrid">
+      ${f("Título *", `<input type="text" name="Título" data-np="Título" placeholder="Nome do projeto">`, "full")}
+      ${f("Categoria", lista("Categoria").replace("<option value=\"\">— selecione —</option>", ""))}
+      ${f("Frente", lista("Frente"))}
+      ${f("Benefício estratégico", lista("Benefício estratégico"), "full")}
+      ${f("Solicitante", cadSelectHtml("solicitantes", "", `name="Solicitante" data-np="Solicitante"`), "", "Preenche o departamento automaticamente")}
+      ${f("Departamento / setor", `<input type="text" name="Departamento" data-np="Departamento" list="npDeps"><datalist id="npDeps">${[...new Set([...cadastros.solicitantes.map(x => x.departamento).filter(Boolean), ...npDistintos("Departamento")])].sort((a, b) => a.localeCompare(b, "pt-BR")).map(o => `<option value="${esc(o)}">`).join("")}</datalist>`)}
+      ${f("Responsável TI", gerSel("Responsável TI", eu && eu.nome))}
+      ${f("Analista Funcional", gerSel("Analista Funcional"))}
+      ${f("Nome do Programa", `<input type="text" name="Nome do Programa" data-np="Nome do Programa" list="npProg"><datalist id="npProg">${npDistintos("Nome do Programa").map(o => `<option value="${esc(o)}">`).join("")}</datalist>`, "", "Escolha um existente ou digite um novo")}
+      ${f("Valor orçado (R$)", `<input type="text" name="Valor Orçado R$" data-np="Valor Orçado R$" inputmode="decimal" placeholder="0,00">`)}
+      ${f("Início", `<input type="date" name="Inicio" data-np="Inicio" value="${hoje}">`)}
+      ${f("Fim previsto", `<input type="date" name="Fim" data-np="Fim" value="${NP_DATA(hoje, 90)}">`, "", `<span class="np-dur"></span> <span class="np-q">${[30, 60, 90, 180, 365].map(d => `<button type="button" class="btn sm" data-np-dias="${d}">+${d} dias</button>`).join(" ")}</span>`)}
+    </div><p class="note np-erro" style="color:#f3b0a8;margin:8px 0 0" hidden></p>
+    <div class="flx-acts"><button type="button" class="btn" data-np-fechar>Cancelar</button><button type="submit" class="btn primary">Criar projeto</button></div></form>`;
+}
+function npDuracao(){
+  const f = $("npForm"); if (!f) return;
+  const a = f.Inicio.value, b = f.Fim.value, el = f.querySelector(".np-dur");
+  if (!a || !b) { el.textContent = ""; return; }
+  const d = Math.round((new Date(b) - new Date(a)) / 864e5);
+  el.textContent = d < 0 ? "Fim antes do início" : `Duração: ${d} dias (~${Math.max(1, Math.round(d / 30))} mês(es))`;
+}
+function criarProjetoNovo(v){
   const maxId = Math.max(0, ...rows.map(r => parseInt(r.ID, 10) || 0));
   const novo = normalizar({});
   novo.Status = "0.Novo/Aguardando";
   novo.ID = String(maxId + 1);
   novo.Fase = "0.2 Pré-escopo";
-  novo.Categoria = "Projeto";
-  novo["Título"] = "Novo projeto";
+  novo.Categoria = v.Categoria || "Projeto";
+  novo["Título"] = v["Título"] || "Novo projeto";
+  ["Frente", "Benefício estratégico", "Departamento", "Solicitante", "Responsável TI", "Analista Funcional", "Nome do Programa", "Inicio", "Fim", "Valor Orçado R$"].forEach(c => { if (v[c]) novo[c] = v[c]; });
   novo["Modificado por"] = autor;
   registrar(novo, "Projeto criado");
   fluxoIniciar(novo);
   rows.push(novo);
   salvar();
-  renderBase();
-  const campos = $("corpoBase").querySelectorAll('input[data-c="Título"]');
-  if (campos.length) { campos[campos.length-1].focus(); campos[campos.length-1].select(); }
+  return novo;
+}
+$("btnNovo").addEventListener("click", () => {
+  flxModal(npModalHtml());
+  const f = $("npForm"); f.querySelector('[name="Título"]').focus();
+});
+document.addEventListener("click", e => {
+  if (e.target.closest("[data-np-fechar]")) { flxFechar(); return; }
+  const q = e.target.closest("[data-np-dias]");
+  if (q) { const f = $("npForm"); f.Fim.value = NP_DATA(f.Inicio.value || hojeISO(), +q.dataset.npDias); npDuracao(); }
+});
+document.addEventListener("change", e => {
+  const f = e.target.form; if (!f || f.id !== "npForm") return;
+  if (e.target.name === "Solicitante") {
+    const s = cadastros.solicitantes.find(x => x.nome === e.target.value);
+    if (s && s.departamento) f.Departamento.value = s.departamento;
+  }
+  if (e.target.name === "Inicio" || e.target.name === "Fim") npDuracao();
+});
+document.addEventListener("input", e => { if (e.target.form && e.target.form.id === "npForm" && /^(Inicio|Fim)$/.test(e.target.name)) npDuracao(); });
+document.addEventListener("submit", e => {
+  if (e.target.id !== "npForm") return;
+  e.preventDefault();
+  const f = e.target, v = Object.fromEntries(new FormData(f).entries()), er = f.querySelector(".np-erro");
+  const msg = !v["Título"].trim() ? "Informe o título do projeto." : (v.Inicio && v.Fim && v.Fim < v.Inicio) ? "A data de fim não pode ser anterior ao início." : "";
+  if (msg) { er.textContent = msg; er.hidden = false; return; }
+  v["Título"] = v["Título"].trim();
+  const novo = criarProjetoNovo(v);
+  flxFechar(); renderBase();
+  toast(`Projeto #${novo.ID} criado. Abra a Gestão para carregar a solicitação.`);
 });
 $("btnRestaurar").addEventListener("click", () => {
   if (spLigado() || spFonte() || !SEED.length) { toast("Os dados ficam no SharePoint; não há o que restaurar aqui."); return; }

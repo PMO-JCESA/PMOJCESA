@@ -180,6 +180,7 @@ h3.sub{font-size:13px;margin:0 0 8px}
 .req input,.req textarea,.req select{width:100%;padding:9px 11px;border:1px solid #CBD5E1;border-radius:8px;background:#fff;outline:none;font:inherit}
 .req input:focus,.req textarea:focus,.req select:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(24,31,55,.12)}
 .req textarea{resize:none;overflow:hidden}
+.rq-h2{display:grid;grid-template-columns:1fr 1.4fr;gap:10px;margin-top:8px}@media(max-width:700px){.rq-h2{grid-template-columns:1fr}}
 .rq-x{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
 @media screen and (max-width:900px){.legend3{grid-template-columns:1fr}.addbar .sp1{flex-basis:100%}}
 /* =========== PDF =========== */
@@ -508,7 +509,7 @@ html.gd-emb body{background:transparent}
         <label class="f"><span>Função / Área</span><input id="tFunc" list="funcs" placeholder="Ex.: Analista de Negócios" autocomplete="off"></label>
         <button class="btn navy" type="button" id="btnTeamAdd">+ Adicionar à fila</button>
       </div>
-      <datalist id="funcs"><option value="Elaborador"><option value="Revisor"><option value="Aprovador"><option value="Analista de Negócios"><option value="Arquiteto de Solução"><option value="Product Owner"><option value="Gerente do Projeto"></datalist>
+      <datalist id="hists"></datalist><datalist id="funcs"><option value="Elaborador"><option value="Revisor"><option value="Aprovador"><option value="Analista de Negócios"><option value="Arquiteto de Solução"><option value="Product Owner"><option value="Gerente do Projeto"></datalist>
       <ol class="queue" id="queue"></ol>
     </div>
     <div class="stepnav" data-nav="s-proj"></div>
@@ -557,8 +558,8 @@ const PRN={MUST:'Essencial',SHOULD:'Importante',COULD:'Desejável',WONT:'Fora de
 const MC={MUST:'#EF4444',SHOULD:'#F59E0B',COULD:'#3B82F6',WONT:'#94A3B8'};
 const CATS=['Performance','Segurança','Disponibilidade','Usabilidade','Escalabilidade','Auditoria / Logs','Outro'];
 const localToday=()=>new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
-const blankReq=t=>({t:t||'rf',nome:'',desc:'',prio:'',cat:'',orig:''});
-const emptyReq=r=>!(r.nome+r.desc+r.prio+r.cat+r.orig).trim();
+const blankReq=t=>({t:t||'rf',nome:'',desc:'',prio:'',cat:'',orig:'',hist:'',crit:''});
+const emptyReq=r=>!(r.nome+r.desc+r.prio+r.cat+r.orig+(r.hist||'')+(r.crit||'')).trim();
 const makeState=()=>({
   id:{nome:'',data:localToday(),analista:'',versao:'001',obj:''},team:[],
   req:[blankReq('rf')],
@@ -600,7 +601,12 @@ function renderReq(){
       ${r.t==='rnf'?`<label><span>Categoria</span><select data-path="req.${i}.cat"><option value="">Selecione…</option>${CATS.map(c=>`<option>${c}</option>`).join('')}</select></label>`:''}
       ${r.t!=='rn'?`<label><span>Prioridade</span><select data-path="req.${i}.prio"><option value="">Selecione…</option>${PRI.map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}</select></label>`
         :`<label style="grid-column:1/-1"><span>Origem da regra <small class="hint">(opcional: lei, norma ou política)</small></span>${inp(`req.${i}.orig`,'Ex.: Política interna de crédito, LGPD')}</label>`}
+    </div>
+    <div class="rq-h2">
+      <label><span>História / épico <small class="hint">(requisitos com o mesmo nome viram um único card no Kanban)</small></span>${inp(`req.${i}.hist`,'Ex.: Cadastro de cliente','hists')}</label>
+      <label><span>Critérios de aceite <small class="hint">(um por linha)</small></span><textarea data-path="req.${i}.crit" style="min-height:48px" placeholder="Ex.: O cadastro rejeita CNPJ inválido"></textarea></label>
     </div></div>`;}).join('');
+  const dl=$('#hists');if(dl)dl.innerHTML=[...new Set(S.req.map(r=>(r.hist||'').trim()).filter(Boolean))].map(h=>`<option value="${esc(h)}">`).join('');
   fillValues('#reqList');$$('textarea',e).forEach(autosize);renderCounts();
 }
 function renderApr(){const e=$('#aprList');
@@ -779,14 +785,16 @@ function buildPrint(){
   const sum=sec('Resumo',`<div class="crow"><div class="cbp"><h4>Prioridade dos requisitos (funcionais e não-funcionais)</h4>${prioChart(list.filter(r=>r.t!=='rn'))}</div>
     <div class="k2">${Object.keys(T).map(k=>`<div class="pk" style="--kc:${T[k].c}"><small>${T[k].long}</small><b>${by(k).length}</b></div>`).join('')}<div class="pk"><small>Total de itens</small><b>${list.length}</b></div></div></div>`);
   const rf=by('rf'),rnf=by('rnf'),rn=by('rn');
-  const row=(x,extra)=>`<tr><td><span class="idp">${x.id}</span></td><td><b>${esc(x.o.nome)}</b><br>${nl2br(x.o.desc)}</td>${extra}</tr>`;
+  const row=(x,extra)=>`<tr><td><span class="idp">${x.id}</span></td><td><b>${esc(x.o.nome)}</b><br>${nl2br(x.o.desc)}${x.o.hist?`<br><small><b>História:</b> ${esc(x.o.hist)}</small>`:''}${(x.o.crit||'').trim()?`<br><small><b>Critérios de aceite:</b><br>${nl2br(x.o.crit)}</small>`:''}</td>${extra}</tr>`;
   const s1=sec('1 · '+T.rf.long,`<table class="dt"><colgroup><col style="width:17mm"><col><col style="width:32mm"></colgroup><thead><tr><th>ID</th><th>Requisito</th><th>Prioridade</th></tr></thead><tbody>${rf.map(x=>row(x,`<td>${pr(x.o)}</td>`)).join('')||'<tr><td colspan="3">Nenhum requisito funcional.</td></tr>'}</tbody></table>`);
   const s2=rnf.length?sec('2 · '+T.rnf.long,`<table class="dt"><colgroup><col style="width:17mm"><col><col style="width:34mm"><col style="width:32mm"></colgroup><thead><tr><th>ID</th><th>Requisito</th><th>Categoria</th><th>Prioridade</th></tr></thead><tbody>${rnf.map(x=>row(x,`<td>${esc(x.o.cat)||'—'}</td><td>${pr(x.o)}</td>`)).join('')}</tbody></table>`):'';
   const s3=rn.length?sec('3 · '+T.rn.long,`<table class="dt"><colgroup><col style="width:17mm"><col><col style="width:62mm"></colgroup><thead><tr><th>ID</th><th>Regra</th><th>Origem</th></tr></thead><tbody>${rn.map(x=>row(x,`<td>${esc(x.o.orig)||'—'}</td>`)).join('')}</tbody></table>`):'';
+  const hs={};list.forEach((o,i)=>{const h=(o.hist||'').trim();if(h)(hs[h]=hs[h]||[]).push({o,id:ids[i]});});
+  const sh=Object.keys(hs).length?sec('Histórias e requisitos',`<table class="dt"><colgroup><col style="width:52mm"><col><col style="width:62mm"></colgroup><thead><tr><th>História / épico</th><th>Requisitos</th><th>Critérios de aceite</th></tr></thead><tbody>${Object.keys(hs).map(h=>`<tr><td><b>${esc(h)}</b></td><td>${hs[h].map(x=>`<span class="idp">${x.id}</span> ${esc(x.o.nome)}`).join('<br>')}</td><td>${hs[h].filter(x=>(x.o.crit||'').trim()).map(x=>nl2br(x.o.crit)).join('<br>')||'—'}</td></tr>`).join('')}</tbody></table>`):'';
   const ap=S.apr.lista.filter(r=>!isEmpty(r));
   const s4=`<div class="psec keep"><h3 class="sec-t">${2+(rnf.length?1:0)+(rn.length?1:0)} · Aprovação</h3><div class="px" style="--tc:#181F37;break-inside:avoid"><h4>Termo de aceite</h4><p class="term">“Declaro que revisei os requisitos e regras de negócio deste documento e confirmo que atendem às necessidades do negócio. Após esta assinatura, mudanças passam pelo processo formal de Gestão de Mudança (Change Request), podendo impactar prazo e custo.”</p></div>
     <div class="apr" style="grid-template-columns:repeat(${Math.min(Math.max(ap.length,1),4)},1fr);break-inside:avoid">${ap.map(o=>`<div class="apb"><small>${esc(o.papel)}</small><b>${esc(o.nome)}</b><span class="ck">Data: ___/___/______</span><div class="ln">Assinatura</div></div>`).join('')}</div></div>`;
-  $('#print').innerHTML=`<table class="wrap"><thead><tr><td>${pageHead()}</td></tr></thead><tbody><tr><td>${ident}${sum}${s1}${s2}${s3}${s4}
+  $('#print').innerHTML=`<table class="wrap"><thead><tr><td>${pageHead()}</td></tr></thead><tbody><tr><td>${ident}${sum}${s1}${s2}${s3}${sh}${s4}
     <p class="note">Documento gerado em ${fmtD(localToday())} — FORM07 | V.1, JCE SA Brazil.</p></td></tr></tbody></table>`;
   dirty=false;
 }
@@ -905,6 +913,7 @@ buildStatic();$('#btnFinish').onclick=finish;$('#btnFinish2').onclick=finish;fil
     try { const b = new Uint8Array(await file.slice(0, 5).arrayBuffer()); return String.fromCharCode(...b).startsWith('%PDF'); } catch (e) { return false; }
   }
   const LIM = 1.5 * 1024 * 1024;
+  let spOn = false;
   function concluir(){
     draftMode = false;
     $$('.invalid').forEach(e => e.classList.remove('invalid'));
@@ -912,11 +921,14 @@ buildStatic();$('#btnFinish').onclick=finish;$('#btnFinish2').onclick=finish;fil
     if (E.length) { finish(); return; }
     showModal('<h3>Concluir e arquivar no portal</h3><p>O documento está completo. Para arquivar, gere o PDF e depois anexe aqui o arquivo salvo.</p>'
       + '<div class="gd-pdfbox"><div class="st"><b>1. Gerar o PDF</b><span>Na janela de impressão escolha <b>Salvar como PDF</b>.</span><div style="margin-top:8px"><button class="btn primary" type="button" id="gdGerar">Gerar PDF</button></div></div>'
-      + '<div class="st"><b>2. Anexar o PDF salvo</b><input type="file" id="gdPdf" accept="application/pdf,.pdf"><div id="gdPdfMsg" style="margin-top:6px"></div></div></div>'
+      + (spOn
+        ? '<div class="st"><b>2. Escolher o PDF na pasta do projeto</b><span>Salve o PDF na pasta do projeto no SharePoint e escolha-o aqui.</span><div style="margin-top:8px"><button class="btn primary" type="button" id="gdPick">Escolher da pasta do projeto</button></div></div></div>'
+        : '<div class="st"><b>2. Anexar o PDF salvo</b><input type="file" id="gdPdf" accept="application/pdf,.pdf"><div id="gdPdfMsg" style="margin-top:6px"></div></div></div>')
       + '<div class="acts"><button class="btn" type="button" id="gdCancel">Voltar e revisar</button></div>');
     $('#gdCancel').onclick = closeModal;
     $('#gdGerar').onclick = () => { doPrint(false); };
-    $('#gdPdf').onchange = async ev => {
+    if ($('#gdPick')) $('#gdPick').onclick = () => { post({t: 'pickpdf', estado: JSON.parse(JSON.stringify(S))}); };
+    if ($('#gdPdf')) $('#gdPdf').onchange = async ev => {
       const f = ev.target.files[0], msg = $('#gdPdfMsg');
       if (!f) return;
       if (!(await ehPdf(f))) { msg.innerHTML = '<span class="err">Este arquivo não é um PDF válido. Gere o PDF pelo passo 1 e anexe o arquivo salvo.</span>'; ev.target.value = ''; return; }
@@ -935,7 +947,7 @@ buildStatic();$('#btnFinish').onclick=finish;$('#btnFinish2').onclick=finish;fil
     if (!m || !m.gd || e.source !== parent) return;
     if (m.t === 'init') {
       if (m.std) { const a0 = document.querySelector('.gpback'); if (a0) { a0.dataset.gdHash = '#/gestao/' + (m.proj ? m.proj.id : ''); a0.textContent = '← Documentos do projeto'; } return; }
-      ativo = true; ro = !!m.ro; projNome = (m.proj && m.proj.nome) || '';
+      ativo = true; spOn = !!m.sp; ro = !!m.ro; projNome = (m.proj && m.proj.nome) || '';
       if (ro) {
         document.body.classList.add('gd-ro');
         document.addEventListener('beforeinput', ev => ev.preventDefault(), true);
