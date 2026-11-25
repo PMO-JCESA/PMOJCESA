@@ -954,5 +954,126 @@ $('#tbLogo').src=LOGO_W;
 buildStatic();$('#btnFinish').onclick=finish;$('#btnFinish2').onclick=finish;fillAll();showTab('s-proj');
 (document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(()=>buildPrint());
 </script>
-<script>(()=>{let d=0;const marca=()=>{d=1;window.__gdSujo=1;};document.addEventListener("input",marca,true);document.addEventListener("change",marca,true);const a=document.querySelector(".gpback");a&&a.addEventListener("click",e=>{if(window.top!==window){e.preventDefault();try{window.top.location.hash=a.dataset.gdHash;}catch(x){window.top.location.href=a.href;}return;}if(d&&!confirm("Voltar ao fluxo?\n\nOs dados preenchidos que não foram salvos (rascunho ou PDF) serão perdidos."))e.preventDefault();});})();</script></body>
+<script>(()=>{let d=0;const marca=()=>{d=1;window.__gdSujo=1;};document.addEventListener("input",marca,true);document.addEventListener("change",marca,true);const a=document.querySelector(".gpback");a&&a.addEventListener("click",e=>{if(window.top!==window){e.preventDefault();try{window.top.location.hash=a.dataset.gdHash;}catch(x){window.top.location.href=a.href;}return;}if(d&&!confirm("Voltar ao fluxo?\n\nOs dados preenchidos que não foram salvos (rascunho ou PDF) serão perdidos."))e.preventDefault();});})();</script><script id="gd-bridge">
+/* Ponte com o Portal PMO: só age quando o formulário está dentro do portal (iframe) e o portal responde. */
+(function(){
+  if (window.parent === window || typeof S === 'undefined' || typeof validate !== 'function' || typeof doPrint !== 'function' || typeof makeState !== 'function') return;
+  const COD = (typeof CFG !== 'undefined' && CFG.form) || '';
+  let ro = false, ativo = false, projNome = '';
+  const post = m => { try { parent.postMessage(Object.assign({gd: 1, cod: COD}, m), '*'); } catch (e) {} };
+  const vazio = v => v == null ? true : typeof v === 'string' ? (!v.trim() || v === 'Não executado') : Array.isArray(v) ? v.every(vazio) : typeof v === 'object' ? Object.values(v).every(vazio) : false;
+  function fillEmpty(dst, src){
+    Object.keys(src).forEach(k => {
+      const s = src[k], d = dst[k];
+      if (vazio(s)) return;
+      if (d === undefined) return;
+      if (Array.isArray(d)) { const vz = k === 'req' && typeof emptyReq === 'function' ? d.every(emptyReq) : vazio(d); if (vz) dst[k] = JSON.parse(JSON.stringify(s)); return; }
+      if (d && typeof d === 'object' && s && typeof s === 'object') { fillEmpty(d, s); return; }
+      if (vazio(d)) dst[k] = s;
+    });
+  }
+  function assign(dst, src){
+    Object.keys(src).forEach(k => {
+      const s = src[k];
+      if (Array.isArray(s)) dst[k] = JSON.parse(JSON.stringify(s));
+      else if (s && typeof s === 'object') assign(dst[k] && typeof dst[k] === 'object' ? dst[k] : (dst[k] = {}), s);
+      else dst[k] = s;
+    });
+  }
+  function refresh(){
+    if (typeof flt !== 'undefined') flt = 'all';
+    if (typeof fillAll === 'function') fillAll(); else if (typeof renderAll === 'function') renderAll();
+    if (typeof dirty !== 'undefined') dirty = true;
+    try { buildPrint(); } catch (e) {}
+  }
+  const limpo = () => { window.__gdSujo = 0; };
+  const css = document.createElement('style');
+  css.textContent = '#gdBr{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:9px 18px;background:#eef4f6;border-bottom:1px solid #cfdde2;font:13px/1.35 system-ui,Segoe UI,Arial,sans-serif;color:#17303a}'
+    + '#gdBr b{font-weight:700}#gdBr .gdn{flex:1;min-width:200px}#gdBr button{font:inherit;font-weight:600;padding:6px 12px;border-radius:8px;border:1px solid #2b7f8e;background:#fff;color:#1d6573;cursor:pointer}'
+    + '#gdBr button:hover{background:#e3f1f4}#gdBr .gdro{color:#8a5a00;font-weight:700}'
+    + 'body.gd-ro main input,body.gd-ro main textarea,body.gd-ro main select{pointer-events:none;background:#f4f6f8}body.gd-ro main button:not(.tab){pointer-events:none;opacity:.55}'
+    + '.gd-pdfbox{display:grid;gap:10px;margin:12px 0}.gd-pdfbox .st{border:1px solid #cdd7dd;border-radius:10px;padding:10px 12px;background:#fafcfd}.gd-pdfbox .st b{display:block;margin-bottom:4px}'
+    + '.gd-pdfbox .ok{color:#17803d;font-weight:700}.gd-pdfbox .err{color:#b3261e;font-weight:700}';
+  document.head.appendChild(css);
+
+  function barra(){
+    let b = document.getElementById('gdBr');
+    if (!b) {
+      b = document.createElement('div'); b.id = 'gdBr'; b.className = 'screen';
+      const h = document.querySelector('header.topbar');
+      if (h) h.insertAdjacentElement('afterend', b); else document.body.prepend(b);
+    }
+    b.innerHTML = '<div class="gdn">Projeto: <b>' + esc(projNome) + '</b> · ligado ao portal' + (ro ? ' · <span class="gdro">somente leitura</span>' : '') + '</div>'
+      + (ro ? '' : (COD === 'FORM06' ? '' : '<button type="button" id="gdBuscar" title="Preencher com informações de um documento de referência">Buscar informações</button>') + '<button type="button" id="gdRasc" title="Guarda o que já foi preenchido, sem concluir">Salvar rascunho no portal</button>');
+    const bb = document.getElementById('gdBuscar'); if (bb) bb.onclick = () => { post({t: 'buscar', estado: JSON.parse(JSON.stringify(S))}); limpo(); };
+    const br = document.getElementById('gdRasc'); if (br) br.onclick = () => { post({t: 'draft', estado: JSON.parse(JSON.stringify(S))}); limpo(); };
+  }
+
+  /* Concluir: valida, gera o PDF e exige o arquivo salvo para arquivar no portal */
+  function lerPdf(file){
+    return new Promise(res => {
+      const fr = new FileReader();
+      fr.onload = () => res(fr.result); fr.onerror = () => res('');
+      fr.readAsDataURL(file);
+    });
+  }
+  async function ehPdf(file){
+    try { const b = new Uint8Array(await file.slice(0, 5).arrayBuffer()); return String.fromCharCode(...b).startsWith('%PDF'); } catch (e) { return false; }
+  }
+  const LIM = 1.5 * 1024 * 1024;
+  function concluir(){
+    draftMode = false;
+    $$('.invalid').forEach(e => e.classList.remove('invalid'));
+    const {E} = validate();
+    if (E.length) { finish(); return; }
+    showModal('<h3>Concluir e arquivar no portal</h3><p>O documento está completo. Para arquivar, gere o PDF e depois anexe aqui o arquivo salvo.</p>'
+      + '<div class="gd-pdfbox"><div class="st"><b>1. Gerar o PDF</b><span>Na janela de impressão escolha <b>Salvar como PDF</b>.</span><div style="margin-top:8px"><button class="btn primary" type="button" id="gdGerar">Gerar PDF</button></div></div>'
+      + '<div class="st"><b>2. Anexar o PDF salvo</b><input type="file" id="gdPdf" accept="application/pdf,.pdf"><div id="gdPdfMsg" style="margin-top:6px"></div></div></div>'
+      + '<div class="acts"><button class="btn" type="button" id="gdCancel">Voltar e revisar</button></div>');
+    $('#gdCancel').onclick = closeModal;
+    $('#gdGerar').onclick = () => { doPrint(false); };
+    $('#gdPdf').onchange = async ev => {
+      const f = ev.target.files[0], msg = $('#gdPdfMsg');
+      if (!f) return;
+      if (!(await ehPdf(f))) { msg.innerHTML = '<span class="err">Este arquivo não é um PDF válido. Gere o PDF pelo passo 1 e anexe o arquivo salvo.</span>'; ev.target.value = ''; return; }
+      if (f.size < 2000) { msg.innerHTML = '<span class="err">O PDF parece vazio (muito pequeno). Gere novamente.</span>'; ev.target.value = ''; return; }
+      const grande = f.size > LIM;
+      const dataUrl = grande ? '' : await lerPdf(f);
+      msg.innerHTML = '<span class="ok">PDF recebido: ' + esc(f.name) + ' (' + Math.round(f.size / 1024) + ' KB)</span>' + (grande ? '<br><small>Arquivo grande: será registrado sem o conteúdo; salve-o também na pasta do projeto.</small>' : '');
+      post({t: 'done', estado: JSON.parse(JSON.stringify(S)), pdf: {nome: f.name, tam: f.size, dataUrl}});
+      limpo();
+      showModal('<div class="ok-ic">✓</div><h3>Enviado ao portal</h3><p>O portal está analisando o documento e arquivando o PDF…</p>');
+    };
+  }
+
+  window.addEventListener('message', e => {
+    const m = e.data;
+    if (!m || !m.gd || e.source !== parent) return;
+    if (m.t === 'init') {
+      if (m.std) { const a0 = document.querySelector('.gpback'); if (a0) { a0.dataset.gdHash = '#/gestao/' + (m.proj ? m.proj.id : ''); a0.textContent = '← Documentos do projeto'; } return; }
+      ativo = true; ro = !!m.ro; projNome = (m.proj && m.proj.nome) || '';
+      if (ro) {
+        document.body.classList.add('gd-ro');
+        document.addEventListener('beforeinput', ev => ev.preventDefault(), true);
+      }
+      if (m.estado) { const b = makeState(); assign(b, m.estado); S = b; }
+      if (m.patch) fillEmpty(S, m.patch);
+      refresh();
+      barra();
+      const a = document.querySelector('.gpback');
+      if (a) { a.dataset.gdHash = '#/gestao/' + (m.proj ? m.proj.id : ''); a.textContent = '← Documentos do projeto'; }
+      if (!ro) {
+        [$('#btnFinish'), $('#btnFinish2')].forEach(b => { if (b) { b.onclick = concluir; b.textContent = 'Concluir e enviar ao portal'; } });
+        try { askClear = function(){}; } catch (x) {}
+      } else { [$('#btnFinish'), $('#btnFinish2')].forEach(b => { if (b) b.hidden = true; }); }
+      limpo();
+    } else if (m.t === 'patch' && ativo && !ro) {
+      fillEmpty(S, m.patch || {});
+      refresh();
+    } else if (m.t === 'fechar') { closeModal(); }
+  });
+  post({t: 'ready'});
+})();
+</script>
+</body>
 </html>
