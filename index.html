@@ -5065,7 +5065,6 @@ async function demAtualizar(manual){
     demAvisaNovas();
     demRender();
     if (st) st.textContent = "Atualizado às " + demHora() + " · atualização automática a cada 3 min";
-    demIaRodar();
   } catch (e) {
     if (st) st.textContent = "Não foi possível atualizar: " + (e.message || e);
   }
@@ -5422,8 +5421,8 @@ function demRenderPrio(){
   const top = abertas.filter(it => demNota(it).pts > 0).sort(demOrdenar).slice(0, 5);
   const crit = demCriterios().filter(c => c.ativo !== false && +c.peso > 0).sort((a, b) => b.peso - a.peso);
   box.innerHTML = `<section class="dpr">
-    <div class="dpr-h"><div><h3>Prioridades sugeridas</h3><p>Pontos pelos critérios: ${crit.map(c => `${esc(c.nome)} <b>${c.peso}</b>`).join(" · ")}</p><p class="note" id="demIaSt" style="margin:4px 0 0">${esc(demIaMsg || (demIaChave() ? "Claude: ativo. As análises rodam no Atualizar agora." : "Claude: sem chave. Análise só por palavras-chave."))}</p></div>
-      <div class="dpr-acts"><button type="button" class="btn" id="demCrit">Critérios de priorização</button><button type="button" class="btn" id="demExportar" title="Só baixa o arquivo para a Skill de priorização do Claude">Exportar para o Claude</button><button type="button" class="btn" id="demIaCfg" title="Análise automática das demandas pelo Claude">Claude (IA)${demIaChave() ? " ✓" : ""}</button><button type="button" class="btn primary" id="demAnalisar">Analisar priorização</button></div></div>
+    <div class="dpr-h"><div><h3>Prioridades sugeridas</h3><p>Pontos pelos critérios: ${crit.map(c => `${esc(c.nome)} <b>${c.peso}</b>`).join(" · ")}</p></div>
+      <div class="dpr-acts"><button type="button" class="btn" id="demCrit">Critérios de priorização</button><button type="button" class="btn primary" id="demAnalisar">Analisar priorização</button></div></div>
     ${top.length ? `<div class="dpr-top">${top.map((it, i) => { const n = demNota(it); return `<button type="button" class="dpr-card" data-dem-ir="${esc(it.id)}"><span class="dpr-n">${i + 1}</span><span class="dpr-b"><span class="dpr-t">${esc(demTxt(it.campos.Title))}</span><span class="dpr-m">#${esc(it.campos.ID || it.id)} · ${esc(demTxt(demValor(it, "setor")) || "—")}</span><span class="dkb-chips">${demCritTags(n, 2)}</span></span><span class="dkb-sc ${demFaixa(n.pts)}"><b>${demNotaTxt(n.pts)}</b><small>pontos</small></span></button>`; }).join("")}</div>`
       : `<p class="note" style="margin:0">Nenhuma demanda aberta atende aos critérios. Revise os critérios ou o benefício estratégico das solicitações.</p>`}
   </section>`;
@@ -5443,7 +5442,7 @@ function demAnaliseHtml(){
     <h4>3. Avaliar depois · prioridade baixa</h4>${tabela(b, a.length + m.length)}
     ${n.length ? `<h4>Sem critério identificado</h4>${tabela(n, a.length + m.length + b.length)}` : ""}
     ${bloq.length ? `<h4>Bloqueadas (aguardam o solicitante)</h4>${tabela(bloq, 0)}` : ""}
-    <div class="flx-acts"><button type="button" class="btn" data-dem-exp>Exportar para o Claude</button><button type="button" class="btn primary" data-dem-fechar>Fechar</button></div>`;
+    <div class="flx-acts"><button type="button" class="btn primary" data-dem-fechar>Fechar</button></div>`;
 }
 function demCritHtml(l){
   return `<h3>Critérios de priorização</h3>
@@ -5775,8 +5774,8 @@ function demPorQueHtml(it){
     ${q.maturidade.length ? `<h5>Maturidade declarada</h5><ul>${q.maturidade.map(x => `<li>${x}</li>`).join("")}</ul>` : ""}
     ${sem.length ? `<h5>Critérios avaliados sem evidência</h5><div class="dkb-chips">${sem.map(c => `<span class="dkb-crit tx" title="Peso ${c.peso}: nenhuma palavra-chave no texto e não marcado no benefício">${esc(c.nome)} (${c.peso})</span>`).join("")}</div>` : ""}
     <h5>Leitura</h5><ul>${lei.map(x => `<li>${x}</li>`).join("")}</ul>
-    <p class="note" style="margin:8px 0 0">A leitura é por palavras-chave e não entende o contexto. Se a nota não refletir a realidade, use <b>Reclassificar</b> abaixo ou <b>Exportar para o Claude</b> para uma análise do conteúdo.</p></div>`;
-  if (!n.ia) return pal + (perfil() === "admin" && !demIaChave() ? `<p class="note" style="margin:0 0 12px">Para o Claude ler e interpretar esta solicitação, cadastre a chave em <b>Claude (IA)</b>.</p>` : "");
+    <p class="note" style="margin:8px 0 0">A leitura é por palavras-chave e não entende o contexto. Se a nota não refletir a realidade, use <b>Reclassificar</b> abaixo.</p></div>`;
+  if (!n.ia) return pal;
   return demIaSecHtml(it, n) + `<details class="dpr-pal"><summary>Leitura por palavras-chave (referência)</summary>${pal}</details>`;
 }
 function demPrioSecHtml(it){
