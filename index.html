@@ -1094,6 +1094,7 @@ body:not(.ro) .sr-wrap .sr-f[data-sr-edit]:hover,body:not(.ro) .sr-wrap .sr-av[d
 .flx-tag.pend{background:color-mix(in srgb,#C07F2A 30%,var(--surface2))}.flx-tag.ob{background:color-mix(in srgb,#7D879C 30%,var(--surface2))}
 .flx-tag.rq{background:color-mix(in srgb,#8a6fd1 30%,var(--surface2))}
 .flx-ov{position:fixed;inset:0;background:rgba(8,12,20,.62);z-index:400;display:grid;place-items:center;padding:16px}
+.flx-opc{display:block;width:100%;text-align:left;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.16);border-radius:12px;padding:12px 14px;color:inherit;font:inherit;cursor:pointer;margin:0 0 8px}.flx-opc:hover{border-color:var(--teal-l);background:rgba(255,255,255,.08)}.flx-opc b{font-size:15px}.flx-opc small{display:block;margin-top:3px;opacity:.8}
 .flx-ov[hidden]{display:none}
 .flx-box{width:min(620px,100%);max-height:88vh;overflow:auto;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px 22px;box-shadow:0 20px 60px rgba(0,0,0,.45)}
 .flx-box h3{margin:0 0 10px}.flx-box h4{margin:14px 0 6px}
@@ -3780,6 +3781,8 @@ document.addEventListener("click", e => {
 
 function renderGestaoProjeto(id){
   const r = achar(id);
+  if (r && fluxoAtivo(r) && podeEditar() && flxConcl(r, "FORM07") && !r.fluxo.reqCards && !flxReqPerguntado.has(r.ID) && flxReqLista(r).length)
+    setTimeout(() => { if (currentProjId() === r.ID && !flxReqPerguntado.has(r.ID)) flxReqModoModal(r); }, 400);
   const p = progProjeto(r);
   const n = r.tarefas.filter(t => efetivo(t) !== "cancelado").length;
   let corpo;
@@ -5433,13 +5436,15 @@ function flxNovoCard(r, fase, nome, extra){
   r.tarefas.push(t);
   return t;
 }
+/* Execução: só o Kick off vira card fixo; o resto da Execução vem dos requisitos */
+const FLX_SEM_CARD = new Set(["guia:exe:1", "guia:exe:2", "guia:exe:3", "guia:exe:4", "guia:exe:5", "guia:exe:6"]);
 function fluxoCriarCards(r, qual){
   const lista = flxAtosFase();
   let n = 0;
   Object.keys(lista).forEach(fase => {
     if (qual !== "todas" && qual !== fase) return;
     lista[fase].forEach(({a, key}) => {
-      if (r.tarefas.some(x => x.origem === key)) return;
+      if (FLX_SEM_CARD.has(key) || r.tarefas.some(x => x.origem === key)) return;
       const ext = a.f === "FORM01";
       const desc = ext ? FLX_DESC_SOLIC : a.d + (a.lk ? "\nPasta do projeto: " + a.lk : "");
       const t = flxNovoCard(r, fase, a.t, {descricao: desc, origem: key, obrig: true, doc: /^FORM\d+A?$/.test(a.f || "") ? a.f : (a.f || "").split(" · ")[0] || ""});
@@ -5646,8 +5651,9 @@ function flxReqLista(r, E){
   if (!S2 || !Array.isArray(S2.req)) return [];
   const cont = {};
   return S2.req.filter(x => (String(x.nome || "") + (x.desc || "") + (x.prio || "") + (x.cat || "") + (x.orig || "")).trim()).map(x => {
-    cont[x.t] = (cont[x.t] || 0) + 1;
-    return {id: (FLX_PREF[x.t] || "RF") + "-" + String(cont[x.t]).padStart(3, "0"), t: x.t, nome: x.nome || "", desc: x.desc || "", prio: x.prio || "", hist: String(x.hist || "").trim(), crit: String(x.crit || "").trim()};
+    const pf = FLX_PREF[String(x.t || "").toLowerCase()] || "RF";
+    cont[pf] = (cont[pf] || 0) + 1;
+    return {id: pf + "-" + String(cont[pf]).padStart(3, "0"), t: x.t, nome: x.nome || "", desc: x.desc || "", prio: x.prio || "", hist: String(x.hist || "").trim(), crit: String(x.crit || "").trim()};
   });
 }
 const flxHistSlug = h => flxSemAcento(h).replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -5671,11 +5677,12 @@ function flxAtividadesHist(g){
   g.itens.forEach(q => q.crit.split(/\n+/).map(x => x.trim()).filter(Boolean).forEach(c => at.push(`Critério de aceite (${q.id}): ${c}`)));
   return at;
 }
-function flxGerarCardsReq(r, ids){
+function flxGerarCardsReq(r, ids, modo){
   const lista = flxReqLista(r);
   let nc = 0, na = 0, nh = 0;
-  flxReqGrupos(lista).forEach(g => {
-    if (!ids.includes(g.id)) return;
+  const grupos = modo === "req" ? lista.map(q => ({tipo: "req", id: q.id, itens: [q]})) : flxReqGrupos(lista);
+  grupos.forEach(g => {
+    if (ids !== "todos" && !ids.includes(g.id)) return;
     const orig = flxOrigemGrupo(g);
     let t = r.tarefas.find(x => x.origem === orig);
     if (g.tipo === "hist") {
@@ -5696,6 +5703,7 @@ function flxGerarCardsReq(r, ids){
     if (!teste.atividades.some(a => a.texto === tx)) { teste.atividades.push({id: uid(), texto: tx, feito: false, dependencias: []}); na++; }
   });
   r.fluxo.reqCards = true;
+  if (modo) r.fluxo.reqModo = modo;
   registrar(r, `Fluxo guiado: ${nc} card(s) criados a partir dos requisitos (${nh} história(s)) e ${na} atividade(s) de validação foram ligadas aos testes`);
   return {nc, na, nh};
 }
@@ -5755,9 +5763,26 @@ function flxResultadoHtml(r, cod, res){
     ${res.an.alertas.length ? `<div class="flx-warn"><b>Atenção</b><ul>${res.an.alertas.map(x => `<li>${esc(x)}</li>`).join("")}</ul><small>Não impedem a conclusão; revise no repositório se quiser.</small></div>` : `<p class="note">Nenhuma inconsistência encontrada.</p>`}
     ${prox}
     <div class="flx-acts">
-      ${cod === "FORM07" ? `<button class="btn primary" data-flx="req-modal">Escolher requisitos que viram cards</button>` : ""}
+      ${cod === "FORM07" ? `<button class="btn primary" data-flx="req-modal">Criar os cards dos requisitos</button>` : ""}
       <button class="btn ${cod === "FORM07" ? "" : "primary"}" data-flx="ir-docs">Ir ao repositório de documentos</button>
     </div>`;
+}
+/* Logo após concluir os Requisitos: pergunta como os cards da Execução serão criados e cria todos */
+const flxReqPerguntado = new Set();
+function flxReqModoModal(r){
+  const lista = flxReqLista(r);
+  if (!lista.length) return false;
+  flxReqPerguntado.add(r.ID);
+  const nh = flxReqGrupos(lista).filter(g => g.tipo === "hist").length;
+  flxModal(`
+    <h3>Criar os cards da Execução</h3>
+    <p class="note" style="margin:0 0 10px">O Levantamento de Requisitos tem <b>${lista.length}</b> requisito(s)${nh ? ` em <b>${nh}</b> história(s) de usuário` : " (nenhum com história de usuário informada)"}. Como os cards devem ser criados?</p>
+    <div>
+      <button type="button" class="flx-opc" data-flx="req-modo" data-modo="hist"><span><b>Um card por história de usuário</b><small>Requisitos da mesma história viram um card, com os requisitos e critérios de aceite como atividades. Requisitos sem história viram um card cada.</small></span></button>
+      <button type="button" class="flx-opc" data-flx="req-modo" data-modo="req"><span><b>Um card por requisito</b><small>Cada requisito vira um card na Execução.</small></span></button>
+    </div>
+    <div class="flx-acts"><button class="btn" data-flx="ir-docs">Decidir depois</button></div>`);
+  return true;
 }
 function flxReqModal(r){
   const lista = flxReqLista(r);
@@ -6411,6 +6436,9 @@ function flxReparar(){
     const sl = r.fluxo.solic, t = flxCardDoc(r, "FORM01");
     if (sl && !sl.arquivo) { r.fluxo.rascunhoSolic = sl.campos || {}; delete r.fluxo.solic; n++; }
     if (!r.fluxo.solic && t && t.bucket === "concluido") { setBucket(t, "backlog"); t.vinc = false; n++; }
+    const antes = r.tarefas.length;
+    r.tarefas = r.tarefas.filter(x => !(FLX_SEM_CARD.has(x.origem) && x.bucket !== "concluido" && !(x.anexos || []).length && !(x.atividades || []).some(a => a.feito) && !(x.comentarios || []).length));
+    n += antes - r.tarefas.length;
   });
   return n;
 }
@@ -6530,13 +6558,13 @@ function flxUltimaHtml(r){
     ? `<p>O formulário de solicitação foi arquivado no card <b>Receber a Solicitação</b>. Abra o <b>Levantamento de Escopo</b>: ele já vem preenchido com estas informações, e você pode editar o que quiser.</p>`
     : u.cod === "FORM06"
     ? `<p>Os documentos de Iniciação foram liberados e o <b>Levantamento de Requisitos</b> pode ser aberto, já preenchido com o que veio do Escopo. As fases do projeto continuam bloqueadas.</p>`
-    : u.cod === "FORM07" ? `<p>Todas as fases foram liberadas e <b>${u.novos}</b> card(s) pré-definidos foram criados em todas as etapas. Escolha quais histórias e requisitos viram cards e depois ajuste o que for preciso em cada card.</p>` : "";
+    : u.cod === "FORM07" ? `<p>Todas as fases foram liberadas e <b>${u.novos}</b> card(s) pré-definidos foram criados em todas as etapas. Crie os cards dos requisitos (por história ou por requisito) e depois ajuste o que for preciso em cada card.</p>` : "";
   return `<div class="card flx-result"><h3 style="margin:0 0 6px">${u.cod === "FORM01" ? "Solicitação carregada" : "Documento concluído: " + esc(f ? f.n : u.cod)}</h3>
     <ul class="flx-ck"><li>${u.cod === "FORM01" ? "Formulário arquivado e card concluído" : "PDF salvo no repositório (anexado ao card do documento)"}</li><li>Dados salvos no portal</li></ul>
     <h4>Análise do documento</h4><ul>${u.an.resumo.map(x => `<li>${esc(x)}</li>`).join("")}</ul>
     ${u.an.alertas.length ? `<div class="flx-warn"><b>Atenção</b><ul>${u.an.alertas.map(x => `<li>${esc(x)}</li>`).join("")}</ul></div>` : `<p class="note">Nenhuma inconsistência encontrada.</p>`}
     ${prox}
-    <div class="flx-acts">${u.cod === "FORM07" ? `<button class="btn primary" data-flx="req-modal">Escolher requisitos que viram cards</button>` : ""}<button class="btn" data-flx="res-ok">Fechar análise</button></div></div>`;
+    <div class="flx-acts">${u.cod === "FORM07" ? `<button class="btn primary" data-flx="req-modal">Criar os cards dos requisitos</button>` : ""}<button class="btn" data-flx="res-ok">Fechar análise</button></div></div>`;
 }
 function flxBuscarIr(r, cod, estado){
   if (estado && podeEditar()) { const d = flxDoc(r, cod) || {}; r.fluxo.docs[cod] = Object.assign(d, {ok: d.ok || false, dados: d.ok ? d.dados : estado, rascunho: estado, em: d.em || new Date().toISOString(), por: d.por || autor}); salvar(); }
@@ -6615,7 +6643,15 @@ document.addEventListener("click", async e => {
     salvar(); renderDrawer(); renderGestaoProjeto(r.ID); toast(ac === "vinc-ok" ? "Vínculo confirmado." : "Vínculo desfeito.");
     return;
   }
-  if (ac === "req-modal") { flxReqModal(r); return; }
+  if (ac === "req-modal") { if (!r.fluxo.reqCards) flxReqModoModal(r); else flxReqModal(r); return; }
+  if (ac === "req-modo") {
+    if (!podeEditar()) return;
+    const res = flxGerarCardsReq(r, "todos", b.dataset.modo);
+    salvar(); flxFechar(); pVisao = "kanban";
+    toast(`${res.nc} card(s) criados na Execução${b.dataset.modo === "hist" ? " (" + res.nh + " história(s))" : ""}; ${res.na} atividade(s) de validação ligadas aos testes.`);
+    if (location.hash === "#/gestao/" + r.ID) route(); else location.hash = "#/gestao/" + r.ID;
+    return;
+  }
   if (ac === "req-todos") { document.querySelectorAll("[data-flx-req]:not(:disabled)").forEach(x => x.checked = true); return; }
   if (ac === "req-ok") {
     const ids = [...document.querySelectorAll("[data-flx-req]:checked:not(:disabled)")].map(x => x.dataset.flxReq);
