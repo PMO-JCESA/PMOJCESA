@@ -986,6 +986,7 @@ body:not(.ro) .sr-wrap .sr-f[data-sr-edit]:hover,body:not(.ro) .sr-wrap .sr-av[d
 .dem-pform{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end}
 .dem-pform label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;color:var(--muted)}
 .dem-pform select{font:inherit;font-size:13px;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface3);color:var(--hi)}
+.dem-faixas{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-top:12px;padding:10px 12px;border:1px solid var(--line);border-radius:10px}.dem-faixas label{display:flex;gap:6px;align-items:center;font-size:13px}.dem-faixas input{width:72px;font:inherit;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--surface3);color:var(--hi)}
 .dem-rform{display:grid;grid-template-columns:150px 1fr;gap:12px;align-items:end;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}.dem-rform h5{grid-column:1/-1;margin:0}.dem-rform label:nth-of-type(3),.dem-rform button{grid-column:1/-1}.dem-rform button{justify-self:end}
 .dem-rform label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;color:var(--muted)}
 .dem-rform input,.dem-rform select,.dem-rform textarea{font:inherit;font-size:13px;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface3);color:var(--hi);resize:vertical}
@@ -5146,7 +5147,7 @@ function demRender(){
    Para cada demanda o portal lê o campo Benefício estratégico e o texto da solicitação:
    - critério marcado no campo Benefício estratégico: conta o peso inteiro;
    - critério só citado no texto (necessidade, objetivos, retorno…): conta metade do peso.
-   Pontos = soma. Faixas relativas ao maior peso (W): Alta ≥ W, Média ≥ W/2, Baixa abaixo. */
+   Pontos = soma. Faixas configuráveis (padrão: Alta ≥ 4, Média ≥ 2, Baixa abaixo). */
 const DEM_CRIT_KEY = "portal_pmo_criterios_prioridade";
 const DEM_CRIT_PADRAO = [
   {nome: "Requisito legal", peso: 5, chaves: "requisito legal, legislação, lei, obrigação legal, fiscal, regulatório, lgpd, sped", ativo: true},
@@ -5218,7 +5219,9 @@ function demNota(it){
 }
 const demPesoMax = () => Math.max(1, ...demCriterios().filter(c => c.ativo !== false).map(c => +c.peso || 0));
 const demNotaTxt = n => (Math.round(n * 10) / 10).toFixed(1).replace(".", ",");
-const demFaixa = n => { const W = demPesoMax(); return !n ? "n" : n >= W ? "a" : n >= W / 2 ? "m" : "b"; };
+const DEM_FAIXA_KEY = "portal_pmo_faixas_prioridade", DEM_FAIXA_PAD = {alta: 4, media: 2};
+function demFaixaLim(){ try { const j = JSON.parse(localStorage.getItem(DEM_FAIXA_KEY) || "null"); if (j && isFinite(+j.alta) && isFinite(+j.media)) return {alta: +j.alta, media: +j.media}; } catch (e) {} return Object.assign({}, DEM_FAIXA_PAD); }
+const demFaixa = n => { const L = demFaixaLim(); return !n ? "n" : n >= L.alta ? "a" : n >= L.media ? "m" : "b"; };
 const DEM_FAIXA_TXT = {a: "Alta", m: "Média", b: "Baixa", n: "Sem critério"};
 const DEM_FAIXA_RANK = {a: 3, m: 2, b: 1, n: 0};
 const DEM_FAIXA_DE = t => { const x = demNorm(t); return x === "alta" ? "a" : x === "media" ? "m" : x === "baixa" ? "b" : ""; };
@@ -5333,9 +5336,9 @@ function demAnaliseHtml(){
   const faixa = f => prontas.filter(it => demFaixaIt(it) === f);
   const linha = (it, i) => { const n = demNota(it), cat = demCategoria(it); return `<tr><td>${i + 1}</td><td><b>#${esc(it.campos.ID || it.id)} ${esc(demTxt(it.campos.Title))}</b><br><small class="note" style="margin:0">${esc(cat.nome)} · ${esc(demTxt(demValor(it, "setor")) || "—")} · ${esc(demStatus(it))}</small></td><td><span class="dsc ${demFaixaIt(it)}">${n.pts ? demNotaTxt(n.pts) : "–"}</span></td><td>${esc(demJustificativa(it))}${demFaixaIt(it) !== demFaixaCalc(it) || n.manual ? `<br><b>Reclassificada pelo PMO${n.manual ? " (nota " + demNotaTxt(n.pts) + ")" : ""} para ${DEM_FAIXA_TXT[demFaixaIt(it)]}:</b> ${esc(demMotivo(demReclassHist(it)[0]))}` : ""}</td></tr>`; };
   const tabela = (lst, ini) => lst.length ? `<table class="dem-rank"><thead><tr><th>#</th><th>Demanda</th><th>Pontos</th><th>Justificativa</th></tr></thead><tbody>${lst.map((it, i) => linha(it, i + ini)).join("")}</tbody></table>` : `<p class="note">Nenhuma.</p>`;
-  const a = faixa("a"), m = faixa("m"), b = faixa("b"), n = faixa("n"), W = demPesoMax();
+  const a = faixa("a"), m = faixa("m"), b = faixa("b"), n = faixa("n"), L = demFaixaLim();
   return `<h3>Análise de priorização das demandas</h3>
-    <p class="note" style="margin:0 0 10px">O portal leu o benefício estratégico e o texto de ${abertas.length} demanda(s) aberta(s). Critério marcado no benefício conta o peso inteiro; critério só citado no texto conta meio peso. Pontos = soma. Faixas: Alta a partir de ${W} pontos, Média a partir de ${demNotaTxt(W / 2)}. Empate: maior peso principal e, depois, mais tempo esperando.</p>
+    <p class="note" style="margin:0 0 10px">O portal leu o benefício estratégico e o texto de ${abertas.length} demanda(s) aberta(s). Critério marcado no benefício conta o peso inteiro; critério só citado no texto conta meio peso. Pontos = soma. Faixas: Alta a partir de ${demNotaTxt(L.alta)} pontos, Média a partir de ${demNotaTxt(L.media)}. Empate: maior peso principal e, depois, mais tempo esperando.</p>
     <h4>1. Atacar primeiro · prioridade alta</h4>${tabela(a, 0)}
     <h4>2. Próximas · prioridade média</h4>${tabela(m, a.length)}
     <h4>3. Avaliar depois · prioridade baixa</h4>${tabela(b, a.length + m.length)}
@@ -5349,6 +5352,10 @@ function demCritHtml(l){
     <table class="dem-rank dcrit"><thead><tr><th>Ativo</th><th>Critério</th><th>Peso</th><th>Palavras-chave no texto</th><th></th></tr></thead><tbody>
     ${l.map((c, i) => `<tr data-crit="${i}"><td><input type="checkbox" name="ativo" ${c.ativo !== false ? "checked" : ""}></td><td><input name="nome" value="${esc(c.nome)}"></td><td><select name="peso">${[0, 1, 2, 3, 4, 5].map(p => `<option ${+c.peso === p ? "selected" : ""}>${p}</option>`).join("")}</select></td><td><input name="chaves" value="${esc(c.chaves || "")}"></td><td><button type="button" class="btn sm" data-crit-del="${i}" title="Excluir">✕</button></td></tr>`).join("")}
     </tbody></table>
+    <div class="dem-faixas"><b>Régua das faixas (pontos):</b>
+      <label>Alta a partir de <input type="number" id="demFxA" min="0.5" max="30" step="0.5" value="${demFaixaLim().alta}"></label>
+      <label>Média a partir de <input type="number" id="demFxM" min="0.5" max="30" step="0.5" value="${demFaixaLim().media}"></label>
+      <span class="note" style="margin:0">Abaixo da Média = Baixa. Hoje: Alta ≥ ${demNotaTxt(demFaixaLim().alta)}, Média ≥ ${demNotaTxt(demFaixaLim().media)}.</span></div>
     <div class="flx-acts"><button type="button" class="btn" data-crit-add>Adicionar critério</button><button type="button" class="btn" data-crit-padrao>Restaurar padrão</button><button type="button" class="btn" data-dem-fechar>Cancelar</button><button type="button" class="btn primary" data-crit-ok>Salvar critérios</button></div>`;
 }
 function demCritLer(){
@@ -5364,7 +5371,7 @@ function demExportar(){
   const crit = demCriterios();
   const dados = {
     gerado_em: new Date().toISOString(), origem: "Portal PMO · lista " + DEM_LISTA,
-    criterios: {regra: "critério no campo Benefício estratégico = peso inteiro; só citado no texto = meio peso; pontos = soma", faixas: {alta: ">= " + demPesoMax(), media: ">= " + demPesoMax() / 2}, desempate: ["maior peso principal", "mais dias no status"], lista: crit},
+    criterios: {regra: "critério no campo Benefício estratégico = peso inteiro; só citado no texto = meio peso; pontos = soma", faixas: {alta: ">= " + demFaixaLim().alta, media: ">= " + demFaixaLim().media}, desempate: ["maior peso principal", "mais dias no status"], lista: crit},
     demandas: demItens.map(it => { const n = demNota(it), cat = demCategoria(it); return {
       id: String(it.campos.ID || it.id), titulo: demTxt(it.campos.Title), status: demStatus(it), encerrada: demFinal(it), bloqueada: demBloqueado(demStatus(it)),
       setor: demTxt(demValor(it, "setor")), tipo: demTxt(demValor(it, "tipo")), beneficio_estrategico: demLista(demValor(it, "benef")),
@@ -5661,7 +5668,7 @@ document.addEventListener("click", e => {
   if (e.target.closest("[data-crit-add]")) { const l = demCritLer(); l.push({nome: "Novo critério", peso: 1, chaves: "", ativo: true}); demCritAbrir(l); return; }
   const cd = e.target.closest("[data-crit-del]"); if (cd) { const l = demCritLer(); l.splice(+cd.dataset.critDel, 1); demCritAbrir(l); return; }
   if (e.target.closest("[data-crit-padrao]")) { demCritAbrir(JSON.parse(JSON.stringify(DEM_CRIT_PADRAO))); return; }
-  if (e.target.closest("[data-crit-ok]")) { const l = demCritLer(); if (!l.length) { toast("Mantenha ao menos um critério."); return; } demCritSalvar(l); demCache2.clear(); flxFechar(); demRender(); toast("Critérios de priorização salvos."); return; }
+  if (e.target.closest("[data-crit-ok]")) { const l = demCritLer(); if (!l.length) { toast("Mantenha ao menos um critério."); return; } demCritSalvar(l); { const a = parseFloat($("demFxA") && $("demFxA").value), m = parseFloat($("demFxM") && $("demFxM").value); if (isFinite(a) && isFinite(m) && a > m && m > 0) { try { localStorage.setItem(DEM_FAIXA_KEY, JSON.stringify({alta: a, media: m})); } catch (er) {} } else if ($("demFxA")) { toast("Régua inválida: Alta precisa ser maior que Média."); return; } } demCache2.clear(); flxFechar(); demRender(); toast("Critérios de priorização salvos."); return; }
   if (e.target.closest("[data-dem-x]") || e.target.id === "demOv") { demSel = null; demRenderTabela(); demRenderDetalhe(); return; }
 });
 $("demDetalhe").addEventListener("submit", e => { if (e.target.id !== "demPForm" && e.target.id !== "demRForm") return; e.preventDefault(); if (perfil() !== "admin") return; if (e.target.id === "demRForm") demReclassificar(); else demSalvarPrio(); });
