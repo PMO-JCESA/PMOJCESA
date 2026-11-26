@@ -1262,6 +1262,7 @@ button.btn.sm.on{background:var(--teal);color:#fff}
       <a href="#/base" data-sub="projetos">Projetos</a>
       <a href="#/base/gerentes" data-sub="gerentes">Gerentes de projetos</a>
       <a href="#/base/solicitantes" data-sub="solicitantes">Solicitantes</a>
+      <a href="#/base/departamentos" data-sub="departamentos">Departamentos</a>
       <a href="#/base/pessoas" data-sub="pessoas">Pessoas das tarefas</a>
     </nav>
     <div id="baseDir" hidden></div>
@@ -1504,7 +1505,7 @@ function listaSelectHtml(campo, valor, attrs){
   const extra = valor && !opts.includes(valor) ? `<option selected value="${esc(valor)}">${esc(valor)} (fora da lista)</option>` : "";
   return `<select ${attrs}><option value="" ${!valor ? "selected" : ""}>— selecione —</option>${extra}${opts.map(o => `<option ${o === valor ? "selected" : ""}>${esc(o)}</option>`).join("")}</select>`;
 }
-const CAD_CAMPO = {"Responsável TI": "gerentes", "Analista Funcional": "gerentes", "Solicitante": "solicitantes"};
+const CAD_CAMPO = {"Responsável TI": "gerentes", "Analista Funcional": "gerentes", "Solicitante": "solicitantes", "Departamento": "departamentos"};
 function cadSelectHtml(tipo, valor, attrs){
   const nomes = cadastros[tipo].map(x => x.nome).sort((a, b) => a.localeCompare(b, "pt-BR"));
   const extra = valor && !nomes.includes(valor) ? `<option selected value="${esc(valor)}">${esc(valor)} (fora do cadastro)</option>` : "";
@@ -1758,11 +1759,14 @@ function carregar(){
 let rows = carregar();
 let pessoas = (() => { const p = lerJSON(PESSOAS_KEY); return Array.isArray(p) ? p : PESSOAS_PADRAO.slice(); })();
 /* Cadastros: gerentes de projetos e solicitantes */
-const CAD_KEYS = {gerentes: "projetos_ti_gerentes", solicitantes: "projetos_ti_solicitantes"};
+const CAD_KEYS = {gerentes: "projetos_ti_gerentes", solicitantes: "projetos_ti_solicitantes", departamentos: "projetos_ti_departamentos"};
 const separaNomes = v => String(v || "").split("/").map(s => s.trim()).filter(Boolean);
 function seedCadastro(tipo){
   const mapa = new Map();
-  if (tipo === "gerentes") {
+  if (tipo === "departamentos") {
+    rows.forEach(r => { const d = (r.Departamento || "").trim(); if (d && !mapa.has(semAcento(d))) mapa.set(semAcento(d), {id: uid(), nome: d}); });
+    if (typeof cadastros !== "undefined") cadastros.solicitantes.forEach(x => { const d = (x.departamento || "").trim(); if (d && !mapa.has(semAcento(d))) mapa.set(semAcento(d), {id: uid(), nome: d}); });
+  } else if (tipo === "gerentes") {
     rows.forEach(r => [...separaNomes(r["Responsável TI"]), ...separaNomes(r["Analista Funcional"])].forEach(n => { if (!mapa.has(n.toLowerCase())) mapa.set(n.toLowerCase(), {id: uid(), nome: n, email: ""}); }));
     const eu = [...mapa.values()].find(g => g.nome === "Alisson Santos");
     if (eu) eu.email = "alisson.santos@jcesa.com.br";
@@ -1781,8 +1785,10 @@ function seedCadastro(tipo){
 }
 const cadastros = {
   gerentes: (() => { const v = lerJSON(CAD_KEYS.gerentes); return Array.isArray(v) ? v : seedCadastro("gerentes"); })(),
-  solicitantes: (() => { const v = lerJSON(CAD_KEYS.solicitantes); return Array.isArray(v) ? v : seedCadastro("solicitantes"); })()
+  solicitantes: (() => { const v = lerJSON(CAD_KEYS.solicitantes); return Array.isArray(v) ? v : seedCadastro("solicitantes"); })(),
+  departamentos: []
 };
+cadastros.departamentos = (() => { const v = lerJSON(CAD_KEYS.departamentos); return Array.isArray(v) ? v : seedCadastro("departamentos"); })();
 let autor = "";
 try { autor = localStorage.getItem(AUTOR_KEY) || ""; } catch(e) {}
 
@@ -1800,6 +1806,7 @@ function salvarLocal(){
     localStorage.setItem(PESSOAS_KEY, JSON.stringify(pessoas));
     localStorage.setItem(CAD_KEYS.gerentes, JSON.stringify(cadastros.gerentes));
     localStorage.setItem(CAD_KEYS.solicitantes, JSON.stringify(cadastros.solicitantes));
+    localStorage.setItem(CAD_KEYS.departamentos, JSON.stringify(cadastros.departamentos));
     return true;
   } catch(e) {
     toast("Não foi possível salvar neste navegador (armazenamento indisponível ou cheio).");
@@ -4791,7 +4798,7 @@ setInterval(() => demAtualizar(false), DEM_INTERVALO);
 setTimeout(() => demAtualizar(false), 10000);
 
 /* ================= GUIA DO PROJETO (PMO e GP): ciclo de vida, fluxos e formulários ================= */
-const GUIA_V = "81";
+const GUIA_V = "82";
 const GUIA_DIR = "guia/";
 const GUIA_SOLICITACAO = "https://pmo-jcesa.github.io/SOLICIT_PROJ_MELHORIAS/";
 const GUIA_D = [{"k":"ini","n":"Iniciação","sub":"Solicitação e formalização do projeto","entra":"Solicitação do setor (FORM01)","sai":"Projeto autorizado","desc":"A demanda entra pelo setor, é justificada e o projeto é formalizado com stakeholders, governança e papéis definidos.","acts":[{"t":"Receber a Solicitação","d":"A demanda chega do setor pelo formulário de solicitação (FORM01) e entra na lista de Demandas do PMO.","r":"Área solicitante, PMO","f":"FORM01"},{"t":"Criar a Pasta do Projeto","d":"Criar a pasta do projeto na biblioteca PMO-Projetos do SharePoint. Os PDFs e documentos do projeto ficam nela.","r":"PMO, GP","f":"","lk":"https://nordtechmaquinas.sharepoint.com/sites/PortalTecnologia/Documentos%20Compartilhados/Forms/AllItems.aspx?id=%2Fsites%2FPortalTecnologia%2FDocumentos%20Compartilhados%2FPMO%2DProjetos%2F01%2EProjetos&viewid=039abd9b%2D3b27%2D489f%2Db785%2Dea30496c7b96&viewpath=%2Fsites%2FProjetosJCE%2FDocumentos%20Compartilhados%2FForms%2FAllItems%2Easpx&share=cgo3PmX7TnPwSrcDOmaE7tQFEgUDm3YnaEXOseXRa0qaYkkFRg","lkt":"Abrir a pasta no SharePoint"},{"t":"Elaborar Business Case","d":"Justificativa formal do investimento, custos, benefícios e retorno esperado.","r":"GP, PMO, Sponsor","f":"FORM02"},{"t":"Registrar Stakeholders","d":"Identificação e análise das partes interessadas no projeto.","r":"GP, PMO","f":"FORM03"},{"t":"Definir Governança","d":"Organização interna do projeto e fluxo de decisão por nível.","r":"GP, PMO","f":"FORM04"},{"t":"Definir Papéis","d":"Criação da Matriz RACI com as responsabilidades de cada ator.","r":"GP, PMO","f":"FORM05"},{"t":"Obter Autorização","d":"Assinatura formal do Sponsor autorizando o início do projeto.","r":"Sponsor","f":""}],"forms":[{"c":"FORM01","n":"Solicitação de Projeto","d":"Entrada das demandas dos setores (equivalente ao TAP). Chega pelo formulário de solicitação e é analisada pelo PMO em Demandas; não é responsabilidade do GP.","w":"Recebido pelo PMO antes do início do projeto.","tipo":"Controle","at":"Específica","f":"","ext":1},{"c":"FORM02","n":"Business Case","d":"Justificativa financeira e estratégica do projeto.","w":"Após a solicitação ser aceita pelo PMO.","tipo":"Controle","at":"Específica","f":"form02-business-case.html"},{"c":"FORM03","n":"Registro de Stakeholders","d":"Partes interessadas, influência e interesse.","w":"Ao formalizar o projeto.","tipo":"Controle","at":"Contínua","f":"form03-registro-de-stakeholders.html"},{"c":"FORM04","n":"Governança do Projeto","d":"Organização interna e fluxo de decisão.","w":"Ao formalizar o projeto.","tipo":"Controle","at":"Específica","f":"form04-governanca-do-projeto.html"},{"c":"FORM05","n":"Matriz RACI","d":"Responsável, Aprovador, Consultado e Informado por atividade.","w":"Ao definir os papéis da equipe.","tipo":"Controle","at":"Específica","f":"form05-matriz-raci.html"}]},{"k":"pla","n":"Planejamento","sub":"Estruturação e baseline","entra":"Projeto autorizado","sai":"Plano do projeto aprovado (baseline)","desc":"Define o que será entregue, os requisitos, o custo, os riscos e como a comunicação vai funcionar.","acts":[{"t":"Levantar Escopo","d":"Delimitação do que está dentro e fora do projeto.","r":"GP, Equipe","f":"FORM06"},{"t":"Levantar Requisitos","d":"Requisitos funcionais, não funcionais e regras de negócio.","r":"GP, Área de negócio","f":"FORM07"},{"t":"Definir Cronograma","d":"Cronograma detalhado do projeto no Portal PMO, na aba Gestão.","r":"GP, Equipe","f":"","lk":"#/gestao","lkt":"Abrir a Gestão"},{"t":"Elaborar Orçamento","d":"Detalhamento do orçamento por categoria.","r":"GP, PMO","f":"FORM08"},{"t":"Identificar Riscos","d":"Probabilidade, impacto e plano de resposta.","r":"GP, Equipe","f":"FORM09"},{"t":"Planejar Comunicação","d":"Quem recebe o quê, quando e por qual canal.","r":"GP","f":"FORM10"},{"t":"Aprovar Baseline","d":"Aprovação do escopo, prazo e custo de referência.","r":"Sponsor, Comitê","f":""}],"forms":[{"c":"FORM06","n":"Levantamento de Escopo","d":"O que está dentro e fora do escopo.","w":"Início do planejamento.","tipo":"Controle","at":"Específica","f":"form06-levantamento-de-escopo.html"},{"c":"FORM07","n":"Levantamento de Requisitos","d":"Requisitos funcionais, não funcionais e regras de negócio.","w":"Depois do escopo.","tipo":"Controle","at":"Específica","f":"form07-levantamento-de-requisitos.html"},{"c":"FORM08","n":"Detalhamento do Orçamento","d":"Orçamento por categoria com gráficos.","w":"Antes de aprovar a baseline.","tipo":"Controle","at":"Contínua","f":"form08-detalhamento-do-orcamento.html"},{"c":"FORM09","n":"Matriz de Riscos","d":"Riscos, probabilidade, impacto e resposta.","w":"Antes de aprovar a baseline.","tipo":"Controle","at":"Contínua","f":"form09-matriz-de-riscos.html"},{"c":"FORM10","n":"Plano de Comunicação","d":"Público, frequência e canal de cada comunicação.","w":"Antes de aprovar a baseline.","tipo":"Controle","at":"Específica","f":"form10-plano-de-comunicacao.html"}]},{"k":"exe","n":"Execução","sub":"Construção das entregas","entra":"Plano do projeto aprovado","sai":"Entregas concluídas","desc":"Construção das entregas. Toda mudança de escopo, prazo ou custo passa pela Gestão de Mudanças, o único registro que guarda histórico.","acts":[{"t":"Kick off","d":"Formalizar o Kick off do projeto: benefícios, entregas, premissas, restrições, riscos e o roadmap de implantação, aprovado pelo Sponsor.","r":"GP, PMO, Sponsor","f":"FORM11A"},{"t":"Executar Entregas","d":"Desenvolvimento dos pacotes de trabalho conforme o escopo.","r":"GP, Equipe","f":""},{"t":"Gerenciar Equipe","d":"Coordenação, motivação e resolução de conflitos.","r":"GP","f":""},{"t":"Gerenciar Mudanças","d":"Abertura e decisão das Change Requests no portal.","r":"GP, Sponsor","f":"FORM11"},{"t":"Garantir Qualidade","d":"Inspeção contínua e validação técnica das entregas.","r":"GP, Qualidade","f":""},{"t":"Gerenciar Fornecedores","d":"Acompanhamento de contratos e entregas de terceiros.","r":"GP","f":""},{"t":"Comunicar Progresso","d":"Atualização dos stakeholders sobre o andamento.","r":"GP","f":""}],"forms":[{"c":"FORM11A","n":"Kick off","d":"Benefícios, entregas, premissas, restrições, riscos, equipe e roadmap de implantação com mini cronograma.","w":"No início da execução, antes da primeira entrega.","tipo":"Controle","at":"Específica","f":"form11a-kick-off.html"},{"c":"FORM11","n":"Gestão de Mudanças","d":"Portal por projeto: Change Requests, painel de gestão e PDFs. Único com histórico salvo.","w":"Durante todo o projeto, a cada mudança.","tipo":"Controle","at":"Contínua","f":"form11-gestao-de-mudancas.html"}]},{"k":"hom","n":"Homologação e Testes","sub":"Testes, aceite e Go-Live","entra":"Entregas concluídas","sai":"Aceite do Go-Live","desc":"Testes, aceite do negócio, preparação da virada e implantação em produção.","acts":[{"t":"Realizar Testes","d":"Testes funcionais e de integração das entregas.","r":"Qualidade","f":"FORM12"},{"t":"Corrigir Não Conformidades","d":"Ajustes dos defeitos encontrados nos testes.","r":"Equipe, GP","f":""},{"t":"Obter Aceite dos Testes","d":"Aprovação formal das entregas pelo negócio.","r":"Cliente, Sponsor","f":"FORM13"},{"t":"Planejar Cutover e Rollback","d":"Roteiro da virada e plano de reversão.","r":"GP, TI","f":"FORM14 · FORM15"},{"t":"Autorizar Go-Live","d":"Autorização formal para implantar em produção.","r":"Sponsor, Comitê","f":"FORM16"},{"t":"Implantar e Estabilizar","d":"Deploy em produção e acompanhamento (Hypercare).","r":"TI, GP","f":""},{"t":"Obter Aceite de Implantação","d":"Validação pós-implantação e início da operação.","r":"Sponsor, Cliente","f":"FORM17"}],"forms":[{"c":"FORM12","n":"Relatório de Testes","d":"Resultados, casos aprovados/reprovados e defeitos.","w":"Ao fim da rodada de testes.","tipo":"Report","at":"Específica","f":"form12-relatorio-de-testes.html"},{"c":"FORM13","n":"Termo de Aceite dos Testes","d":"Aceite formal das entregas pelo negócio.","w":"Após os testes aprovados.","tipo":"Controle","at":"Específica","f":"form13-termo-de-aceite-dos-testes.html"},{"c":"FORM14","n":"Plano de Cutover","d":"Sequência e responsáveis pela virada.","w":"Antes da implantação.","tipo":"Controle","at":"Específica","f":"form14-plano-de-cutover.html"},{"c":"FORM15","n":"Plano de Rollback","d":"Passos para reverter em caso de falha.","w":"Antes da implantação.","tipo":"Controle","at":"Específica","f":"form15-plano-de-rollback.html"},{"c":"FORM16","n":"Termo de Aceite do Go Live","d":"Autorização para implantar em produção.","w":"Antes da virada.","tipo":"Controle","at":"Específica","f":"form16-termo-de-aceite-do-go-live.html"},{"c":"FORM17","n":"Termo de Aceite de Implantação","d":"Validação pós-implantação.","w":"Depois da virada.","tipo":"Controle","at":"Específica","f":"form17-termo-de-aceite-de-implantacao.html"}]},{"k":"enc","n":"Encerramento","sub":"Formalização e lições aprendidas","entra":"Aceite do Go-Live","sai":"Projeto encerrado e arquivado","desc":"Registro das lições, verificação do escopo entregue e arquivamento dos PDFs nas pastas do projeto no SharePoint.","acts":[{"t":"Ajustes Pós Go-Live","d":"Suporte imediato e estabilização da solução.","r":"Equipe, GP","f":""},{"t":"Encerrar Pagamentos e Contratos","d":"Finalização das pendências financeiras e com fornecedores.","r":"GP, PMO","f":""},{"t":"Passagem para Sustentação","d":"Treinamentos, documentos técnicos e acessos entregues à sustentação, com evidências.","r":"GP, Sustentação","f":"FORM18"},{"t":"Lições Aprendidas","d":"Registro dos aprendizados para os próximos projetos.","r":"GP","f":"FORM19"},{"t":"Termo de Encerramento","d":"Verificação da entrega do escopo e assinaturas.","r":"GP, Sponsor","f":"FORM20"},{"t":"Arquivar o Projeto","d":"Salvar os PDFs nas pastas do projeto no SharePoint e concluir o projeto no Portal PMO.","r":"GP","f":"","lk":"#/gestao","lkt":"Abrir a Gestão"}],"forms":[{"c":"FORM18","n":"Termo de Passagem para Sustentação","d":"Checklist da transição para a operação (treinamentos, documentação, acessos) com evidências e aceite da sustentação.","w":"Ao fim da operação assistida.","tipo":"Controle","at":"Específica","f":"form18-termo-de-passagem-para-sustentacao.html"},{"c":"FORM19","n":"Lições Aprendidas","d":"O que manter, o que ajustar e plano de ação.","w":"Após o Go-Live.","tipo":"Controle","at":"Específica","f":"form19-licoes-aprendidas.html"},{"c":"FORM20","n":"Termo de Encerramento do Projeto","d":"Confirma se todos os pontos do escopo foram entregues.","w":"Último documento do projeto.","tipo":"Controle","at":"Específica","f":"form20-termo-de-encerramento-do-projeto.html"}]}];
@@ -5832,6 +5839,13 @@ function flxPid(){
   return h[0] === "gestao" ? (h[1] || "") : (h[0] === "guia" && h[1] === "form") ? (h[3] || "") : "";
 }
 function flxFrame(){ const fr = $("gdFrame"); if (!fr || !fr.dataset.cod) return null; const [cod, pid, m] = fr.dataset.cod.split("|"); return pid ? {fr, cod, pid, modelo: m === "m"} : null; }
+function flxCadBase(){
+  const nomes = new Set();
+  cadastros.gerentes.forEach(g => nomes.add(g.nome)); cadastros.solicitantes.forEach(x => nomes.add(x.nome));
+  try { pessoas.forEach(e => { const n = nomeCompletoDe(e); if (n) nomes.add(n); }); } catch (x) {}
+  return {gerentes: cadastros.gerentes.map(g => g.nome), solicitantes: cadastros.solicitantes.map(x => ({nome: x.nome, dep: x.departamento || ""})),
+    departamentos: cadastros.departamentos.map(d => d.nome), pessoas: [...nomes].filter(Boolean).sort((a, b) => a.localeCompare(b, "pt-BR"))};
+}
 function flxEnviar(fr, m){ try { fr.contentWindow.postMessage(Object.assign({gd: 1}, m), "*"); } catch (e) {} }
 window.addEventListener("message", e => {
   const m = e.data;
@@ -5840,16 +5854,16 @@ window.addEventListener("message", e => {
   if (!c || e.source !== c.fr.contentWindow) return;
   const r = achar(c.pid);
   if (!r) return;
-  if (!fluxoAtivo(r)) { if (m.t === "ready") flxEnviar(c.fr, {t: "init", std: true, proj: {id: r.ID, nome: r["Título"]}}); return; }
+  if (!fluxoAtivo(r)) { if (m.t === "ready") flxEnviar(c.fr, {t: "init", std: true, cad: flxCadBase(), proj: {id: r.ID, nome: r["Título"]}}); return; }
   const cod = c.cod;
-  if (c.modelo) { if (m.t === "ready") flxEnviar(c.fr, {t: "init", proj: {id: r.ID, nome: r["Título"]}, estado: null, patch: null, ro: true}); return; }
+  if (c.modelo) { if (m.t === "ready") flxEnviar(c.fr, {t: "init", cad: flxCadBase(), proj: {id: r.ID, nome: r["Título"]}, estado: null, patch: null, ro: true}); return; }
   if (m.t === "ready") {
     const d = flxDoc(r, cod);
     const pmo = FLX_SO_PMO.includes(cod) && perfil() !== "admin";
     const chave = r.ID + "|" + cod, pend = flxPend[chave];
     delete flxPend[chave];
     const estado = d && (d.rascunho || d.dados) ? (d.rascunho && !d.ok ? d.rascunho : d.dados) : null;
-    flxEnviar(c.fr, {t: "init", sp: spLigado(), proj: {id: r.ID, nome: r["Título"]}, estado, patch: pend || (estado ? (cod === "FORM06" && r.fluxo.solic ? flxDeSolic(r.fluxo.solic.campos) : null) : flxPrefillInicial(cod, r)), ro: !podeEditar() || pmo});
+    flxEnviar(c.fr, {t: "init", sp: spLigado(), cad: flxCadBase(), proj: {id: r.ID, nome: r["Título"]}, estado, patch: pend || (estado ? (cod === "FORM06" && r.fluxo.solic ? flxDeSolic(r.fluxo.solic.campos) : null) : flxPrefillInicial(cod, r)), ro: !podeEditar() || pmo});
   } else if (m.t === "buscar") {
     flxBuscarIr(r, cod, m.estado);
   } else if (m.t === "draft") {
@@ -7396,15 +7410,15 @@ function renderPessoas(){
 }
 const subBaseAtual = () => { const p = location.hash.replace(/^#\/?/, "").split("/"); return p[0] === "base" && p[1] ? p[1] : "projetos"; };
 function renderBase(sub){
-  sub = ["projetos","gerentes","solicitantes","pessoas","diretoria"].includes(sub) ? sub : subBaseAtual();
+  sub = ["projetos","gerentes","solicitantes","departamentos","pessoas","diretoria"].includes(sub) ? sub : subBaseAtual();
   document.querySelectorAll("#baseNav a").forEach(a => a.classList.toggle("on", a.dataset.sub === sub));
   $("baseProjetos").hidden = sub !== "projetos";
   $("basePessoas").hidden = sub !== "pessoas";
-  $("baseCad").hidden = !(sub === "gerentes" || sub === "solicitantes");
+  $("baseCad").hidden = !(sub === "gerentes" || sub === "solicitantes" || sub === "departamentos");
   $("baseDir").hidden = sub !== "diretoria";
   if (sub === "diretoria") { renderDiretoria(); return; }
   if (sub === "pessoas") { renderPessoas(); return; }
-  if (sub === "gerentes" || sub === "solicitantes") { renderCadastro(sub); return; }
+  if (sub === "gerentes" || sub === "solicitantes" || sub === "departamentos") { renderCadastro(sub); return; }
   renderBaseProjetos();
 }
 const CAD_DEF = {
@@ -7413,13 +7427,16 @@ const CAD_DEF = {
     uso: g => rows.filter(r => [...separaNomes(r["Responsável TI"]), ...separaNomes(r["Analista Funcional"])].includes(g.nome)).length},
   solicitantes: {titulo: "Solicitantes", desc: "Aparecem na lista de Solicitante. Ao escolher o solicitante num projeto, o departamento é preenchido automaticamente.",
     campos: [["nome","Nome","Nome e sobrenome"],["email","E-mail","nome.sobrenome@jcesa.com.br"],["departamento","Departamento","Ex.: Comercial"]],
-    uso: s => rows.filter(r => r.Solicitante === s.nome).length}
+    uso: s => rows.filter(r => r.Solicitante === s.nome).length},
+  departamentos: {titulo: "Departamentos", desc: "Áreas da empresa. Aparecem nas listas de Departamento dos projetos, dos solicitantes e dos formulários do Guia do Projeto, que só aceitam departamentos cadastrados aqui.",
+    campos: [["nome","Nome do departamento","Ex.: Comercial"]],
+    uso: d => rows.filter(r => semAcento(r.Departamento) === semAcento(d.nome)).length + cadastros.solicitantes.filter(x => semAcento(x.departamento) === semAcento(d.nome)).length}
 };
 const emailOk = v => !v || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 function renderCadastro(tipo){
   const def = CAD_DEF[tipo], lista = cadastros[tipo];
-  const deps = [...new Set([...rows.map(r => r.Departamento), ...cadastros.solicitantes.map(s => s.departamento)].filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR"));
-  const semEmail = lista.filter(x => !x.email).length;
+  const deps = cadastros.departamentos.map(d => d.nome).sort((a, b) => a.localeCompare(b, "pt-BR"));
+  const semEmail = tipo === "departamentos" ? 0 : lista.filter(x => !x.email).length;
   $("baseCad").innerHTML = `
     <div class="card">
       <div class="card-h"><h3>${def.titulo}</h3><span class="note" style="margin:0">${lista.length} cadastrado(s)${semEmail ? ` · ${semEmail} sem e-mail` : ""}</span></div>
@@ -7454,9 +7471,16 @@ $("baseCad").addEventListener("submit", e => {
   CAD_DEF[tipo].campos.forEach(([k]) => item[k] = String(fd.get(k) || "").trim());
   if (item.email) item.email = item.email.toLowerCase();
   if (!item.nome) { toast("Informe o nome."); return; }
-  if (!item.email) { toast("Informe o e-mail."); return; }
-  if (!emailOk(item.email)) { toast("E-mail inválido."); return; }
-  if (cadastros[tipo].some(x => x.nome.toLowerCase() === item.nome.toLowerCase() || (x.email && x.email === item.email))) { toast("Já existe um cadastro com esse nome ou e-mail."); return; }
+  if (tipo !== "departamentos") {
+    if (!item.email) { toast("Informe o e-mail."); return; }
+    if (!emailOk(item.email)) { toast("E-mail inválido."); return; }
+  }
+  if (tipo === "solicitantes" && item.departamento) {
+    const dc = cadastros.departamentos.find(d => semAcento(d.nome) === semAcento(item.departamento));
+    if (!dc) { toast("Departamento não cadastrado. Cadastre-o primeiro em Base › Departamentos."); return; }
+    item.departamento = dc.nome;
+  }
+  if (cadastros[tipo].some(x => semAcento(x.nome) === semAcento(item.nome) || (item.email && x.email && x.email === item.email))) { toast(tipo === "departamentos" ? "Esse departamento já está cadastrado." : "Já existe um cadastro com esse nome ou e-mail."); return; }
   cadastros[tipo].push(item);
   cadastros[tipo].sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
   salvar();
@@ -7474,11 +7498,21 @@ $("baseCad").addEventListener("change", e => {
   let v = inp.value.trim();
   if (campo === "email") { v = v.toLowerCase(); if (!emailOk(v)) { toast("E-mail inválido."); inp.value = item.email || ""; return; } }
   if (campo === "nome" && !v) { toast("O nome não pode ficar vazio."); inp.value = item.nome; return; }
+  if (tipo === "solicitantes" && campo === "departamento" && v) {
+    const dc = cadastros.departamentos.find(d => semAcento(d.nome) === semAcento(v));
+    if (!dc) { toast("Departamento não cadastrado. Cadastre-o primeiro em Base › Departamentos."); inp.value = item.departamento || ""; return; }
+    v = dc.nome; inp.value = v;
+  }
+  if (tipo === "departamentos" && campo === "nome" && cadastros.departamentos.some(d => d !== item && semAcento(d.nome) === semAcento(v))) { toast("Esse departamento já está cadastrado."); inp.value = item.nome; return; }
   const antes = item[campo];
   item[campo] = v;
   let n = 0;
   if (campo === "nome" && antes && antes !== v) {
-    rows.forEach(r => {
+    if (tipo === "departamentos") {
+      rows.forEach(r => { if (r.Departamento === antes) { r.Departamento = v; n++; } });
+      cadastros.solicitantes.forEach(x => { if (x.departamento === antes) x.departamento = v; });
+    }
+    else rows.forEach(r => {
       if (tipo === "gerentes") {
         if (r["Responsável TI"] === antes) { r["Responsável TI"] = v; n++; }
         const partes = separaNomes(r["Analista Funcional"]);
@@ -7622,7 +7656,7 @@ function npModalHtml(){
       ${f("Frente", lista("Frente"))}
       ${f("Benefício estratégico", lista("Benefício estratégico"), "full")}
       ${f("Solicitante", cadSelectHtml("solicitantes", "", `name="Solicitante" data-np="Solicitante"`), "", "Preenche o departamento automaticamente")}
-      ${f("Departamento / setor", `<input type="text" name="Departamento" data-np="Departamento" list="npDeps"><datalist id="npDeps">${[...new Set([...cadastros.solicitantes.map(x => x.departamento).filter(Boolean), ...npDistintos("Departamento")])].sort((a, b) => a.localeCompare(b, "pt-BR")).map(o => `<option value="${esc(o)}">`).join("")}</datalist>`)}
+      ${f("Departamento / setor", cadSelectHtml("departamentos", "", `name="Departamento" data-np="Departamento"`), "", "Cadastrados em Base › Departamentos")}
       ${f("Responsável TI", gerSel("Responsável TI", eu && eu.nome))}
       ${f("Analista Funcional", gerSel("Analista Funcional"))}
       ${f("Nome do Programa", `<input type="text" name="Nome do Programa" data-np="Nome do Programa" list="npProg"><datalist id="npProg">${npDistintos("Nome do Programa").map(o => `<option value="${esc(o)}">`).join("")}</datalist>`, "", "Escolha um existente ou digite um novo")}
@@ -7668,7 +7702,7 @@ document.addEventListener("change", e => {
   const f = e.target.form; if (!f || f.id !== "npForm") return;
   if (e.target.name === "Solicitante") {
     const s = cadastros.solicitantes.find(x => x.nome === e.target.value);
-    if (s && s.departamento) f.Departamento.value = s.departamento;
+    if (s && s.departamento) { const dv = [...f.Departamento.options].find(o => semAcento(o.value) === semAcento(s.departamento)); if (dv) f.Departamento.value = dv.value; }
   }
   if (e.target.name === "Inicio" || e.target.name === "Fim") npDuracao();
 });
@@ -8004,10 +8038,11 @@ function spPessoasDesejadas(){
   const add = (k, f) => { if (k.length > 2 && !m.has(k)) m.set(k, spLimpo(f)); };
   cadastros.gerentes.forEach(g => add("G|" + semAcento(g.email || g.nome), {Title: g.nome || g.email, Email: String(g.email || "").toLowerCase(), Papel: "Gerente de projeto", Ativo: true}));
   cadastros.solicitantes.forEach(s => add("S|" + semAcento(s.email || s.nome), {Title: s.nome || s.email, Email: String(s.email || "").toLowerCase(), Departamento: s.departamento || "", Papel: "Solicitante", Ativo: true}));
+  cadastros.departamentos.forEach(d => add("D|" + semAcento(d.nome), {Title: d.nome, Papel: "Departamento", Ativo: true}));
   pessoas.forEach(e => add("E|" + semAcento(e), {Title: nomeCompletoDe(e), Email: String(e).toLowerCase(), Papel: "Equipe", Ativo: true}));
   return m;
 }
-const spChavePessoa = f => (f.Papel === "Gerente de projeto" ? "G|" : f.Papel === "Solicitante" ? "S|" : "E|") + semAcento(f.Email || f.Title);
+const spChavePessoa = f => (f.Papel === "Gerente de projeto" ? "G|" : f.Papel === "Solicitante" ? "S|" : f.Papel === "Departamento" ? "D|" : "E|") + semAcento(f.Email || f.Title);
 
 /* ---------- Escrita nas listas ---------- */
 function spCampos(f){
@@ -8122,7 +8157,7 @@ async function spCarregar(){
   rows.forEach(r => r.tarefas.forEach(t => t.anexos.forEach(a => { if (a.dataUrl) anexosLocais.set(a.id, a.dataUrl); })));
 
   /* Pessoas → cadastros */
-  const ger = [], sol = [], equipe = [], vistos = new Set(), itensPes = [];
+  const ger = [], sol = [], dep = [], equipe = [], vistos = new Set(), itensPes = [];
   ipe.forEach(item => {
     const f = item.fields || {};
     if (f.Ativo === false) return;
@@ -8134,11 +8169,13 @@ async function spCarregar(){
     itensPes.push({chave, spId: String(item.id)});
     if (f.Papel === "Gerente de projeto") ger.push({id: "sp" + item.id, nome: nome || email, email});
     else if (f.Papel === "Solicitante") sol.push({id: "sp" + item.id, nome: nome || email, email, departamento: f.Departamento || ""});
+    else if (f.Papel === "Departamento") dep.push({id: "sp" + item.id, nome});
     else if (email) equipe.push(email);
   });
   const porNome = (a, b) => a.nome.localeCompare(b.nome, "pt-BR");
   cadastros.gerentes = ger.sort(porNome);
   cadastros.solicitantes = sol.sort(porNome);
+  if (dep.length) cadastros.departamentos = dep.sort(porNome);
   pessoas = equipe;
 
   /* Projetos */
@@ -8371,7 +8408,7 @@ function spImportar(dados, extras){
   /* Cadastro: gerentes e solicitantes citados nos projetos importados */
   const salvo = rows;
   rows = novos;
-  const ger = seedCadastro("gerentes"), sol = seedCadastro("solicitantes");
+  const ger = seedCadastro("gerentes"), sol = seedCadastro("solicitantes"), dep = seedCadastro("departamentos");
   rows = salvo;
   const juntar = (tipo, lista) => lista.forEach(x => {
     const k = semAcento(x.email || x.nome);
@@ -8380,6 +8417,8 @@ function spImportar(dados, extras){
   if (extras && extras.cadastros) { juntar("gerentes", extras.cadastros.gerentes || []); juntar("solicitantes", extras.cadastros.solicitantes || []); }
   juntar("gerentes", ger);
   juntar("solicitantes", sol);
+  juntar("departamentos", (extras && extras.cadastros && extras.cadastros.departamentos) || []);
+  juntar("departamentos", dep);
   if (extras && Array.isArray(extras.pessoas)) extras.pessoas.forEach(e => { e = String(e).toLowerCase(); if (!pessoas.includes(e)) pessoas.push(e); });
   rows.push(...novos);
   salvar();

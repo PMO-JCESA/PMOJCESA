@@ -833,7 +833,7 @@ buildStatic();$('#btnFinish').onclick=finish;$('#btnFinish2').onclick=finish;fil
     + '#gdBr b{font-weight:700}#gdBr .gdn{flex:1;min-width:200px}#gdBr button{font:inherit;font-weight:600;padding:6px 12px;border-radius:8px;border:1px solid #2b7f8e;background:#fff;color:#1d6573;cursor:pointer}'
     + '#gdBr button:hover{background:#e3f1f4}#gdBr .gdro{color:#8a5a00;font-weight:700}'
     + 'body.gd-ro main input,body.gd-ro main textarea,body.gd-ro main select{pointer-events:none;background:#f4f6f8}body.gd-ro main button:not(.tab){pointer-events:none;opacity:.55}'
-    + '.gd-pdfbox{display:grid;gap:10px;margin:12px 0}.gd-pdfbox .st{border:1px solid #cdd7dd;border-radius:10px;padding:10px 12px;background:#fafcfd}.gd-pdfbox .st b{display:block;margin-bottom:4px}'
+    + '.gd-aviso{display:block;color:#b3261e;font-size:11.5px;font-weight:600;margin-top:3px}.gd-pdfbox{display:grid;gap:10px;margin:12px 0}.gd-pdfbox .st{border:1px solid #cdd7dd;border-radius:10px;padding:10px 12px;background:#fafcfd}.gd-pdfbox .st b{display:block;margin-bottom:4px}'
     + '.gd-pdfbox .ok{color:#17803d;font-weight:700}.gd-pdfbox .err{color:#b3261e;font-weight:700}';
   document.head.appendChild(css);
 
@@ -891,10 +891,76 @@ buildStatic();$('#btnFinish').onclick=finish;$('#btnFinish2').onclick=finish;fil
     };
   }
 
+
+  /* ---- Cadastros da Base: sugestões e validação (só aceita o que está cadastrado) ---- */
+  let CAD = null;
+  const norm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+  const MAPA = {'id.gp': 'ger', 'org.gp.nome': 'ger', 'proj.gp': 'ger', 'pf.gerente': 'ger', 'id.analista': 'pes', 'id.po': 'sol', 'id.solic': 'solarea', 'f.solicitante': 'sol', 'id.area': 'dep', 'proj.area': 'dep'};
+  const ABA = {ger: 'Base › Gerentes de projetos', pes: 'Base › Gerentes, Solicitantes ou Pessoas', sol: 'Base › Solicitantes', solarea: 'Base › Solicitantes', dep: 'Base › Departamentos'};
+  const solTxt = s => s.dep ? s.nome + ' / ' + s.dep : s.nome;
+  function opcoes(t){ if (!CAD) return []; return t === 'ger' ? CAD.gerentes : t === 'pes' ? CAD.pessoas : t === 'sol' ? CAD.solicitantes.map(s => s.nome) : t === 'solarea' ? CAD.solicitantes.map(solTxt) : CAD.departamentos; }
+  function canon(t, v){
+    const n = norm(v); if (!n) return '';
+    let o = opcoes(t).find(x => norm(x) === n);
+    if (!o && t === 'solarea') { const nm = norm(String(v).split('/')[0]); const s = CAD.solicitantes.find(x => norm(x.nome) === nm); if (s) o = solTxt(s); }
+    return o || null;
+  }
+  function aviso(el, msg){
+    let a = el.parentNode.querySelector('.gd-aviso');
+    if (!msg) { if (a) a.remove(); el.classList.remove('invalid'); return; }
+    if (!a) { a = document.createElement('small'); a.className = 'gd-aviso screen'; el.insertAdjacentElement('afterend', a); }
+    a.textContent = msg; el.classList.add('invalid');
+  }
+  const msgFora = (v, t) => '“' + v + '” não está cadastrado (' + ABA[t] + '). Escolha uma opção da lista ou peça ao PMO para cadastrar.';
+  function listas(){
+    if (!CAD) return;
+    const mk = (id, arr) => { let d = document.getElementById(id); if (!d) { d = document.createElement('datalist'); d.id = id; document.body.appendChild(d); } d.innerHTML = arr.map(x => '<option value="' + esc(x) + '">').join(''); };
+    ['ger', 'pes', 'sol', 'solarea', 'dep'].forEach(t => mk('gdl-' + t, opcoes(t)));
+    Object.keys(MAPA).forEach(p => { const el = document.querySelector('[data-path="' + p + '"]'); if (el) { el.setAttribute('list', 'gdl-' + MAPA[p]); el.setAttribute('autocomplete', 'off'); } });
+    const tn = document.getElementById('tNome'); if (tn) tn.setAttribute('list', 'gdl-pes');
+  }
+  function revisar(){
+    if (!CAD) return;
+    Object.keys(MAPA).forEach(p => { const el = document.querySelector('[data-path="' + p + '"]'); if (!el) return; const v = String(el.value || '').trim(); aviso(el, v && canon(MAPA[p], v) === null ? msgFora(v, MAPA[p]) : ''); });
+  }
+  function preencher(path, val){
+    const el = document.querySelector('[data-path="' + path + '"]');
+    if (el && val && !String(el.value || '').trim()) { el.value = val; try { setP(path, val); } catch (x) {} aviso(el, ''); }
+  }
+  document.addEventListener('change', e => {
+    const t = e.target, p = t.dataset && t.dataset.path, tipo = MAPA[p];
+    if (!CAD || ro || !tipo) return;
+    const v = t.value.trim(); aviso(t, '');
+    if (!v) return;
+    const c = canon(tipo, v);
+    if (c === null) { t.value = ''; aviso(t, msgFora(v, tipo)); t.classList.add('invalid'); return; }
+    t.value = c;
+    if (tipo === 'sol' || tipo === 'solarea') {
+      const nome = tipo === 'solarea' ? c.split(' / ')[0] : c, s = CAD.solicitantes.find(x => x.nome === nome);
+      if (s) { if (s.dep) preencher('id.area', CAD.departamentos.find(d => norm(d) === norm(s.dep)) || ''); if (tipo !== 'solarea') preencher('id.solic', solTxt(s)); if (tipo !== 'sol') preencher('id.po', s.nome); }
+    }
+  }, true);
+  document.addEventListener('focusin', e => {
+    const t = e.target, p = t.dataset && t.dataset.path;
+    if (!CAD || !p || MAPA[p] || t.getAttribute('list') || !/\.(nome|resp)$/.test(p) || /^(proj|id|pf|f|org\.sponsor)\./.test(p) || /sponsor/.test(p)) return;
+    t.setAttribute('list', 'gdl-pes');
+  });
+  const v0 = validate;
+  validate = function(){
+    const r = v0.apply(this, arguments);
+    if (CAD && !ro) Object.keys(MAPA).forEach(p => {
+      const el = document.querySelector('[data-path="' + p + '"]'); if (!el) return;
+      const v = String(el.value || '').trim();
+      if (v && canon(MAPA[p], v) === null) r.E.push({msg: msgFora(v, MAPA[p]), sel: '[data-path="' + p + '"]', tab: (el.closest('[id^="s-"]') || {}).id});
+    });
+    return r;
+  };
+
   window.addEventListener('message', e => {
     const m = e.data;
     if (!m || !m.gd || e.source !== parent) return;
     if (m.t === 'init') {
+      if (m.cad) { CAD = m.cad; ro = !!m.ro; listas(); revisar(); }
       if (m.std) { const a0 = document.querySelector('.gpback'); if (a0) { a0.dataset.gdHash = '#/gestao/' + (m.proj ? m.proj.id : ''); a0.textContent = '← Documentos do projeto'; } return; }
       ativo = true; spOn = !!m.sp; ro = !!m.ro; projNome = (m.proj && m.proj.nome) || '';
       if (ro) {
@@ -904,6 +970,7 @@ buildStatic();$('#btnFinish').onclick=finish;$('#btnFinish2').onclick=finish;fil
       if (m.estado) { const b = makeState(); assign(b, m.estado); S = b; }
       if (m.patch) fillEmpty(S, m.patch);
       refresh();
+      listas(); revisar();
       barra();
       const a = document.querySelector('.gpback');
       if (a) { a.dataset.gdHash = '#/gestao/' + (m.proj ? m.proj.id : ''); a.textContent = '← Documentos do projeto'; }
@@ -915,6 +982,7 @@ buildStatic();$('#btnFinish').onclick=finish;$('#btnFinish2').onclick=finish;fil
     } else if (m.t === 'patch' && ativo && !ro) {
       fillEmpty(S, m.patch || {});
       refresh();
+      listas(); revisar();
     } else if (m.t === 'fechar') { closeModal(); }
   });
   post({t: 'ready'});
