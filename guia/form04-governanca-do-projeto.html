@@ -891,7 +891,7 @@ buildStatic();$('#btnFinish').onclick=finish;$('#btnFinish2').onclick=finish;fil
     + '#gdBr button:hover{background:#e3f1f4}#gdBr .gdro{color:#8a5a00;font-weight:700}'
     + 'body.gd-ro main input,body.gd-ro main textarea,body.gd-ro main select{pointer-events:none;background:#f4f6f8}body.gd-ro main button:not(.tab){pointer-events:none;opacity:.55}'
     + '.gd-aviso{display:block;color:#b3261e;font-size:11.5px;font-weight:600;margin-top:3px}.gd-pdfbox{display:grid;gap:10px;margin:12px 0}.gd-pdfbox .st{border:1px solid #cdd7dd;border-radius:10px;padding:10px 12px;background:#fafcfd}.gd-pdfbox .st b{display:block;margin-bottom:4px}'
-    + '.gd-pdfbox .ok{color:#17803d;font-weight:700}.gd-pdfbox .err{color:#b3261e;font-weight:700}';
+    + '.gd-pdfbox .st b,.gd-pdfbox .st span,.gd-pdfbox .st small,.gd-pdfbox .st p{color:#17303a!important}.gd-pdfbox .st button{color:#fff}.gd-pdfbox .ok{color:#17803d;font-weight:700}.gd-pdfbox .err{color:#b3261e;font-weight:700}';
   document.head.appendChild(css);
 
   function barra(){
@@ -920,32 +920,110 @@ buildStatic();$('#btnFinish').onclick=finish;$('#btnFinish2').onclick=finish;fil
   }
   const LIM = 1.5 * 1024 * 1024;
   let spOn = false;
+  /* ---- Geração do PDF dentro do portal (sem diálogo de impressão e sem anexar arquivo) ---- */
+  const esperar = ms => new Promise(r => setTimeout(r, ms));
+  function margens(css){
+    const p = String(css || '10mm').trim().split(/\s+/).map(v => parseFloat(v) || 0);
+    if (p.length === 1) return {t: p[0], h: p[0], b: p[0]};
+    if (p.length === 2) return {t: p[0], h: p[1], b: p[0]};
+    return {t: p[0], h: p[1], b: p[2]};
+  }
+  async function gerarPdf(libs, prog){
+    draftMode = false;
+    buildPrint();
+    await Promise.all($$('#print img').map(i => i.decode ? i.decode().catch(() => {}) : null));
+    const doc = document.documentElement.outerHTML;
+    const pg = (doc.match(/@page\s*\{\s*size:\s*A4\s+(landscape|portrait)\s*;\s*margin:\s*([^;}]+)/i) || []);
+    const land = (pg[1] || 'landscape').toLowerCase() === 'landscape';
+    const mg = margens(pg[2]);
+    const fe = (doc.match(/@bottom-left\s*\{\s*content:\s*"([^"]*)"/) || [])[1] || '';
+    const PX = 96 / 25.4, PW = land ? 297 : 210, PH = land ? 210 : 297;
+    const cw = Math.round((PW - 2 * mg.h) * PX), ch = Math.round((PH - mg.t - mg.b) * PX);
+    /* regras de impressão reaproveitadas na tela, restritas ao #print (sem iframe) */
+    const regras = [];
+    const coletar = (lista, ehPrint) => [...lista].forEach(r => {
+      if (r.type === 1) {
+        if (!ehPrint) return;
+        const sels = r.selectorText.split(',').map(x => x.trim()).filter(x => x && !/^(html|body|\.screen|#modal)\b/.test(x)).map(x => /^#print\b/.test(x) ? x : '#print ' + x);
+        if (sels.length) regras.push(sels.join(',') + '{' + r.style.cssText + '}');
+      } else if (r.type === 4 && /print/.test(r.media.mediaText)) coletar(r.cssRules, true);
+    });
+    [...document.styleSheets].forEach(sh => { try { coletar(sh.cssRules, /print/.test(sh.media.mediaText) && !/screen/.test(sh.media.mediaText)); } catch (e) {} });
+    const st = document.createElement('style');
+    st.textContent = regras.join('\n') + '\n#print{display:block!important;position:absolute!important;left:-99999px!important;top:0!important;width:' + cw + 'px!important;box-sizing:border-box;background:#fff!important;color:#0F172A}';
+    document.head.appendChild(st);
+    const w = window;
+    try {
+      (0, eval)(libs.h2c); (0, eval)(libs.jspdf);
+      try { await Promise.race([document.fonts.ready, esperar(4000)]); } catch (e) {}
+      const el = document.getElementById('print');
+      await Promise.all([...el.querySelectorAll('img')].map(i => i.decode ? i.decode().catch(() => {}) : null));
+      const topo = el.getBoundingClientRect().top;
+      const alt = Math.ceil(el.getBoundingClientRect().height);
+      const th = el.querySelector('table.wrap > thead');
+      const hh = th ? Math.ceil(th.getBoundingClientRect().height) : 0;
+      /* pontos de quebra: evita cortar linhas/blocos no meio */
+      const atomos = [...el.querySelectorAll('tr,p,li,h1,h2,h3,h4,h5,img,svg,.idrow,.card,.box,.ganttbox')].map(x => {
+        const r = x.getBoundingClientRect(); return {t: r.top - topo, b: r.bottom - topo, h: r.height};
+      }).filter(x => x.h > 2 && x.h <= ch * 0.6);
+      const cortes = []; let y0 = 0;
+      while (y0 < alt - 1) {
+        const cap = cortes.length ? ch - hh : ch;
+        let y1 = y0 + cap;
+        if (y1 >= alt) { y1 = alt; }
+        else {
+          const cand = atomos.filter(x => x.t < y1 - 1 && x.b > y1 + 1 && x.t > y0 + cap * 0.3);
+          if (cand.length) y1 = Math.min(...cand.map(x => x.t));
+        }
+        if (alt - y1 < 40 && y1 < alt) y1 = alt;
+        cortes.push([y0, Math.max(y1, y0 + 20)]); y0 = cortes[cortes.length - 1][1];
+        if (cortes.length > 120) break;
+      }
+      const J = window.jspdf.jsPDF, pdf = new J({orientation: land ? 'landscape' : 'portrait', unit: 'mm', format: 'a4', compress: true});
+      const esc2 = 2, mmPx = 25.4 / 96;
+      const cap = (y, h) => window.html2canvas(el, {scale: esc2, backgroundColor: '#fff', useCORS: true, logging: false, x: 0, y, width: cw, height: Math.max(1, Math.ceil(h)), windowWidth: Math.max(document.documentElement.clientWidth, cw + 100)});
+      let cabec = null;
+      if (hh && cortes.length > 1) cabec = await cap(0, hh);
+      for (let i = 0; i < cortes.length; i++) {
+        if (prog) prog(i + 1, cortes.length);
+        if (i) pdf.addPage('a4', land ? 'landscape' : 'portrait');
+        let yy = mg.t;
+        if (i && cabec) { pdf.addImage(cabec.toDataURL('image/jpeg', 0.9), 'JPEG', mg.h, yy, cw * mmPx, hh * mmPx); yy += hh * mmPx; }
+        const [a0, a1] = cortes[i];
+        const cv = await cap(a0, a1 - a0);
+        pdf.addImage(cv.toDataURL('image/jpeg', 0.88), 'JPEG', mg.h, yy, cw * mmPx, (a1 - a0) * mmPx);
+        pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7); pdf.setTextColor(100, 116, 139);
+        if (fe) pdf.text(fe.replace(/\s{2,}/g, '  '), mg.h, PH - 6);
+        pdf.text('Página ' + (i + 1) + ' de ' + cortes.length, PW - mg.h, PH - 6, {align: 'right'});
+      }
+      return pdf.output('arraybuffer');
+    } finally { st.remove(); }
+  }
+  function nomeArq(){ const cd = COD || ((location.pathname.match(/form(\d+a?)/i) || [])[1] ? 'FORM' + location.pathname.match(/form(\d+a?)/i)[1].toUpperCase() : 'FORM'); return (cd + '_' + (projNome || 'projeto') + '_' + new Date().toISOString().slice(0, 10) + '.pdf').replace(/[\\/:*?"<>|#%]+/g, '-').replace(/\s+/g, ' ').trim(); }
   function concluir(){
     draftMode = false;
     $$('.invalid').forEach(e => e.classList.remove('invalid'));
     const {E} = validate();
     if (E.length) { finish(); return; }
-    showModal('<h3>Concluir e arquivar no portal</h3><p>O documento está completo. Para arquivar, gere o PDF e depois anexe aqui o arquivo salvo.</p>'
-      + '<div class="gd-pdfbox"><div class="st"><b>1. Gerar o PDF</b><span>Na janela de impressão escolha <b>Salvar como PDF</b>.</span><div style="margin-top:8px"><button class="btn primary" type="button" id="gdGerar">Gerar PDF</button></div></div>'
-      + (spOn
-        ? '<div class="st"><b>2. Escolher o PDF na pasta do projeto</b><span>Salve o PDF na pasta do projeto no SharePoint e escolha-o aqui.</span><div style="margin-top:8px"><button class="btn primary" type="button" id="gdPick">Escolher da pasta do projeto</button></div></div></div>'
-        : '<div class="st"><b>2. Anexar o PDF salvo</b><input type="file" id="gdPdf" accept="application/pdf,.pdf"><div id="gdPdfMsg" style="margin-top:6px"></div></div></div>')
-      + '<div class="acts"><button class="btn" type="button" id="gdCancel">Voltar e revisar</button></div>');
+    showModal('<h3>Concluir e arquivar no portal</h3><p>O documento está completo. ' + (spOn ? 'Escolha a pasta do projeto no SharePoint e clique em Salvar: o portal gera o PDF e grava lá.' : 'O portal vai gerar o PDF e guardar no projeto.') + '</p>'
+      + '<div class="acts"><button class="btn" type="button" id="gdCancel">Voltar e revisar</button><button class="btn primary" type="button" id="gdSalvar">' + (spOn ? 'Escolher a pasta e salvar o PDF' : 'Gerar e salvar o PDF') + '</button></div>');
     $('#gdCancel').onclick = closeModal;
-    $('#gdGerar').onclick = () => { doPrint(false); };
-    if ($('#gdPick')) $('#gdPick').onclick = () => { post({t: 'pickpdf', estado: JSON.parse(JSON.stringify(S))}); };
-    if ($('#gdPdf')) $('#gdPdf').onchange = async ev => {
-      const f = ev.target.files[0], msg = $('#gdPdfMsg');
-      if (!f) return;
-      if (!(await ehPdf(f))) { msg.innerHTML = '<span class="err">Este arquivo não é um PDF válido. Gere o PDF pelo passo 1 e anexe o arquivo salvo.</span>'; ev.target.value = ''; return; }
-      if (f.size < 2000) { msg.innerHTML = '<span class="err">O PDF parece vazio (muito pequeno). Gere novamente.</span>'; ev.target.value = ''; return; }
-      const grande = f.size > LIM;
-      const dataUrl = grande ? '' : await lerPdf(f);
-      msg.innerHTML = '<span class="ok">PDF recebido: ' + esc(f.name) + ' (' + Math.round(f.size / 1024) + ' KB)</span>' + (grande ? '<br><small>Arquivo grande: será registrado sem o conteúdo; salve-o também na pasta do projeto.</small>' : '');
-      post({t: 'done', estado: JSON.parse(JSON.stringify(S)), pdf: {nome: f.name, tam: f.size, dataUrl}});
-      limpo();
-      showModal('<div class="ok-ic">✓</div><h3>Enviado ao portal</h3><p>O portal está analisando o documento e arquivando o PDF…</p>');
+    $('#gdSalvar').onclick = () => {
+      if (spOn) { post({t: 'pdfpasta', estado: JSON.parse(JSON.stringify(S)), nome: nomeArq()}); return; }
+      post({t: 'pdfgerar', estado: JSON.parse(JSON.stringify(S)), nome: nomeArq()});
     };
+  }
+  async function executarPdf(m){
+    const prog = (i, n) => showModal('<h3>Gerando o PDF…</h3><p>Página ' + i + ' de ' + n + '. Aguarde, não feche esta janela.</p>');
+    showModal('<h3>Gerando o PDF…</h3><p>Preparando o documento. Aguarde, não feche esta janela.</p>');
+    try {
+      const buf = await gerarPdf(m.libs, prog);
+      showModal('<h3>' + (m.local ? 'Guardando no projeto…' : 'Salvando na pasta do projeto…') + '</h3><p>Enviando o PDF (' + Math.max(1, Math.round(buf.byteLength / 1024)) + ' KB).</p>');
+      parent.postMessage({gd: 1, cod: COD, t: 'pdfpronto', nome: m.nome, buf, estado: JSON.parse(JSON.stringify(S))}, '*', [buf]);
+    } catch (err) {
+      showModal('<h3>Não foi possível gerar o PDF</h3><p class="err">' + esc(String(err && err.message || err)) + '</p><div class="acts"><button class="btn" type="button" id="gdCancel">Voltar</button></div>');
+      $('#gdCancel').onclick = closeModal;
+    }
   }
 
 
@@ -1051,6 +1129,13 @@ buildStatic();$('#btnFinish').onclick=finish;$('#btnFinish2').onclick=finish;fil
       fillEmpty(S, m.patch || {});
       refresh();
       listas(); revisar();
+    } else if (m.t === 'gerarpdf' && ativo) { executarPdf(m);
+    } else if (m.t === 'pdfok' && ativo) {
+      limpo();
+      showModal('<div class="ok-ic">✓</div><h3>PDF salvo</h3><p>' + esc(m.msg || 'Documento arquivado. O portal está analisando…') + '</p>');
+    } else if (m.t === 'pdferro' && ativo) {
+      showModal('<h3>Não foi possível salvar o PDF</h3><p class="err">' + esc(m.msg || 'Erro desconhecido.') + '</p><div class="acts"><button class="btn" type="button" id="gdCancel">Voltar</button><button class="btn primary" type="button" id="gdTent">Tentar de novo</button></div>');
+      $('#gdCancel').onclick = closeModal; $('#gdTent').onclick = concluir;
     } else if (m.t === 'fechar') { closeModal(); }
   });
   post({t: 'ready'});
