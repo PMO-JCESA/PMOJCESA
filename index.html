@@ -5224,15 +5224,34 @@ const demRe = k => new RegExp("(^|[^a-z0-9])" + k.replace(/[.*+?^${}()|[\]\\]/g,
 /* vocabulário embutido por tema do critério (soma-se às palavras-chave editáveis). Expressões com espaço = evidência forte. */
 const DEM_LEXICO = [
   [/receita|faturamento|venda/, "retorno financeiro, ganho financeiro, retorno sobre investimento, roi, payback, receita, faturamento, aumentar vendas, vender mais, vendas, novos clientes, novos mercados, margem, lucro, lucratividade, rentabilidade, ticket medio, monetizar, recuperar receita, perda de vendas, conversao, resultado financeiro, gerar receita, aumento de faturamento"],
-  [/custo|economia|despesa/, "reducao de custo, reduzir custo, reduzir custos, economia, economizar, custo, despesa, gasto, desperdicio, otimizar recursos, horas extras, evitar multa, evitar perdas, perdas financeiras, reduzir perdas, cancelar licenca, licenca, frete, estoque parado, consumo, terceirizacao, corte de gastos, reduzir gastos"],
+  [/custo|economia|despesa/, "reducao de custo, reduzir custo, reduzir custos, economia, economizar, custo, despesa, gasto, desperdicio, custos operacionais, cursos operacionais, reducao de cursos, reducao de curso, otimizar recursos, horas extras, evitar multa, evitar perdas, perdas financeiras, reduzir perdas, cancelar licenca, licenca, frete, estoque parado, consumo, terceirizacao, corte de gastos, reduzir gastos"],
   [/legal|\blei\b|regulat|fiscal/, "requisito legal, obrigacao legal, legislacao, lei, norma regulamentadora, fiscal, sped, esocial, reinf, lgpd, receita federal, sefaz, nota fiscal eletronica, nf-e, bloco k, regulatorio, exigencia legal, prazo legal, auditoria externa, anvisa, inmetro, multa"],
   [/seguranca das pessoas|seguranca do trabalho|seguranca fisica|\bvidas?\b|\bsaude\b/, "seguranca do trabalho, seguranca das pessoas, integridade fisica, risco de acidente, acidente de trabalho, evitar acidentes, condicao insegura, ato inseguro, protecao de maquinas, trabalho em altura, espaco confinado, risco a vida, risco a saude, ergonomia, epi, cipa, sesmt"],
-  [/organizacional|auditoria|compliance|\bgestao\b|controle/, "tomada de decisao, visibilidade, controle, governanca, padronizacao, padronizar, rastreabilidade, indicadores, centralizar informacoes, informacao confiavel, transparencia, qualidade, satisfacao, gestao, organizacao, auditoria interna, compliance"],
-  [/produtiv|eficien|agilidade/, "aumento de produtividade, produtividade, automatizar, automacao, processo manual, manualmente, retrabalho, reduzir tempo, ganho de tempo, tempo gasto, horas gastas, agilidade, agilizar, eficiencia, planilha, digitacao, gargalo, demora, lentidao, fila, duplicidade"],
+  [/organizacional|auditoria|compliance|\bgestao\b|controle/, "tomada de decisao, visibilidade, controle, governanca, padronizacao, padronizar, rastreabilidade, indicadores, dashboard, dashboards, monitoramento, monitorar, acompanhamento, acompanhar, visao maior, visao ampla, visao geral, mais visao, registrar atividades, centralizar informacoes, informacao confiavel, transparencia, qualidade, satisfacao, gestao, organizacao, auditoria interna, compliance"],
+  [/produtiv|eficien|agilidade/, "aumento de produtividade, produtividade, automatizar, automacao, processo manual, manualmente, retrabalho, reduzir tempo, reducao do tempo, reducao de tempo, ganho de tempo, tempo gasto, efetividade, rapidez, atender mais rapido, lead time, horas gastas, agilidade, agilizar, eficiencia, planilha, digitacao, gargalo, demora, lentidao, fila, duplicidade"],
   [/diferencial|estrateg|inovac/, "diferencial estrategico, diferencial competitivo, vantagem competitiva, inovacao, transformacao digital, experiencia do cliente, posicionamento, pioneiro, competitividade, estrategia"]
 ];
 const demLexico = c => { const n = demNorm(c.nome); const l = DEM_LEXICO.find(([re]) => re.test(n)); return l ? l[1].split(",").map(x => demNorm(x)).filter(x => x.length >= 2) : []; };
 const demTermos = c => [...new Set(demChaves(c).concat(demLexico(c)))];
+/* ganhos descritos em frase ("redução do meu tempo de recebimento", "reduzir custos operacionais"): verbo de ganho + objeto → critério */
+const DEM_GANHO_V = /(^|[^a-z0-9])(reduc\w*|reduz\w*|diminu\w*|menor\w*|aument\w*|melhor\w*|otimiz\w*|evit\w*|elimin\w*|acelera\w*|agiliz\w*|ganh\w*)((?:\s+[a-z0-9]+){1,8})/g;
+const DEM_GANHO_OBJ = [
+  [/(^|[^a-z0-9])(custos?|cursos? operac\w*|despesas?|gastos?|perdas?|desperdic\w*|avarias?|fretes?|horas? extras?)(?![a-z0-9])/, /custo|economia|despesa/],
+  [/(^|[^a-z0-9])(tempos?|prazos?|esforcos?|rapidez|agilidade|lead ?time|descargas?|recebimentos?|conferencias?|processos?|atividades?|operacao|operacoes|efetividade|eficiencia|entregas?|produtividade|filas?|esperas?|retrabalhos?|erros?|falhas?|manuais|manual)(?![a-z0-9])/, /produtiv|eficien|agilidade/],
+  [/(^|[^a-z0-9])(receitas?|vendas?|faturamento|clientes?|comercial|margem|lucro\w*)(?![a-z0-9])/, /receita|faturamento|venda/],
+  [/(^|[^a-z0-9])(visao|visibilidade|controles?|monitoramento|indicadores?|dashboards?|rastreab\w*|informac\w*|decis\w*|transparencia|qualidade|acuracia|acuracidade)(?![a-z0-9])/, /organizacional|auditoria|compliance|gestao|controle/],
+  [/(^|[^a-z0-9])(acidentes?|lesoes|lesao|seguranca)(?![a-z0-9])/, /seguranca das pessoas|seguranca do trabalho|seguranca fisica|\bvidas?\b|\bsaude\b/],
+  [/(^|[^a-z0-9])(obrigac\w*|fiscal|normas?|legisla\w*)(?![a-z0-9])/, /legal|\blei\b|regulat|fiscal/]
+];
+const demLimpaFrase = n => n.replace(/[,;:()\-\/"“”]/g, " ");
+function demGanhos(nn){
+  const out = [], re = new RegExp(DEM_GANHO_V.source, "g"); let m;
+  while ((m = re.exec(nn))) {
+    const jan = m[3], pos = m.index + m[1].length;
+    DEM_GANHO_OBJ.forEach(([ro, rc]) => { const o = ro.exec(jan); if (o) { const corte = jan.slice(0, o.index + o[0].length); out.push({rc, obj: o[2], frase: (m[2] + corte).replace(/\s+/g, " ").trim(), pos, fim: pos + m[2].length + corte.length}); } });
+  }
+  return out;
+}
 const DEM_CAMPO_CENTRAL = /necessidade|justifi|escopo|objetiv|retorno|benef|descri|motiv|resultado|ganho|medic|consequ|problema|demanda/;
 const DEM_QUANT = /r\$\s?\d|\d+\s?%|\d+\s?(horas?|h\b|dias|minutos|pessoas|colaboradores|clientes|mil\b|milh|reais|notas|pedidos|ton)/;
 const DEM_CATS = [
@@ -5289,14 +5308,19 @@ function demNota(it){
   const benLista = demLista(demValor(it, "benef")).map(demNorm);
   const texto = demTextoTodo(it);
   const itens = [];
-  const campos = demCampoTextos(it).map(x => ({campo: x.campo, texto: x.texto, n: demNorm(x.texto), central: DEM_CAMPO_CENTRAL.test(demNorm(x.campo))}));
+  const campos = demCampoTextos(it).map(x => { const n = demNorm(x.texto); return {campo: x.campo, texto: x.texto, n, central: DEM_CAMPO_CENTRAL.test(demNorm(x.campo)), ganhos: demGanhos(demLimpaFrase(n))}; });
   crit.forEach(c => {
     const ks = demTermos(c);
     const noCampo = benLista.some(b => ks.some(k => b.includes(k) || k.includes(b)) || b.includes(demNorm(c.nome)));
     const porCampo = campos.map(f => ({f, ach: ks.filter(k => demRe(k).test(f.n))})).filter(x => x.ach.length);
     /* um campo sustenta o critério quando traz uma expressão (2+ palavras) ou 2 termos diferentes do tema */
     const sust = porCampo.filter(x => x.ach.some(k => k.includes(" ")) || new Set(x.ach).size >= 2);
-    const ach = [...new Set(porCampo.flatMap(x => x.ach))];
+    /* ganho descrito em frase (verbo + objeto) também sustenta o critério */
+    const nomeN = demNorm(c.nome);
+    const gan = campos.map(f => ({f, g: f.ganhos.filter(g => g.rc.test(nomeN))})).filter(x => x.g.length);
+    gan.forEach(x => { if (!sust.some(y => y.f === x.f)) sust.push({f: x.f, ach: x.g.map(g => g.obj)}); });
+    const trGan = gan.slice(0, 2).map(x => { const g = x.g[0], nn = demLimpaFrase(x.f.n), a = Math.max(0, g.pos - 40), b = Math.min(nn.length, g.fim + 60), base = x.f.n.length === x.f.texto.length ? x.f.texto : nn; return {campo: x.f.campo, palavra: g.frase.split(" ").slice(0, 8).join(" "), trecho: (a > 0 ? "…" : "") + base.slice(a, b).replace(/\s+/g, " ").trim() + (b < nn.length ? "…" : "")}; });
+    const ach = [...new Set(porCampo.flatMap(x => x.ach).concat(gan.flatMap(x => x.g.map(g => { const w = g.frase.split(" "); return w.length > 5 ? w[0] + " … " + g.obj : g.frase; }))))];
     const quant = sust.some(x => DEM_QUANT.test(x.f.n));
     const centrais = sust.filter(x => x.f.central).length;
     const txtOk = sust.length > 0;
@@ -5306,7 +5330,7 @@ function demNota(it){
     else if (txtOk && sust.length >= 2 && centrais >= 1 && quant) { pts = +c.peso; motivo = `Descrito em ${sust.length} campos e com quantificação: peso inteiro.`; }
     else if (txtOk) { pts = +c.peso / 2; motivo = `Citado em ${sust.length} campo(s)${quant ? "" : " sem quantificar (R$, %, horas)"}: meio peso.`; }
     if (pts) itens.push({nome: c.nome, peso: +c.peso, fonte: noCampo ? "campo" : "texto", pts, motivo, ev: ach.slice(0, 5), nCampos: sust.length, quant,
-      camposCit: sust.map(x => x.f.campo), trechos: demTrechos(it, ach, 3), nExt: ach.length, campoVal: noCampo ? benLista.join(", ") : ""});
+      camposCit: sust.map(x => x.f.campo), trechos: trGan.concat(demTrechos(it, porCampo.flatMap(x => x.ach), 3)).slice(0, 3), nExt: ach.length, campoVal: noCampo ? benLista.join(", ") : ""});
   });
   itens.sort((a, b) => b.pts - a.pts);
   const pts = itens.reduce((a, x) => a + x.pts, 0);
@@ -8953,7 +8977,17 @@ function cadDepGarantir(v){
 }
 const cadUsoPessoa = s => { const g = cadGerenteDe(s); return rows.filter(r => r.Solicitante === s.nome || (g && [...separaNomes(r["Responsável TI"]), ...separaNomes(r["Analista Funcional"])].includes(g.nome))).length; };
 const cadUsoTarefas = s => s.email ? rows.reduce((a, r) => a + r.tarefas.filter(t => t.responsavel === s.email.toLowerCase() || t.apoio.includes(s.email.toLowerCase())).length, 0) : 0;
-let cadFiltroPapel = "";
+let cadFiltroPapel = "", cadFiltroDep = "", cadBuscaTxt = "";
+function cadAplicarFiltros(){
+  const q = acNorm(cadBuscaTxt.trim());
+  $("baseCad").querySelectorAll("tr[data-cad-id]").forEach(tr => {
+    const txt = acNorm([...tr.querySelectorAll("input")].map(i => i.value).join(" "));
+    const dep = tr.querySelector('[data-cadp="departamento"]');
+    const okDep = !cadFiltroDep || (cadFiltroDep === "__sem" ? !(dep && dep.value.trim()) : (dep && semAcento(dep.value.trim()) === semAcento(cadFiltroDep)));
+    const okPapel = !cadFiltroPapel || tr.dataset.papel === cadFiltroPapel;
+    tr.hidden = !(okPapel && okDep && (!q || txt.includes(q)));
+  });
+}
 function renderCadPessoas(){
   cadUnificar();
   const lista = cadastros.solicitantes, nGp = lista.filter(cadGerenteDe).length, semEmail = lista.filter(x => !x.email).length;
@@ -8969,13 +9003,14 @@ function renderCadPessoas(){
         <button type="submit" class="btn primary">Adicionar</button>
       </form>
       <datalist id="listaDeps"></datalist>
-      <div class="toolbar" style="margin-top:14px"><input type="search" class="cad-busca" placeholder="Buscar por nome, e-mail ou departamento…" aria-label="Buscar">
-        <div class="cadp-f">${["", "GP", "Usuário"].map(f => `<button type="button" class="btn sm ${cadFiltroPapel === f ? "on" : ""}" data-cadp-filtro="${f}">${f || "Todos"}</button>`).join("")}</div></div>
+      <div class="toolbar" style="margin-top:14px"><input type="search" class="cad-busca" placeholder="Buscar por nome, e-mail ou departamento…" aria-label="Buscar" value="${esc(cadBuscaTxt)}">
+        <div class="cadp-f">${["", "GP", "Usuário"].map(f => `<button type="button" class="btn sm ${cadFiltroPapel === f ? "on" : ""}" data-cadp-filtro="${f}">${f || "Todos"}</button>`).join("")}</div>
+        <select class="cadp-fdep" aria-label="Filtrar por departamento" style="max-width:240px"><option value="">Todos os departamentos</option>${[...new Set(lista.map(x => (x.departamento || "").trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR")).map(d => `<option value="${esc(d)}" ${semAcento(cadFiltroDep) === semAcento(d) ? "selected" : ""}>${esc(d)} (${lista.filter(x => semAcento((x.departamento || "").trim()) === semAcento(d)).length})</option>`).join("")}${lista.some(x => !(x.departamento || "").trim()) ? `<option value="__sem" ${cadFiltroDep === "__sem" ? "selected" : ""}>Sem departamento (${lista.filter(x => !(x.departamento || "").trim()).length})</option>` : ""}</select></div>
       <div class="wrap">
         <table class="editgrid cad-tb cadp-tb">
           <thead><tr><th></th><th>Nome</th><th>E-mail</th><th>Departamento</th><th>Papel</th><th>Projetos</th><th>Tarefas</th><th></th></tr></thead>
           <tbody>${lista.map(x => { const gp = !!cadGerenteDe(x); return `
-            <tr data-cad-id="${esc(x.id)}" data-papel="${gp ? "GP" : "Usuário"}" ${cadFiltroPapel && cadFiltroPapel !== (gp ? "GP" : "Usuário") ? "hidden" : ""}>
+            <tr data-cad-id="${esc(x.id)}" data-papel="${gp ? "GP" : "Usuário"}">
               <td class="av-td">${avatarHtml(x.nome, 28)}</td>
               <td><input class="wide" data-cadp="nome" value="${esc(x.nome)}"></td>
               <td><input class="wide" data-cadp="email" value="${esc(x.email || "")}" placeholder="falta e-mail"></td>
@@ -8987,6 +9022,7 @@ function renderCadPessoas(){
         </table>
       </div>
     </div>`;
+  cadAplicarFiltros();
 }
 function cadRenomear(antes, depois, eraGp){
   let n = 0;
@@ -9130,7 +9166,7 @@ $("baseCad").addEventListener("change", e => {
 $("baseCad").addEventListener("click", e => {
   const d = e.target.closest("[data-cadp-del]"); if (d) { e.stopImmediatePropagation(); cadPessoaExcluir(d.dataset.cadpDel); return; }
   const fl = e.target.closest("[data-cadp-filtro]");
-  if (fl) { e.stopImmediatePropagation(); cadFiltroPapel = fl.dataset.cadpFiltro; renderCadPessoas(); const b = $("baseCad").querySelector(".cad-busca"); return; }
+  if (fl) { e.stopImmediatePropagation(); cadFiltroPapel = fl.dataset.cadpFiltro; renderCadPessoas(); return; }
   const pd = e.target.closest("[data-prog-del]");
   if (pd) {
     e.stopImmediatePropagation();
@@ -9267,10 +9303,14 @@ $("baseCad").addEventListener("click", e => {
 $("baseCad").addEventListener("input", e => {
   if (!e.target.classList.contains("cad-busca")) return;
   const q = e.target.value.trim().toLowerCase();
+  if (e.target.closest(".cadp-add") === null && $("baseCad").querySelector(".cadp-tb")) { cadBuscaTxt = e.target.value; cadAplicarFiltros(); return; }
   $("baseCad").querySelectorAll("tr[data-cad-id]").forEach(tr => {
     const txt = [...tr.querySelectorAll("input")].map(i => i.value).join(" ").toLowerCase();
     tr.hidden = !!q && !txt.includes(q);
   });
+});
+$("baseCad").addEventListener("change", e => {
+  if (e.target.classList.contains("cadp-fdep")) { cadFiltroDep = e.target.value; cadAplicarFiltros(); }
 });
 function avisoConclusaoHtml(){
   const lst = incoerentesConclusao();
@@ -10104,7 +10144,7 @@ function spPodeRecarregar(){
   const a = document.activeElement;
   if (a && a.matches && a.matches("input, textarea, select")) return false;
   const v = (location.hash.replace(/^#\/?/, "").split("/")[0]) || "";
-  return !["editar", "base", "perfil"].includes(v);
+  return !["editar", "perfil"].includes(v);
 }
 async function spRecarregar(forcar){
   if (!forcar && !spPodeRecarregar()) return;
@@ -10122,6 +10162,8 @@ async function spRecarregar(forcar){
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible" && spSt.on && Date.now() - spSt.carregadoEm > 60000) spRecarregar(false);
 });
+/* atualiza do SharePoint a cada 5 minutos (cadastros de pessoas, programas e projetos feitos por outros) */
+setInterval(() => { if (document.visibilityState === "visible" && spSt.on) spRecarregar(false); }, 5 * 60 * 1000);
 window.addEventListener("beforeunload", e => { if (spSt.on && spPendente()) { e.preventDefault(); e.returnValue = ""; } });
 
 function spImportar(dados, extras){
