@@ -5145,12 +5145,22 @@ const DEM_CRIT_PADRAO = [
   {nome: "Requisito legal", peso: 5, chaves: "requisito legal, legislação, lei, obrigação legal, fiscal, regulatório, lgpd, sped", ativo: true},
   {nome: "Redução de custos", peso: 5, chaves: "redução de custo, reduzir custo, economia, custo, despesa, gasto, desperdício", ativo: true},
   {nome: "Aumento de receita", peso: 4, chaves: "aumento de receita, receita, faturamento, vendas, novos clientes, margem", ativo: true},
-  {nome: "Benefício organizacional", peso: 3, chaves: "benefício organizacional, auditoria, compliance, controle, rastreabilidade, segurança, qualidade, satisfação", ativo: true},
+  {nome: "Segurança das pessoas", peso: 5, chaves: "segurança das pessoas, segurança do trabalho, segurança física, integridade física, saúde e segurança, acidente, acidentes, risco de acidente, risco à vida, risco a saúde, lesão, ferimento, incidente de segurança, quase acidente, afastamento, ergonomia, epi, nr-12, nr12, nr-35, nr35, cipa, sesmt, brigada, incêndio, emergência, evacuação, primeiros socorros, insalubridade, periculosidade, condição insegura, ato inseguro, proteção de máquinas, bloqueio e etiquetagem, trabalho em altura, espaço confinado, produto químico, empilhadeira, atropelamento, colaboradores expostos", ativo: true},
+  {nome: "Benefício organizacional", peso: 3, chaves: "benefício organizacional, auditoria, compliance, controle, rastreabilidade, qualidade, satisfação", ativo: true},
   {nome: "Aumento de produtividade", peso: 2, chaves: "produtividade, automatizar, retrabalho, tempo, agilidade, manual, planilha", ativo: true},
   {nome: "Diferencial estratégico", peso: 2, chaves: "diferencial estratégico, diferencial, inovação, competitivo, estratégia", ativo: true}
 ];
 function demCriterios(){
-  try { const j = JSON.parse(localStorage.getItem(DEM_CRIT_KEY) || "null"); if (Array.isArray(j) && j.length) return j; } catch (e) {}
+  try {
+    const j = JSON.parse(localStorage.getItem(DEM_CRIT_KEY) || "null");
+    if (Array.isArray(j) && j.length) {
+      if (!localStorage.getItem(DEM_CRIT_KEY + "_seg")) { /* migração única: inclui o critério de segurança das pessoas */
+        localStorage.setItem(DEM_CRIT_KEY + "_seg", "1");
+        if (!j.some(c => demNorm(c.nome) === "seguranca das pessoas")) { j.unshift(JSON.parse(JSON.stringify(DEM_CRIT_PADRAO.find(c => c.nome === "Segurança das pessoas")))); demCritSalvar(j); }
+      }
+      return j;
+    }
+  } catch (e) {}
   return JSON.parse(JSON.stringify(DEM_CRIT_PADRAO));
 }
 function demCritSalvar(l){ try { localStorage.setItem(DEM_CRIT_KEY, JSON.stringify(l)); } catch (e) {} }
