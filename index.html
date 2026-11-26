@@ -927,6 +927,35 @@ body:not(.ro) .sr-wrap .sr-f[data-sr-edit]:hover,body:not(.ro) .sr-wrap .sr-av[d
 .dem-linha:hover td{background:color-mix(in srgb,var(--teal) 10%,transparent)}
 .dem-linha.on td{background:color-mix(in srgb,var(--teal) 18%,transparent)}
 .dem-det{margin-top:14px}
+.dem-ind{margin:0 0 14px}.dem-ind>summary{cursor:pointer;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding:8px 2px}.dem-ind[open]>summary{margin-bottom:8px}
+.dem-tb{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.dem-tb select{font:inherit;font-size:13px;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface3);color:var(--hi)}
+.dem-tg{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--muted);font-weight:600}
+.dem-vis{margin-left:auto;display:flex;gap:6px}.dem-vis .btn.on{background:var(--teal);color:#fff;border-color:var(--teal)}
+.dkb{display:flex;gap:12px;overflow-x:auto;padding:2px 2px 10px;align-items:flex-start}
+.dkb-col{flex:0 0 272px;background:var(--surface2);border:1px solid var(--line);border-radius:14px;padding:10px;max-height:78vh;overflow:auto}
+.dkb-h{display:flex;justify-content:space-between;align-items:center;margin:2px 4px 10px;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--hi)}
+.dkb-h small{font-weight:700;color:var(--muted);background:var(--surface3);border-radius:999px;padding:1px 8px}
+.dkb-card{display:block;width:100%;text-align:left;font:inherit;color:inherit;background:var(--surface3);border:1px solid var(--line);border-left:4px solid var(--c,#7D879C);border-radius:12px;padding:10px 11px;margin:0 0 8px;cursor:pointer}
+.dkb-card:hover{border-color:var(--teal-l)}.dkb-card.on{outline:2px solid var(--teal-l)}
+.dkb-top{display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:11px;color:var(--muted);font-weight:700}
+.dkb-t{display:block;margin:5px 0 7px;font-weight:700;font-size:13.5px;color:var(--hi);line-height:1.3}
+.dkb-chips{display:flex;flex-wrap:wrap;gap:5px}
+.dkb-chip{font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:999px;background:rgba(255,255,255,.07);border:1px solid var(--line);color:var(--hi)}
+.dkb-f{display:flex;justify-content:space-between;margin-top:8px;font-size:11px;color:var(--muted)}
+.dsc{font-size:11.5px;font-weight:800;padding:2px 8px;border-radius:999px;border:1px solid currentColor;white-space:nowrap}
+.dsc.a{color:#4cc38a}.dsc.m{color:#e7b24a}.dsc.b{color:#9aa4b8}.dsc.n{color:#9aa4b8;border-style:dashed}
+.dem-prio{display:grid;grid-template-columns:1.4fr 1fr;gap:12px;margin:0 0 14px}
+.dem-prio .dg-card ol{margin:0;padding-left:20px}.dem-prio .dg-card li{margin:0 0 7px;font-size:13px;color:var(--hi)}
+.dem-prio .dg-card li small{display:block;color:var(--muted);font-size:11.5px}
+.dem-prio-acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.dem-rank{width:100%;border-collapse:collapse;font-size:12.5px}.dem-rank th,.dem-rank td{border-bottom:1px solid var(--line);padding:7px 6px;text-align:left;vertical-align:top}
+.dem-rank{table-layout:fixed}.dem-rank td,.dem-rank th{white-space:normal!important;overflow-wrap:anywhere}.dem-rank th:nth-child(1){width:34px}.dem-rank th:nth-child(2){width:30%}.dem-rank th:nth-child(3){width:64px}
+.dem-rank th{font-size:10.5px;text-transform:uppercase;color:var(--muted)}
+.dem-pform{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end}
+.dem-pform label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;color:var(--muted)}
+.dem-pform select{font:inherit;font-size:13px;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface3);color:var(--hi)}
+@media (max-width:1000px){.dem-prio{grid-template-columns:1fr}.dem-pform{grid-template-columns:1fr}}
 .dem-dl{display:grid;grid-template-columns:240px 1fr;gap:7px 16px;font-size:13px;margin:0}
 .dem-dl dt{color:var(--muted);font-weight:700}
 .dem-dl dd{margin:0;color:var(--hi);word-break:break-word}
@@ -1250,7 +1279,12 @@ button.btn.sm.on{background:var(--teal);color:#fff}
     <div class="page-h"><div><span class="eyebrow">Gestão de demandas</span><h1>Demandas</h1><p>Solicitações da lista SolicitacoesPMO do SharePoint. A tela atualiza sozinha a cada 3 minutos.</p></div>
       <div class="acts"><span class="note" id="demStatus" style="margin:0"></span><button class="btn" id="demAtualizar">Atualizar agora</button></div></div>
     <div id="demResumo"></div>
-    <div class="toolbar"><input type="search" id="demBusca" placeholder="Buscar por título, setor, status, tipo ou prioridade…" aria-label="Buscar demandas"></div>
+    <div id="demPrio"></div>
+    <div class="toolbar dem-tb"><input type="search" id="demBusca" placeholder="Buscar por título, setor, status, tipo ou categoria…" aria-label="Buscar demandas">
+      <select id="demFCat" aria-label="Filtrar por categoria"><option value="">Todas as categorias</option></select>
+      <select id="demFSetor" aria-label="Filtrar por setor"><option value="">Todos os setores</option></select>
+      <label class="dem-tg"><input type="checkbox" id="demFEnc"> Mostrar encerradas</label>
+      <div class="dem-vis"><button type="button" class="btn sm on" data-dem-vis="kanban">Kanban</button><button type="button" class="btn sm" data-dem-vis="lista">Lista</button></div></div>
     <div id="demTabela"></div>
     <div id="demDetalhe"></div>
   </section>
@@ -2288,7 +2322,7 @@ const progFase = (r, key) => progLista(r.tarefas.filter(t => t.fase === key));
 
 /* Mudança de coluna: mantém andamento e datas coerentes */
 function setBucket(t, b){
-  if (b === "concluido" && !flxPodeConcluir(t)) { toast(`Este card depende do documento ${t.doc}. Conclua o documento na aba Documentos do projeto.`); return; }
+  if (b === "concluido" && !flxPodeConcluir(t)) { toast(flxMsgTrava(t)); return; }
   const antesEf = efetivo(t);
   t.bucket = b;
   if (b === "concluido") {
@@ -2304,7 +2338,7 @@ function setBucket(t, b){
   if (antesEf !== depoisEf) notificarStatusTarefa(t, antesEf, depoisEf);
 }
 function setAndamento(t, a){
-  if (a === "Concluído" && !flxPodeConcluir(t)) { toast(`Este card depende do documento ${t.doc}. Conclua o documento na aba Documentos do projeto.`); return; }
+  if (a === "Concluído" && !flxPodeConcluir(t)) { toast(flxMsgTrava(t)); return; }
   t.andamento = a;
   if (a === "Concluído") setBucket(t, "concluido");
   else if (t.bucket === "concluido") setBucket(t, bucketPorDatas(t));
@@ -2314,7 +2348,7 @@ const iniciouT = t => { const d = toDate(t.inicio); return !!d && d <= HOJE; };
 const vencidaT = t => { const d = toDate(t.fimPrevisto); return !!d && d < HOJE; };
 const bucketPorDatas = t => { if (depPendentes(t).length) return "backlog"; const d = toDate(t.inicio); return d && d > HOJE ? "backlog" : "execucao"; };
 function motivoBloqueioArraste(t, destino){
-  if (destino === "concluido" && !flxPodeConcluir(t)) return `Este card depende do documento ${t.doc}. Conclua o documento na aba Documentos do projeto.`;
+  if (destino === "concluido" && !flxPodeConcluir(t)) return flxMsgTrava(t);
   if (destino === "concluido" || destino === "cancelado") return "";
   if (destino === "execucao") {
     const pend = depPendentes(t);
@@ -4859,10 +4893,11 @@ const DEM_CAMPOS = {
   pdf: ["Formulário (PDF)", "FormularioPDF"],
   token: ["Token de complemento", "TokenAjuste", "Token"],
   dados: ["Dados do formulário", "DadosSistema", "DadosFormulario"],
-  tipo: ["Tipo"], setor: ["Setor"], prio: ["Prioridade"], benef: ["Benefício estratégico", "BeneficioEstrategico"]
+  tipo: ["Tipo"], setor: ["Setor"], prio: ["Prioridade"], benef: ["Benefício estratégico", "BeneficioEstrategico"],
+  tec: ["Análise técnica", "AnaliseTecnica"], cat: ["Categoria", "CategoriaPMO"]
 };
 /* Campos mostrados em outro bloco ou que pertencem aos fluxos (não entram em "Dados da solicitação") */
-const DEM_FORA_DADOS = ["status", "just", "orient", "info", "notif", "desde", "decPor", "decEm", "ultJust", "ultOrient", "hist", "pdf", "token", "dados"];
+const DEM_FORA_DADOS = ["tec", "cat", "status", "just", "orient", "info", "notif", "desde", "decPor", "decEm", "ultJust", "ultOrient", "hist", "pdf", "token", "dados"];
 const DEM_OCULTAS = ["TokenAjuste", "DadosSistema", "AuthorLookupId", "EditorLookupId", "ContentType", "ContentTypeId", "Edit", "AppAuthor", "AppEditor", "Modified", "Created", "ID", "Title", "LinkTitle", "LinkTitleNoMenu", "Attachments", "Author", "Editor", "ItemChildCount", "FolderChildCount", "ComplianceAssetId", "DocIcon"];
 let demColunas = [], demCache = {};
 const demNorm = t => String(t || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
@@ -5029,26 +5064,243 @@ function demRender(){
       ${kc("Em atraso", atraso, "mais de 5 dias em análise ou 30 em backlog", "var(--st3)")}
       ${kc("Encerradas", encerr, "reprovadas, canceladas ou convertidas", "var(--st4)")}
     </div>
-    <div class="dg-grid">
+    <details class="dem-ind"${demIndAberto ? " open" : ""}><summary>Indicadores (status, tipo, setor, mês e benefício)</summary><div class="dg-grid">
       <div class="dg-card"><h4>Demandas por status</h4>${demBarras(demAgrupa("status"))}</div>
       <div class="dg-card"><h4>Demandas por tipo</h4>${demBarras(demAgrupa("tipo"))}</div>
       <div class="dg-card"><h4>Demandas por setor</h4>${demBarras(demAgrupa("setor").slice(0, 8))}</div>
       <div class="dg-card"><h4>Criadas por mês (12 meses)</h4>${demBarras(demMeses())}</div>
       <div class="dg-card"><h4>Por benefício estratégico</h4>${demBarras(demAgrupa("benef"))}</div>
       ${temPrio ? `<div class="dg-card"><h4>Demandas por prioridade</h4>${demBarras(demAgrupa("prio"))}</div>` : ""}
-    </div>`;
+    </div></details>`;
+  demRenderPrio();
   demRenderTabela();
   demRenderDetalhe();
 }
+/* ================= Priorização das demandas =================
+   Nota = peso do benefício estratégico (o maior, se houver vários) ÷ análise técnica (Alto 3, Médio 2, Baixo 1).
+   Mostrada com uma casa decimal (sem arredondar para inteiro), para não empatar notas diferentes. */
+const DEM_PESOS = [
+  [/requisito legal|legal|legislac|\blei\b|regulat|obrigac/, 5, "Requisito legal"],
+  [/reduc\w* de custo|custo/, 5, "Redução de custos"],
+  [/receita/, 4, "Aumento de receita"],
+  [/auditoria|compliance/, 3, "Auditoria"],
+  [/produtividade/, 2, "Aumento de produtividade"],
+  [/diferencial/, 2, "Diferencial estratégico"]
+];
+const DEM_TEC = {alto: 3, medio: 2, baixo: 1};
+const DEM_TEC_OPC = ["Alto", "Médio", "Baixo"];
+const DEM_CATS = [
+  ["Compliance / Legal", /\blgpd\b|\blei\b|legisla|fiscal|\bsped\b|auditoria|compliance|norma regulament|regulat|obrigatori/],
+  ["Integração", /integra|\bapi\b|interface entre|sincroniz|webservice|\bedi\b|importac\w* automatic|exportac\w* automatic/],
+  ["Relatórios / BI", /relatorio|dashboard|indicador|power ?bi|\bbi\b|\bkpi|painel|consolidac/],
+  ["Automação", /automat|\brpa\b|\brobo|workflow|manualmente|planilha|retrabalho|digitac/],
+  ["Infraestrutura", /servidor|\brede\b|infraestrutura|backup|hardware|equipamento|\bvpn\b|wi-?fi|link de internet|seguranca da informacao/],
+  ["Sistema novo", /novo sistema|nova ferramenta|aquisic|contratac\w* de (sistema|software|ferramenta)|implantac\w* de (sistema|software|ferramenta)|plataforma/],
+  ["Melhoria de sistema", /melhoria|ajuste|alterac|correc|\bcampo\b|\btela\b|\berp\b|sistema/]
+];
+const DEM_CAT_NOMES = DEM_CATS.map(c => c[0]).concat("Outros");
+let demIndAberto = false, demVis = "kanban", demFCat = "", demFSetor = "", demFEnc = false;
+const demFinal = it => DEM_FINAIS.includes(demStatus(it));
+function demBeneficio(it){
+  const lst = demLista(demValor(it, "benef"));
+  let melhor = null;
+  lst.forEach(b => { const n = demNorm(b); const p = DEM_PESOS.find(x => x[0].test(n)); if (p && (!melhor || p[1] > melhor.peso)) melhor = {peso: p[1], nome: p[2], orig: b}; });
+  return {lista: lst, melhor};
+}
+function demTecnica(it){ const t = demTxt(demValor(it, "tec")).trim(); const n = DEM_TEC[demNorm(t)]; return n ? {txt: t, n} : null; }
+function demNota(it){
+  const b = demBeneficio(it), t = demTecnica(it);
+  const nota = b.melhor && t ? b.melhor.peso / t.n : null;
+  return {ben: b, tec: t, nota};
+}
+const demNotaTxt = n => n == null ? "—" : n.toFixed(1).replace(".", ",");
+const demFaixa = n => n == null ? "n" : n >= 3 ? "a" : n >= 1.5 ? "m" : "b";
+const DEM_FAIXA_TXT = {a: "Alta", m: "Média", b: "Baixa", n: "Sem nota"};
+function demTextoTodo(it){
+  const c = it.campos;
+  const partes = [demTxt(c.Title)];
+  Object.keys(c).forEach(k => { if (!/^(@|_)|LookupId$|Token|odata/.test(k)) { const v = c[k]; if (typeof v === "string" && v.length < 20000) partes.push(v); else if (Array.isArray(v)) partes.push(v.join(" ")); } });
+  return demNorm(partes.join(" \n "));
+}
+function demCatAuto(it){
+  const t = demTextoTodo(it);
+  let best = "Outros", bn = 0;
+  DEM_CATS.forEach(([nome, re]) => { const m = t.match(new RegExp(re.source, "g")); const n = m ? m.length : 0; if (n > bn) { bn = n; best = nome; } });
+  return best;
+}
+function demCategoria(it){ const m = demTxt(demValor(it, "cat")).trim(); return m ? {nome: m, auto: false} : {nome: demCatAuto(it), auto: true}; }
+function demOrdenar(a, b){
+  const na = demNota(a), nb = demNota(b);
+  if ((na.nota == null) !== (nb.nota == null)) return na.nota == null ? 1 : -1;
+  if (na.nota !== nb.nota) return (nb.nota || 0) - (na.nota || 0);
+  const pa = na.ben.melhor ? na.ben.melhor.peso : 0, pb = nb.ben.melhor ? nb.ben.melhor.peso : 0;
+  if (pa !== pb) return pb - pa;
+  return (demDias(b) || 0) - (demDias(a) || 0);
+}
+function demJustificativa(it){
+  const {ben, tec, nota} = demNota(it), st = demStatus(it), d = demDias(it);
+  const p = [];
+  if (!ben.melhor) p.push(ben.lista.length ? `Benefício "${ben.lista.join(", ")}" sem peso definido nos critérios.` : "Sem benefício estratégico informado.");
+  if (!tec) p.push("Falta a análise técnica do PMO (Alto, Médio ou Baixo) para calcular a nota.");
+  if (nota != null) {
+    p.push(`Peso ${ben.melhor.peso} (${ben.melhor.nome}) ÷ análise técnica ${tec.txt} (${tec.n}) = ${demNotaTxt(nota)}.`);
+    if (ben.melhor.peso >= 4 && tec.n === 1) p.push("Alto benefício com baixa complexidade: vitória rápida, atacar primeiro.");
+    else if (ben.melhor.peso >= 4 && tec.n === 3) p.push("Alto benefício, mas complexidade alta: tratar como projeto planejado, com escopo e orçamento.");
+    else if (ben.melhor.peso >= 4) p.push("Alto benefício com complexidade moderada: boa candidata para o próximo ciclo.");
+    else if (tec.n === 1) p.push("Benefício menor e baixa complexidade: encaixar em janelas da equipe.");
+    else if (tec.n === 3) p.push("Benefício menor e complexidade alta: reavaliar se compensa ou reduzir o escopo.");
+    else p.push("Benefício e complexidade médios: manter no backlog priorizado.");
+  }
+  if (ben.melhor && ben.lista.length > 1) p.push(`Considerado o maior peso entre: ${ben.lista.join(", ")}.`);
+  if (demBloqueado(st)) p.push("Está bloqueada aguardando o complemento do solicitante: não atacar até a resposta.");
+  if (d != null) p.push(`${d} ${d === 1 ? "dia" : "dias"} em "${st || "—"}"${demAtrasado(it) ? " (atrasada)" : ""}.`);
+  return p.join(" ");
+}
+function demFiltrados(){
+  const q = demNorm(demBusca);
+  return demItens.filter(it => {
+    if (!demFEnc && demFinal(it)) return false;
+    const cat = demCategoria(it).nome, setor = demTxt(demValor(it, "setor"));
+    if (demFCat && cat !== demFCat) return false;
+    if (demFSetor && setor !== demFSetor) return false;
+    if (q && !demNorm([it.campos.Title, setor, demStatus(it), demValor(it, "tipo"), demValor(it, "prio"), cat, "#" + (it.campos.ID || it.id)].map(demTxt).join(" ")).includes(q)) return false;
+    return true;
+  });
+}
+function demPreencherFiltros(){
+  const cs = [...new Set(demItens.map(it => demCategoria(it).nome))].sort((a, b) => DEM_CAT_NOMES.indexOf(a) - DEM_CAT_NOMES.indexOf(b));
+  const ss = [...new Set(demItens.map(it => demTxt(demValor(it, "setor"))).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR"));
+  const fc = $("demFCat"), fs = $("demFSetor");
+  if (fc) fc.innerHTML = `<option value="">Todas as categorias</option>` + cs.map(c => `<option ${c === demFCat ? "selected" : ""}>${esc(c)}</option>`).join("");
+  if (fs) fs.innerHTML = `<option value="">Todos os setores</option>` + ss.map(c => `<option ${c === demFSetor ? "selected" : ""}>${esc(c)}</option>`).join("");
+}
+function demCardHtml(it){
+  const c = it.campos, st = demStatus(it), {ben, tec, nota} = demNota(it), cat = demCategoria(it), d = demDias(it), f = demFaixa(nota);
+  return `<button type="button" class="dkb-card${demSel === it.id ? " on" : ""}" style="--c:${demCorStatus(st)}" data-dem="${esc(it.id)}">
+    <span class="dkb-top"><span>#${esc(c.ID || it.id)}${demPendenteFluxo(it) ? ` <span class="dem-tag">e-mail pendente</span>` : ""}</span><span class="dsc ${f}" title="${f === "n" ? "Sem nota: falta benefício com peso ou análise técnica" : "Nota de prioridade: " + DEM_FAIXA_TXT[f]}">${f === "n" ? "sem nota" : demNotaTxt(nota)}</span></span>
+    <span class="dkb-t">${esc(demTxt(c.Title) || "—")}</span>
+    <span class="dkb-chips"><span class="dkb-chip" title="${cat.auto ? "Categoria sugerida pelo portal" : "Categoria definida pelo PMO"}">${esc(cat.nome)}${cat.auto ? " ·auto" : ""}</span>${demTxt(demValor(it, "setor")) ? `<span class="dkb-chip">${esc(demTxt(demValor(it, "setor")))}</span>` : ""}${demTxt(demValor(it, "tipo")) ? `<span class="dkb-chip">${esc(demTxt(demValor(it, "tipo")))}</span>` : ""}</span>
+    <span class="dkb-f"><span>${esc(ben.melhor ? ben.melhor.nome : (ben.lista[0] || "sem benefício"))} · técnica ${esc(tec ? tec.txt : "—")}</span><span>${d == null ? "" : d + "d"}${demAtrasado(it) ? ` <span class="dem-tag atr">atrasada</span>` : ""}</span></span>
+  </button>`;
+}
+function demRenderKanban(lista){
+  const abertos = DEM_STATUS.filter(x => !DEM_FINAIS.includes(x));
+  const extras = [...new Set(lista.map(demStatus))].filter(x => x && !DEM_STATUS.includes(x));
+  const cols = abertos.concat(extras).map(stt => ({nome: stt, itens: lista.filter(it => demStatus(it) === stt)}));
+  if (demFEnc) cols.push({nome: "Encerradas", itens: lista.filter(demFinal)});
+  const semSt = lista.filter(it => !demStatus(it));
+  if (semSt.length) cols.unshift({nome: "Sem status", itens: semSt});
+  return `<div class="dkb">${cols.filter(c => c.itens.length || abertos.includes(c.nome)).map(c => `<div class="dkb-col"><div class="dkb-h"><span><i class="dem-dot" style="background:${demCorStatus(c.nome)}"></i>${esc(c.nome)}</span><small>${c.itens.length}</small></div>${c.itens.sort(demOrdenar).map(demCardHtml).join("") || `<p class="note" style="margin:4px">Nenhuma.</p>`}</div>`).join("")}</div>`;
+}
+function demRenderPrio(){
+  const box = $("demPrio"); if (!box) return;
+  if (perfil() !== "admin" || !spLigado() || !demItens.length) { box.innerHTML = ""; return; }
+  const abertas = demItens.filter(it => !demFinal(it) && !demBloqueado(demStatus(it)));
+  const top = abertas.filter(it => demNota(it).nota != null).sort(demOrdenar).slice(0, 5);
+  const semTec = demItens.filter(it => !demFinal(it) && !demTecnica(it)).length;
+  const temCol = !demColunas.length || (demAchar("tec") && demAchar("cat"));
+  const porCat = {};
+  demItens.filter(it => !demFinal(it)).forEach(it => { const c = demCategoria(it).nome; porCat[c] = (porCat[c] || 0) + 1; });
+  const cats = Object.entries(porCat).sort((a, b) => b[1] - a[1]);
+  box.innerHTML = `<div class="dem-prio">
+    <div class="dg-card"><h4>Atacar primeiro · maiores notas (benefício ÷ análise técnica)</h4>
+      ${top.length ? `<ol>${top.map(it => { const n = demNota(it); return `<li><a href="#" data-dem-ir="${esc(it.id)}" class="pf-link">#${esc(it.campos.ID || it.id)} ${esc(demTxt(it.campos.Title))}</a> <span class="dsc ${demFaixa(n.nota)}">${demNotaTxt(n.nota)}</span><small>${esc(demJustificativa(it))}</small></li>`; }).join("")}</ol>` : `<p class="note" style="margin:0">Nenhuma demanda aberta com nota ainda. Preencha a <b>análise técnica</b> nas demandas (no detalhe de cada card) para o portal calcular a prioridade.</p>`}
+      <div class="dem-prio-acts"><button type="button" class="btn primary" id="demAnalisar">Analisar priorização</button><button type="button" class="btn" id="demExportar" title="Arquivo para a Skill de priorização do Claude">Exportar para análise (Claude)</button></div>
+      ${semTec ? `<p class="note" style="margin:8px 0 0">${semTec} demanda(s) aberta(s) sem análise técnica: ficam sem nota.</p>` : ""}
+      ${temCol ? "" : `<p class="note" style="margin:8px 0 0;color:var(--st2)">A lista ainda não tem as colunas <b>Análise técnica</b> e <b>Categoria</b>. <button type="button" class="btn sm" id="demCriarCols">Criar colunas na lista</button></p>`}
+    </div>
+    <div class="dg-card"><h4>Demandas abertas por categoria</h4>${demBarras(cats.map(([l, n], i) => ({l, n, c: DEM_CORES[i % DEM_CORES.length]})))}</div>
+  </div>`;
+}
+function demAnaliseHtml(){
+  const abertas = demItens.filter(it => !demFinal(it));
+  const com = abertas.filter(it => demNota(it).nota != null).sort(demOrdenar);
+  const sem = abertas.filter(it => demNota(it).nota == null);
+  const bloq = com.filter(it => demBloqueado(demStatus(it)));
+  const prontas = com.filter(it => !demBloqueado(demStatus(it)));
+  const faixa = f => prontas.filter(it => demFaixa(demNota(it).nota) === f);
+  const linha = (it, i) => { const n = demNota(it), cat = demCategoria(it); return `<tr><td>${i + 1}</td><td><b>#${esc(it.campos.ID || it.id)} ${esc(demTxt(it.campos.Title))}</b><br><small class="note" style="margin:0">${esc(cat.nome)} · ${esc(demTxt(demValor(it, "setor")) || "—")} · ${esc(demStatus(it))}</small></td><td><span class="dsc ${demFaixa(n.nota)}">${demNotaTxt(n.nota)}</span></td><td>${esc(demJustificativa(it))}</td></tr>`; };
+  const tabela = (lst, ini) => lst.length ? `<table class="dem-rank"><thead><tr><th>#</th><th>Demanda</th><th>Nota</th><th>Justificativa</th></tr></thead><tbody>${lst.map((it, i) => linha(it, i + ini)).join("")}</tbody></table>` : `<p class="note">Nenhuma.</p>`;
+  const a = faixa("a"), m = faixa("m"), b = faixa("b");
+  return `<h3>Análise de priorização das demandas</h3>
+    <p class="note" style="margin:0 0 10px">Nota = peso do benefício estratégico (Requisito legal 5, Redução de custos 5, Aumento de receita 4, Auditoria 3, Aumento de produtividade 2, Diferencial estratégico 2; vale o maior se houver vários) ÷ análise técnica (Alto 3, Médio 2, Baixo 1). Empates: maior peso de benefício e, depois, mais tempo esperando. ${abertas.length} demanda(s) aberta(s) analisadas.</p>
+    <h4>1. Atacar primeiro · nota alta (3,0 ou mais)</h4>${tabela(a, 0)}
+    <h4>2. Próximas · nota média (1,5 a 2,9)</h4>${tabela(m, a.length)}
+    <h4>3. Avaliar depois · nota baixa (abaixo de 1,5)</h4>${tabela(b, a.length + m.length)}
+    ${bloq.length ? `<h4>Bloqueadas (aguardam o solicitante)</h4>${tabela(bloq, 0)}` : ""}
+    ${sem.length ? `<h4>Sem nota (completar)</h4><ul>${sem.map(it => `<li>#${esc(it.campos.ID || it.id)} ${esc(demTxt(it.campos.Title))}: ${esc(demJustificativa(it))}</li>`).join("")}</ul>` : ""}
+    <div class="flx-acts"><button type="button" class="btn" data-dem-exp>Exportar para análise (Claude)</button><button type="button" class="btn primary" data-dem-fechar>Fechar</button></div>`;
+}
+function demExportar(){
+  const camposTxt = it => {
+    const o = {};
+    (demColunas.length ? demColunas.filter(demMostra) : Object.keys(it.campos).map(k => ({name: k, displayName: k}))).forEach(col => { const t = demTexto(it.campos[col.name]); if (t && !/token/i.test(col.name)) o[col.displayName] = t; });
+    return o;
+  };
+  const dados = {
+    gerado_em: new Date().toISOString(), origem: "Portal PMO · lista " + DEM_LISTA,
+    criterio: {formula: "nota = peso do benefício estratégico (maior, se vários) ÷ análise técnica", pesos_beneficio: Object.fromEntries(DEM_PESOS.map(p => [p[2], p[1]])), analise_tecnica: {Alto: 3, "Médio": 2, Baixo: 1}, faixas: {alta: ">= 3,0", media: "1,5 a 2,9", baixa: "< 1,5"}, desempate: ["maior peso de benefício", "mais dias no status"]},
+    demandas: demItens.map(it => { const n = demNota(it), cat = demCategoria(it); return {
+      id: String(it.campos.ID || it.id), titulo: demTxt(it.campos.Title), status: demStatus(it), encerrada: demFinal(it), bloqueada: demBloqueado(demStatus(it)),
+      setor: demTxt(demValor(it, "setor")), tipo: demTxt(demValor(it, "tipo")), beneficios: n.ben.lista, beneficio_considerado: n.ben.melhor ? n.ben.melhor.nome : null, peso_beneficio: n.ben.melhor ? n.ben.melhor.peso : null,
+      analise_tecnica: n.tec ? n.tec.txt : null, nota: n.nota == null ? null : Math.round(n.nota * 100) / 100, faixa: DEM_FAIXA_TXT[demFaixa(n.nota)],
+      categoria: cat.nome, categoria_definida_pelo_pmo: !cat.auto, dias_no_status: demDias(it), atrasada: demAtrasado(it), criada_em: it.criado, justificativa_portal: demJustificativa(it), link: it.web || "", campos: camposTxt(it)}; })
+  };
+  const blob = new Blob([JSON.stringify(dados, null, 2)], {type: "application/json"});
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `demandas_priorizacao_${new Date().toISOString().slice(0, 10)}.json`; document.body.appendChild(a); a.click(); a.remove();
+  toast("Arquivo exportado. Anexe-o na conversa com o Claude e peça a análise de priorização.");
+}
+async function demCriarColunas(){
+  const id = await demObterListaId();
+  const defs = [];
+  if (!demAchar("tec")) defs.push({name: "AnaliseTecnica", displayName: "Análise técnica", choice: {choices: DEM_TEC_OPC, displayAs: "dropDownMenu", allowTextEntry: false}});
+  if (!demAchar("cat")) defs.push({name: "CategoriaPMO", displayName: "Categoria", choice: {choices: DEM_CAT_NOMES, displayAs: "dropDownMenu", allowTextEntry: true}});
+  try {
+    for (const d of defs) await gx("POST", `/sites/${spSt.siteId}/lists/${id}/columns`, d);
+    demColunas = []; demCache = {}; await demCarregar(); demRender();
+    toast("Colunas criadas na lista SolicitacoesPMO.");
+  } catch (e) {
+    flxModal(`<h3>Não consegui criar as colunas</h3><p class="note">${esc(e.message || e)}</p><p>Crie manualmente na lista <b>SolicitacoesPMO</b> (Configurações da lista › Criar coluna):</p><ul><li><b>Análise técnica</b> · tipo Escolha · opções: Alto, Médio, Baixo</li><li><b>Categoria</b> · tipo Escolha · opções: ${DEM_CAT_NOMES.join(", ")} (permitir valores de preenchimento)</li></ul><div class="flx-acts"><button class="btn primary" data-dem-fechar>Fechar</button></div>`);
+  }
+}
+async function demSalvarPrio(){
+  const it = demItens.find(x => x.id === demSel), f = $("demPForm");
+  if (!it || !f) return;
+  const corpo = {};
+  const tec = f.elements.tec.value, cat = f.elements.cat.value;
+  if (tec !== demTxt(demValor(it, "tec")).trim()) { if (!demAchar("tec")) { toast('A lista não tem a coluna "Análise técnica". Use "Criar colunas na lista".'); return; } corpo[demNomeInterno("tec")] = tec || null; }
+  const catAtual = demTxt(demValor(it, "cat")).trim();
+  const catNova = cat === "__auto" ? "" : cat;
+  if (catNova !== catAtual) { if (!demAchar("cat")) { toast('A lista não tem a coluna "Categoria". Use "Criar colunas na lista".'); return; } corpo[demNomeInterno("cat")] = catNova || null; }
+  if (!Object.keys(corpo).length) { toast("Nenhuma alteração na priorização."); return; }
+  try {
+    await gx("PATCH", `/sites/${spSt.siteId}/lists/${demListaId}/items/${it.id}/fields`, corpo);
+    toast(`Priorização da demanda #${it.campos.ID || it.id} salva (sem e-mail ao solicitante).`);
+    await demCarregar(); demRender();
+  } catch (e) { toast("A lista recusou a alteração: " + (e.message || e)); }
+}
+function demPrioSecHtml(it){
+  const n = demNota(it), cat = demCategoria(it), tecAt = n.tec ? n.tec.txt : "";
+  return `<section class="dem-sec"><h4>Priorização</h4>
+    <p class="note" style="margin:0 0 10px">Nota: <span class="dsc ${demFaixa(n.nota)}">${demNotaTxt(n.nota)}</span> · ${esc(demJustificativa(it))}</p>
+    <form id="demPForm" class="dem-pform">
+      <label>Análise técnica (complexidade)<select name="tec"><option value="">— não avaliada —</option>${DEM_TEC_OPC.map(o => `<option ${demNorm(o) === demNorm(tecAt) ? "selected" : ""}>${o}</option>`).join("")}</select></label>
+      <label>Categoria<select name="cat"><option value="__auto" ${cat.auto ? "selected" : ""}>Automática (${esc(demCatAuto(it))})</option>${[...new Set(DEM_CAT_NOMES.concat(cat.auto ? [] : [cat.nome]))].map(o => `<option ${!cat.auto && o === cat.nome ? "selected" : ""}>${esc(o)}</option>`).join("")}</select></label>
+      <button type="submit" class="btn primary">Salvar priorização</button>
+    </form></section>`;
+}
 function demRenderTabela(){
-  const q = demBusca.trim().toLowerCase();
-  const lista = demItens
-    .filter(it => !q || [it.campos.Title, demValor(it, "setor"), demStatus(it), demValor(it, "tipo"), demValor(it, "prio")].map(demTxt).join(" ").toLowerCase().includes(q))
-    .sort((a, b) => new Date(b.criado) - new Date(a.criado));
+  demPreencherFiltros();
+  document.querySelectorAll("[data-dem-vis]").forEach(b => b.classList.toggle("on", b.dataset.demVis === demVis));
+  if (demVis === "kanban") { const l = demFiltrados(); $("demTabela").innerHTML = l.length ? demRenderKanban(l) : `<p class="note" style="margin:0">Nenhuma demanda encontrada.</p>`; return; }
+  return demRenderLista();
+}
+function demRenderLista(){
+  const lista = demFiltrados().sort(demOrdenar);
   $("demTabela").innerHTML = lista.length
-    ? `<div class="tbl-wrap"><table class="dir-tb"><thead><tr><th>ID</th><th>Título</th><th>Status</th><th>No status</th><th>Tipo</th><th>Setor</th><th>Criada em</th><th>PDF</th></tr></thead><tbody>${lista.map(it => {
+    ? `<div class="tbl-wrap"><table class="dir-tb"><thead><tr><th>ID</th><th>Título</th><th>Nota</th><th>Categoria</th><th>Status</th><th>No status</th><th>Tipo</th><th>Setor</th><th>Criada em</th><th>PDF</th></tr></thead><tbody>${lista.map(it => {
         const c = it.campos, pdf = demUrl(demValor(it, "pdf")), st = demStatus(it), dias = demDias(it), atr = demAtrasado(it);
-        return `<tr class="dem-linha${demSel === it.id ? " on" : ""}${atr ? " atraso" : ""}" data-dem="${esc(it.id)}"><td>#${esc(c.ID || it.id)}</td><td>${esc(demTxt(c.Title) || "—")}</td>`
+        return `<tr class="dem-linha${demSel === it.id ? " on" : ""}${atr ? " atraso" : ""}" data-dem="${esc(it.id)}"><td>#${esc(c.ID || it.id)}</td><td>${esc(demTxt(c.Title) || "—")}</td><td><span class="dsc ${demFaixa(demNota(it).nota)}">${demNota(it).nota == null ? "sem nota" : demNotaTxt(demNota(it).nota)}</span></td><td>${esc(demCategoria(it).nome)}</td>`
           + `<td><i class="dem-dot" style="background:${demCorStatus(st)}"></i>${esc(st || "—")}${demPendenteFluxo(it) ? `<span class="dem-tag" title="O Fluxo 2 ainda não registrou esta decisão">e-mail pendente</span>` : ""}</td>`
           + `<td>${dias == null ? "—" : dias + (dias === 1 ? " dia" : " dias")}${atr ? `<span class="dem-tag atr">atrasado</span>` : ""}</td>`
           + `<td>${esc(demTxt(demValor(it, "tipo")) || "—")}</td><td>${esc(demTxt(demValor(it, "setor")) || "—")}</td><td>${demDataBR(it.criado)}</td>`
@@ -5110,6 +5362,7 @@ function demRenderDetalhe(){
     <div class="dir-rh"><h3>Demanda #${esc(c.ID || it.id)} · ${esc(demTxt(c.Title) || "")}</h3>
       ${it.web ? `<a class="btn" href="${esc(it.web)}" target="_blank" rel="noopener" title="Abre o item no SharePoint: anexos, histórico de versões e o botão Decidir da lista">Ver no SharePoint</a>` : ""}</div>
     ${aviso}
+    ${demPrioSecHtml(it)}
     <section class="dem-sec"><h4>Decidir</h4>
     <form id="demForm" class="dem-form" novalidate>
       <div class="dem-campo"><span class="dem-rot">Status atual</span><span class="dem-atual"><i class="dem-dot" style="background:${demCorStatus(st)}"></i>${esc(st || "—")}${dias != null ? ` · ${dias} ${dias === 1 ? "dia" : "dias"}` : ""}</span></div>
@@ -5209,12 +5462,26 @@ $("demDetalhe").addEventListener("submit", e => {
 });
 $("demAtualizar").addEventListener("click", () => demAtualizar(true));
 $("demBusca").addEventListener("input", e => { demBusca = e.target.value; demRenderTabela(); });
+document.addEventListener("toggle", e => { if (e.target.classList && e.target.classList.contains("dem-ind")) demIndAberto = e.target.open; }, true);
+$("demFCat").addEventListener("change", e => { demFCat = e.target.value; demRenderTabela(); });
+$("demFSetor").addEventListener("change", e => { demFSetor = e.target.value; demRenderTabela(); });
+$("demFEnc").addEventListener("change", e => { demFEnc = e.target.checked; demRenderTabela(); });
+document.addEventListener("click", e => {
+  const v = e.target.closest("[data-dem-vis]"); if (v) { demVis = v.dataset.demVis; demRenderTabela(); return; }
+  const ir = e.target.closest("[data-dem-ir]"); if (ir) { e.preventDefault(); demSel = ir.dataset.demIr; demRenderTabela(); demRenderDetalhe(); const d = $("demDetalhe"); if (d) d.scrollIntoView({behavior: "smooth", block: "start"}); return; }
+  if (e.target.closest("#demAnalisar")) { flxModal(demAnaliseHtml()); const bx = document.querySelector("#flxModal .flx-box"); if (bx) bx.style.width = "min(1100px,100%)"; return; }
+  if (e.target.closest("#demExportar,[data-dem-exp]")) { demExportar(); return; }
+  if (e.target.closest("#demCriarCols")) { demCriarColunas(); return; }
+  if (e.target.closest("[data-dem-fechar]")) { flxFechar(); return; }
+});
+$("demDetalhe").addEventListener("submit", e => { if (e.target.id !== "demPForm") return; e.preventDefault(); if (perfil() !== "admin") return; demSalvarPrio(); });
 $("demTabela").addEventListener("click", e => {
   const l = e.target.closest("[data-dem]");
   if (!l) return;
   demSel = demSel === l.dataset.dem ? null : l.dataset.dem;
   demRenderTabela();
   demRenderDetalhe();
+  if (demSel) { const d = $("demDetalhe"); if (d) d.scrollIntoView({behavior: "smooth", block: "start"}); }
 });
 setInterval(() => demAtualizar(false), DEM_INTERVALO);
 setTimeout(() => demAtualizar(false), 10000);
@@ -5224,6 +5491,8 @@ const GUIA_V = "87";
 const GUIA_DIR = "guia/";
 const GUIA_SOLICITACAO = "https://pmo-jcesa.github.io/SOLICIT_PROJ_MELHORIAS/";
 const GUIA_D = [{"k":"ini","n":"Iniciação","sub":"Solicitação e formalização do projeto","entra":"Solicitação do setor (FORM01)","sai":"Projeto autorizado","desc":"A demanda entra pelo setor, é justificada e o projeto é formalizado com stakeholders, governança e papéis definidos.","acts":[{"t":"Receber a Solicitação","d":"A demanda chega do setor pelo formulário de solicitação (FORM01) e entra na lista de Demandas do PMO.","r":"Área solicitante, PMO","f":"FORM01"},{"t":"Criar a Pasta do Projeto","d":"Criar a pasta do projeto na biblioteca PMO-Projetos do SharePoint. Os PDFs e documentos do projeto ficam nela.","r":"PMO, GP","f":"","lk":"https://nordtechmaquinas.sharepoint.com/sites/PortalTecnologia/Documentos%20Compartilhados/Forms/AllItems.aspx?id=%2Fsites%2FPortalTecnologia%2FDocumentos%20Compartilhados%2FPMO%2DProjetos%2F01%2EProjetos&viewid=039abd9b%2D3b27%2D489f%2Db785%2Dea30496c7b96&viewpath=%2Fsites%2FProjetosJCE%2FDocumentos%20Compartilhados%2FForms%2FAllItems%2Easpx&share=cgo3PmX7TnPwSrcDOmaE7tQFEgUDm3YnaEXOseXRa0qaYkkFRg","lkt":"Abrir a pasta no SharePoint"},{"t":"Elaborar Business Case","d":"Justificativa formal do investimento, custos, benefícios e retorno esperado.","r":"GP, PMO, Sponsor","f":"FORM02"},{"t":"Registrar Stakeholders","d":"Identificação e análise das partes interessadas no projeto.","r":"GP, PMO","f":"FORM03"},{"t":"Definir Governança","d":"Organização interna do projeto e fluxo de decisão por nível.","r":"GP, PMO","f":"FORM04"},{"t":"Definir Papéis","d":"Criação da Matriz RACI com as responsabilidades de cada ator.","r":"GP, PMO","f":"FORM05"},{"t":"Obter Autorização","d":"Assinatura formal do Sponsor autorizando o início do projeto.","r":"Sponsor","f":""}],"forms":[{"c":"FORM01","n":"Solicitação de Projeto","d":"Entrada das demandas dos setores (equivalente ao TAP). Chega pelo formulário de solicitação e é analisada pelo PMO em Demandas; não é responsabilidade do GP.","w":"Recebido pelo PMO antes do início do projeto.","tipo":"Controle","at":"Específica","f":"","ext":1},{"c":"FORM02","n":"Business Case","d":"Justificativa financeira e estratégica do projeto.","w":"Após a solicitação ser aceita pelo PMO.","tipo":"Controle","at":"Específica","f":"form02-business-case.html"},{"c":"FORM03","n":"Registro de Stakeholders","d":"Partes interessadas, influência e interesse.","w":"Ao formalizar o projeto.","tipo":"Controle","at":"Contínua","f":"form03-registro-de-stakeholders.html"},{"c":"FORM04","n":"Governança do Projeto","d":"Organização interna e fluxo de decisão.","w":"Ao formalizar o projeto.","tipo":"Controle","at":"Específica","f":"form04-governanca-do-projeto.html"},{"c":"FORM05","n":"Matriz RACI","d":"Responsável, Aprovador, Consultado e Informado por atividade.","w":"Ao definir os papéis da equipe.","tipo":"Controle","at":"Específica","f":"form05-matriz-raci.html"}]},{"k":"pla","n":"Planejamento","sub":"Estruturação e baseline","entra":"Projeto autorizado","sai":"Plano do projeto aprovado (baseline)","desc":"Define o que será entregue, os requisitos, o custo, os riscos e como a comunicação vai funcionar.","acts":[{"t":"Levantar Escopo","d":"Delimitação do que está dentro e fora do projeto.","r":"GP, Equipe","f":"FORM06"},{"t":"Levantar Requisitos","d":"Requisitos funcionais, não funcionais e regras de negócio.","r":"GP, Área de negócio","f":"FORM07"},{"t":"Definir Cronograma","d":"Cronograma detalhado do projeto no Portal PMO, na aba Gestão.","r":"GP, Equipe","f":"","lk":"#/gestao","lkt":"Abrir a Gestão"},{"t":"Elaborar Orçamento","d":"Detalhamento do orçamento por categoria.","r":"GP, PMO","f":"FORM08"},{"t":"Identificar Riscos","d":"Probabilidade, impacto e plano de resposta.","r":"GP, Equipe","f":"FORM09"},{"t":"Planejar Comunicação","d":"Quem recebe o quê, quando e por qual canal.","r":"GP","f":"FORM10"},{"t":"Aprovar Baseline","d":"Aprovação do escopo, prazo e custo de referência.","r":"Sponsor, Comitê","f":""}],"forms":[{"c":"FORM06","n":"Levantamento de Escopo","d":"O que está dentro e fora do escopo.","w":"Início do planejamento.","tipo":"Controle","at":"Específica","f":"form06-levantamento-de-escopo.html"},{"c":"FORM07","n":"Levantamento de Requisitos","d":"Requisitos funcionais, não funcionais e regras de negócio.","w":"Depois do escopo.","tipo":"Controle","at":"Específica","f":"form07-levantamento-de-requisitos.html"},{"c":"FORM08","n":"Detalhamento do Orçamento","d":"Orçamento por categoria com gráficos.","w":"Antes de aprovar a baseline.","tipo":"Controle","at":"Contínua","f":"form08-detalhamento-do-orcamento.html"},{"c":"FORM09","n":"Matriz de Riscos","d":"Riscos, probabilidade, impacto e resposta.","w":"Antes de aprovar a baseline.","tipo":"Controle","at":"Contínua","f":"form09-matriz-de-riscos.html"},{"c":"FORM10","n":"Plano de Comunicação","d":"Público, frequência e canal de cada comunicação.","w":"Antes de aprovar a baseline.","tipo":"Controle","at":"Específica","f":"form10-plano-de-comunicacao.html"}]},{"k":"exe","n":"Execução","sub":"Construção das entregas","entra":"Plano do projeto aprovado","sai":"Entregas concluídas","desc":"Construção das entregas. Toda mudança de escopo, prazo ou custo passa pela Gestão de Mudanças, o único registro que guarda histórico.","acts":[{"t":"Kick off","d":"Formalizar o Kick off do projeto: benefícios, entregas, premissas, restrições, riscos e o roadmap de implantação, aprovado pelo Sponsor.","r":"GP, PMO, Sponsor","f":"FORM11A"},{"t":"Executar Entregas","d":"Desenvolvimento dos pacotes de trabalho conforme o escopo.","r":"GP, Equipe","f":""},{"t":"Gerenciar Equipe","d":"Coordenação, motivação e resolução de conflitos.","r":"GP","f":""},{"t":"Gerenciar Mudanças","d":"Abertura e decisão das Change Requests no portal.","r":"GP, Sponsor","f":"FORM11"},{"t":"Garantir Qualidade","d":"Inspeção contínua e validação técnica das entregas.","r":"GP, Qualidade","f":""},{"t":"Gerenciar Fornecedores","d":"Acompanhamento de contratos e entregas de terceiros.","r":"GP","f":""},{"t":"Comunicar Progresso","d":"Atualização dos stakeholders sobre o andamento.","r":"GP","f":""}],"forms":[{"c":"FORM11A","n":"Kick off","d":"Benefícios, entregas, premissas, restrições, riscos, equipe e roadmap de implantação com mini cronograma.","w":"No início da execução, antes da primeira entrega.","tipo":"Controle","at":"Específica","f":"form11a-kick-off.html"},{"c":"FORM11","n":"Gestão de Mudanças","d":"Portal por projeto: Change Requests, painel de gestão e PDFs. Único com histórico salvo.","w":"Durante todo o projeto, a cada mudança.","tipo":"Controle","at":"Contínua","f":"form11-gestao-de-mudancas.html"}]},{"k":"hom","n":"Homologação e Testes","sub":"Testes, aceite e Go-Live","entra":"Entregas concluídas","sai":"Aceite do Go-Live","desc":"Testes, aceite do negócio, preparação da virada e implantação em produção.","acts":[{"t":"Realizar Testes","d":"Testes funcionais e de integração das entregas.","r":"Qualidade","f":"FORM12"},{"t":"Corrigir Não Conformidades","d":"Ajustes dos defeitos encontrados nos testes.","r":"Equipe, GP","f":""},{"t":"Obter Aceite dos Testes","d":"Aprovação formal das entregas pelo negócio.","r":"Cliente, Sponsor","f":"FORM13"},{"t":"Planejar Cutover e Rollback","d":"Roteiro da virada e plano de reversão.","r":"GP, TI","f":"FORM14 · FORM15"},{"t":"Autorizar Go-Live","d":"Autorização formal para implantar em produção.","r":"Sponsor, Comitê","f":"FORM16"},{"t":"Implantar e Estabilizar","d":"Deploy em produção e acompanhamento (Hypercare).","r":"TI, GP","f":""},{"t":"Obter Aceite de Implantação","d":"Validação pós-implantação e início da operação.","r":"Sponsor, Cliente","f":"FORM17"}],"forms":[{"c":"FORM12","n":"Relatório de Testes","d":"Resultados, casos aprovados/reprovados e defeitos.","w":"Ao fim da rodada de testes.","tipo":"Report","at":"Específica","f":"form12-relatorio-de-testes.html"},{"c":"FORM13","n":"Termo de Aceite dos Testes","d":"Aceite formal das entregas pelo negócio.","w":"Após os testes aprovados.","tipo":"Controle","at":"Específica","f":"form13-termo-de-aceite-dos-testes.html"},{"c":"FORM14","n":"Plano de Cutover","d":"Sequência e responsáveis pela virada.","w":"Antes da implantação.","tipo":"Controle","at":"Específica","f":"form14-plano-de-cutover.html"},{"c":"FORM15","n":"Plano de Rollback","d":"Passos para reverter em caso de falha.","w":"Antes da implantação.","tipo":"Controle","at":"Específica","f":"form15-plano-de-rollback.html"},{"c":"FORM16","n":"Termo de Aceite do Go Live","d":"Autorização para implantar em produção.","w":"Antes da virada.","tipo":"Controle","at":"Específica","f":"form16-termo-de-aceite-do-go-live.html"},{"c":"FORM17","n":"Termo de Aceite de Implantação","d":"Validação pós-implantação.","w":"Depois da virada.","tipo":"Controle","at":"Específica","f":"form17-termo-de-aceite-de-implantacao.html"}]},{"k":"enc","n":"Encerramento","sub":"Formalização e lições aprendidas","entra":"Aceite do Go-Live","sai":"Projeto encerrado e arquivado","desc":"Registro das lições, verificação do escopo entregue e arquivamento dos PDFs nas pastas do projeto no SharePoint.","acts":[{"t":"Ajustes Pós Go-Live","d":"Suporte imediato e estabilização da solução.","r":"Equipe, GP","f":""},{"t":"Encerrar Pagamentos e Contratos","d":"Finalização das pendências financeiras e com fornecedores.","r":"GP, PMO","f":""},{"t":"Passagem para Sustentação","d":"Treinamentos, documentos técnicos e acessos entregues à sustentação, com evidências.","r":"GP, Sustentação","f":"FORM18"},{"t":"Lições Aprendidas","d":"Registro dos aprendizados para os próximos projetos.","r":"GP","f":"FORM19"},{"t":"Termo de Encerramento","d":"Verificação da entrega do escopo e assinaturas.","r":"GP, Sponsor","f":"FORM20"},{"t":"Arquivar o Projeto","d":"Salvar os PDFs nas pastas do projeto no SharePoint e concluir o projeto no Portal PMO.","r":"GP","f":"","lk":"#/gestao","lkt":"Abrir a Gestão"}],"forms":[{"c":"FORM18","n":"Termo de Passagem para Sustentação","d":"Checklist da transição para a operação (treinamentos, documentação, acessos) com evidências e aceite da sustentação.","w":"Ao fim da operação assistida.","tipo":"Controle","at":"Específica","f":"form18-termo-de-passagem-para-sustentacao.html"},{"c":"FORM19","n":"Lições Aprendidas","d":"O que manter, o que ajustar e plano de ação.","w":"Após o Go-Live.","tipo":"Controle","at":"Específica","f":"form19-licoes-aprendidas.html"},{"c":"FORM20","n":"Termo de Encerramento do Projeto","d":"Confirma se todos os pontos do escopo foram entregues.","w":"Último documento do projeto.","tipo":"Controle","at":"Específica","f":"form20-termo-de-encerramento-do-projeto.html"}]}];
+/* Termo de Aceite de Implantação (FORM17) excluído do processo (era a última ação da Homologação: não desloca as demais) */
+GUIA_D.forEach(s => { s.forms = s.forms.filter(f => f.c !== "FORM17"); s.acts = s.acts.filter(a => a.f !== "FORM17"); });
 const GUIA_COR = {ini: "#7D879C", pla: "#4697A8", exe: "#3E8E57", hom: "#C07F2A", enc: "#ED174F"};
 const GUIA_ICO = {
   ini: '<path d="M4 22V4M4 4h12l-2 4 2 4H4"/>',
@@ -5395,6 +5664,10 @@ $("v-guia").addEventListener("input", e => {
               Requisitos (FORM07) → libera todas as fases, cria os cards pré-definidos e a escolha dos requisitos-card. */
 const FLX_PDF_MAX = 1.5 * 1024 * 1024;
 const FLX_BASE = ["FORM06", "FORM07"];
+/* Documentos obrigatórios: não bloqueiam fases, mas o card só encerra com o documento concluído e o PDF salvo */
+const FLX_OBRIG_DOC = ["FORM03", "FORM04", "FORM05", "FORM09", "FORM10", "FORM11A", "FORM13", "FORM16", "FORM18", "FORM19", "FORM20"];
+const FLX_EXCLUIDOS = ["FORM17"];
+const flxDocTrava = c => c === "FORM01" || FLX_BASE.includes(c) || FLX_OBRIG_DOC.includes(c);
 /* PLACEHOLDER: documentos que só o PMO edita (o GP apenas consulta). A matriz real ainda será definida. */
 const FLX_SO_PMO = ["FORM04", "FORM20"];
 const FLX_ETAPA_FASE = {ini: "iniciacao", pla: "planejamento", exe: "execucao", hom: "homologacao", enc: "encerramento"};
@@ -5437,7 +5710,7 @@ function flxNovoCard(r, fase, nome, extra){
   return t;
 }
 /* Execução: só o Kick off vira card fixo; o resto da Execução vem dos requisitos */
-const FLX_SEM_CARD = new Set(["guia:exe:1", "guia:exe:2", "guia:exe:3", "guia:exe:4", "guia:exe:5", "guia:exe:6"]);
+const FLX_SEM_CARD = new Set(["guia:exe:1", "guia:exe:2", "guia:exe:3", "guia:exe:4", "guia:exe:5", "guia:exe:6", "guia:hom:6"]);
 function fluxoCriarCards(r, qual){
   const lista = flxAtosFase();
   let n = 0;
@@ -5447,7 +5720,8 @@ function fluxoCriarCards(r, qual){
       if (FLX_SEM_CARD.has(key) || r.tarefas.some(x => x.origem === key)) return;
       const ext = a.f === "FORM01";
       const desc = ext ? FLX_DESC_SOLIC : a.d + (a.lk ? "\nPasta do projeto: " + a.lk : "");
-      const t = flxNovoCard(r, fase, a.t, {descricao: desc, origem: key, obrig: true, doc: /^FORM\d+A?$/.test(a.f || "") ? a.f : (a.f || "").split(" · ")[0] || ""});
+      const dc = /^FORM\d+A?$/.test(a.f || "") ? a.f : (a.f || "").split(" · ")[0] || "";
+      const t = flxNovoCard(r, fase, a.t, {descricao: desc, origem: key, obrig: flxDocTrava(dc), doc: dc});
       n++;
     });
   });
@@ -5461,7 +5735,7 @@ function fluxoIniciar(r){
 function flxCardAvulso(r, cod){
   const f = guiaForm(cod);
   const fase = FLX_BASE.includes(cod) ? "iniciacao" : (f ? FLX_ETAPA_FASE[f.etapa.k] : "iniciacao");
-  return flxNovoCard(r, fase, "Documento: " + (f ? f.n : cod), {doc: cod, origem: "doc:" + cod, obrig: true});
+  return flxNovoCard(r, fase, "Documento: " + (f ? f.n : cod), {doc: cod, origem: "doc:" + cod, obrig: flxDocTrava(cod)});
 }
 /* Trava de encerramento: o Termo de Encerramento (FORM20) precisa estar salvo e o card dele encerrado */
 function flxTrancaEncerrar(r){
@@ -5477,11 +5751,18 @@ function flxCardDoc(r, cod){ return r.tarefas.find(x => x.doc === cod) || null; 
 function flxProjetoDe(t){ return rows.find(x => x.tarefas.includes(t)); }
 /* Um card ligado a documento só conclui com o documento concluído (ou "não se aplica") */
 function flxPodeConcluir(t){
-  if (!t || !t.doc || !t.obrig) return true;
+  if (!t || !t.doc) return true;
   const r = flxProjetoDe(t);
   if (!fluxoAtivo(r)) return true;
-  if (t.doc === "FORM20") { const d = flxDoc(r, "FORM20"); return !!(d && d.ok && t.anexos.some(a => a.flx === "FORM20")); }
-  return flxConcl(r, t.doc);
+  if (FLX_OBRIG_DOC.includes(t.doc)) { const d = flxDoc(r, t.doc); return !!(d && d.ok && t.anexos.some(a => a.flx === t.doc)); }
+  if (t.doc === "FORM01" || FLX_BASE.includes(t.doc)) return flxConcl(r, t.doc);
+  return true;
+}
+function flxMsgTrava(t){
+  const f = guiaForm(t.doc);
+  return FLX_OBRIG_DOC.includes(t.doc)
+    ? `Documento obrigatório: este card só encerra com "${f ? f.n : t.doc}" concluído e o PDF salvo na pasta. Conclua na aba Documentos do projeto.`
+    : `Este card depende do documento ${t.doc}. Conclua o documento na aba Documentos do projeto.`;
 }
 
 /* ---------- Estado dos documentos ---------- */
@@ -5490,6 +5771,7 @@ function flxListaDocs(r){
     let fs = s.forms.map(f => guiaForm(f.c));
     if (s.k === "ini") fs = [fs[0], guiaForm("FORM06"), guiaForm("FORM07")].concat(fs.slice(1));
     if (s.k === "pla") fs = fs.filter(f => !FLX_BASE.includes(f.c));
+    fs = fs.filter(f => f && !FLX_EXCLUIDOS.includes(f.c));
     return {s, fase: FLX_ETAPA_FASE[s.k], docs: fs};
   });
 }
@@ -5825,7 +6107,7 @@ function flxDocHtml(r, f){
     if (edit && st.k !== "pmo" && st.k !== "ok" && st.k !== "na") acoes += spLigado() ? ` <button type="button" class="btn sm primary" data-pa-abrir="evid:${f.c}" title="Escolha o PDF no SharePoint">Anexar PDF final</button>` : ` <label class="btn sm primary flx-file">Anexar PDF final<input type="file" accept="application/pdf,.pdf" data-flx-evid="${f.c}" hidden></label>`;
   }
   if (edit && st.k === "ok" && !f.ext && fluxoAtivo(r)) acoes += spLigado() ? ` <button type="button" class="btn sm" data-pa-abrir="aprov:${f.c}" title="Escolha a evidência no SharePoint">Anexar evidência de aprovação</button>` : ` <label class="btn sm flx-file" title="Aprovação feita fora do portal (e-mail, Teams): guarde a evidência">Anexar evidência de aprovação<input type="file" data-flx-aprov="${f.c}" hidden></label>`;
-  if (fluxoAtivo(r) && edit && st.k !== "bloq" && st.k !== "ok" && st.k !== "na" && st.k !== "pmo" && !f.ext && !FLX_BASE.includes(f.c) && f.c !== "FORM20") acoes += ` <button class="btn sm" data-flx="na" data-cod="${f.c}">Não se aplica</button>`;
+  if (fluxoAtivo(r) && edit && st.k !== "bloq" && st.k !== "ok" && st.k !== "na" && st.k !== "pmo" && !f.ext && !FLX_BASE.includes(f.c) && !FLX_OBRIG_DOC.includes(f.c)) acoes += ` <button class="btn sm" data-flx="na" data-cod="${f.c}">Não se aplica</button>`;
   const card = flxCardDoc(r, f.c);
   const evid = card ? card.anexos.filter(a => a.flx === f.c) : [];
   const info = [];
@@ -5837,7 +6119,7 @@ function flxDocHtml(r, f){
   return `
     <div class="flx-doc st-${st.k}">
       <span class="gd-code">${esc(f.c)}</span>
-      <div class="flx-dm"><b>${esc(f.n)}${FLX_BASE.includes(f.c) && fluxoAtivo(r) ? ` <span class="flx-badge disp" style="margin-left:6px">Obrigatório</span>` : ""}</b><small>${esc(f.d)}</small>${info.length ? `<small class="flx-info">${info.join(" · ")}</small>` : ""}${refTxt}</div>
+      <div class="flx-dm"><b>${esc(f.n)}${(FLX_BASE.includes(f.c) || FLX_OBRIG_DOC.includes(f.c)) && fluxoAtivo(r) ? ` <span class="flx-badge disp" style="margin-left:6px">Obrigatório</span>` : ""}</b><small>${esc(f.d)}</small>${info.length ? `<small class="flx-info">${info.join(" · ")}</small>` : ""}${refTxt}</div>
       <span class="flx-badge ${st.k}">${st.k === "bloq" ? "🔒 " : ""}${esc(st.txt)}</span>
       <div class="flx-da">${acoes}</div>
     </div>`;
@@ -5884,7 +6166,7 @@ const flxGuiaLink = f => `<button class="btn sm ${flxGuiaAberto.has(f.key) ? "on
 function flxGuiaFaseHtml(r, fase, semDocs){
   if (!flxGuiaAberto.has(fase)) return "";
   const s = GUIA_D.find(x => x.k === flxFaseKey(fase));
-  const atos = flxAtosFase()[fase] || [];
+  const atos = (flxAtosFase()[fase] || []).filter(x => x.key !== "guia:hom:6");
   const lin = atos.map(({a, key}, i) => {
     const t = r.tarefas.find(x => x.origem === key);
     const f = a.f && guiaForm(a.f.split(" · ")[0]);
@@ -6436,8 +6718,9 @@ function flxReparar(){
     const sl = r.fluxo.solic, t = flxCardDoc(r, "FORM01");
     if (sl && !sl.arquivo) { r.fluxo.rascunhoSolic = sl.campos || {}; delete r.fluxo.solic; n++; }
     if (!r.fluxo.solic && t && t.bucket === "concluido") { setBucket(t, "backlog"); t.vinc = false; n++; }
+    r.tarefas.forEach(x => { if (x.origem && /^(guia|doc):/.test(x.origem)) { const ob = flxDocTrava(x.doc || ""); if (!!x.obrig !== ob) { x.obrig = ob; n++; } } });
     const antes = r.tarefas.length;
-    r.tarefas = r.tarefas.filter(x => !(FLX_SEM_CARD.has(x.origem) && x.bucket !== "concluido" && !(x.anexos || []).length && !(x.atividades || []).some(a => a.feito) && !(x.comentarios || []).length));
+    r.tarefas = r.tarefas.filter(x => !((FLX_SEM_CARD.has(x.origem) || FLX_EXCLUIDOS.includes(x.doc)) && x.bucket !== "concluido" && !(x.anexos || []).length && !(x.atividades || []).some(a => a.feito) && !(x.comentarios || []).length));
     n += antes - r.tarefas.length;
   });
   return n;
@@ -6662,7 +6945,7 @@ document.addEventListener("click", async e => {
     return;
   }
   if (ac === "na") {
-    if (!podeEditar() || b.dataset.cod === "FORM20") return;
+    if (!podeEditar() || FLX_OBRIG_DOC.includes(b.dataset.cod)) return;
     const cod = b.dataset.cod, f = guiaForm(cod);
     const j = prompt(`Por que "${f ? f.n : cod}" não se aplica a este projeto?\n\nA justificativa fica registrada.`);
     if (!j || !j.trim()) return;
