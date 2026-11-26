@@ -6279,10 +6279,10 @@ function flxPaHtml(){
       : `<p class="note" style="margin:6px 0">Pasta vazia.</p>`;
   const n = Object.keys(flxPa.sel).length;
   if (flxPa.salvar) return `<h3>Salvar o PDF na pasta do projeto</h3>
-    <p class="note" style="margin:0 0 6px">${flxPa.fixa ? "Escolha a pasta de destino (por padrão, a pasta do projeto)." : "Não encontrei a pasta deste projeto automaticamente. Navegue até ela, confirme e salve."}</p>
-    <div class="flx-spc">${crumb}</div><div class="flx-spl" style="max-height:260px">${flxPa.itens.some(x => x.folder) || flxPa.erro ? lista : `<p class="note" style="margin:6px 0">Esta pasta não tem subpastas.</p>`}</div>
+    <p class="note" style="margin:0 0 6px">Escolha em qual pasta do SharePoint salvar. Começa na pasta do projeto; use o caminho acima para voltar e navegue pelas pastas.</p>
+    <div class="flx-spc">${crumb}</div><div class="flx-spl" style="max-height:260px">${flxPa.itens.some(x => x.folder) || flxPa.erro ? lista : `<p class="note" style="margin:6px 0">Esta pasta não tem subpastas. Você pode salvar aqui ou voltar pelo caminho acima.</p>`}</div>
     <p class="note" style="margin:8px 0 0">Arquivo: <b>${esc(flxPa.nome)}</b></p>
-    <div class="flx-acts">${flxPa.fixa ? "" : `<button type="button" class="btn" data-pa-definir>Esta é a pasta do projeto</button>`}<button type="button" class="btn" data-pa-fechar>Cancelar</button><button type="button" class="btn primary" data-pa-salvar ${flxPa.erro ? "disabled" : ""}>Salvar aqui</button></div>`;
+    <div class="flx-acts"><button type="button" class="btn" data-pa-fechar>Cancelar</button><button type="button" class="btn primary" data-pa-salvar ${flxPa.erro ? "disabled" : ""}>Salvar aqui</button></div>`;
   return `<h3>Anexar da pasta do projeto</h3>
     <p class="note" style="margin:0 0 6px">${flxPa.fixa ? "Escolha os documentos já salvos na pasta deste projeto." : "Não encontrei a pasta deste projeto automaticamente. Navegue até ela e confirme."}</p>
     <div class="flx-spc">${crumb}</div><div class="flx-spl" style="max-height:260px">${lista}</div>
@@ -6301,7 +6301,8 @@ async function flxPaAbrir(ctx, pidForce, estado, nome){
   flxModal(`<p class="note">Procurando a pasta do projeto…</p>`);
   try {
     const achada = await flxPaAcharPasta(r);
-    if (achada) { flxPa.base = achada; flxPa.caminho = []; flxPa.fixa = true; }
+    if (achada && salvar) { flxPa.base = []; flxPa.caminho = achada.slice(); flxPa.fixa = false; }
+    else if (achada) { flxPa.base = achada; flxPa.caminho = []; flxPa.fixa = true; }
     else { flxPa.base = []; flxPa.caminho = []; }
   } catch (e) { flxPa.base = []; flxPa.caminho = []; }
   await flxPaRender();
