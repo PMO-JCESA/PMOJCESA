@@ -4798,7 +4798,7 @@ setInterval(() => demAtualizar(false), DEM_INTERVALO);
 setTimeout(() => demAtualizar(false), 10000);
 
 /* ================= GUIA DO PROJETO (PMO e GP): ciclo de vida, fluxos e formulários ================= */
-const GUIA_V = "82";
+const GUIA_V = "83";
 const GUIA_DIR = "guia/";
 const GUIA_SOLICITACAO = "https://pmo-jcesa.github.io/SOLICIT_PROJ_MELHORIAS/";
 const GUIA_D = [{"k":"ini","n":"Iniciação","sub":"Solicitação e formalização do projeto","entra":"Solicitação do setor (FORM01)","sai":"Projeto autorizado","desc":"A demanda entra pelo setor, é justificada e o projeto é formalizado com stakeholders, governança e papéis definidos.","acts":[{"t":"Receber a Solicitação","d":"A demanda chega do setor pelo formulário de solicitação (FORM01) e entra na lista de Demandas do PMO.","r":"Área solicitante, PMO","f":"FORM01"},{"t":"Criar a Pasta do Projeto","d":"Criar a pasta do projeto na biblioteca PMO-Projetos do SharePoint. Os PDFs e documentos do projeto ficam nela.","r":"PMO, GP","f":"","lk":"https://nordtechmaquinas.sharepoint.com/sites/PortalTecnologia/Documentos%20Compartilhados/Forms/AllItems.aspx?id=%2Fsites%2FPortalTecnologia%2FDocumentos%20Compartilhados%2FPMO%2DProjetos%2F01%2EProjetos&viewid=039abd9b%2D3b27%2D489f%2Db785%2Dea30496c7b96&viewpath=%2Fsites%2FProjetosJCE%2FDocumentos%20Compartilhados%2FForms%2FAllItems%2Easpx&share=cgo3PmX7TnPwSrcDOmaE7tQFEgUDm3YnaEXOseXRa0qaYkkFRg","lkt":"Abrir a pasta no SharePoint"},{"t":"Elaborar Business Case","d":"Justificativa formal do investimento, custos, benefícios e retorno esperado.","r":"GP, PMO, Sponsor","f":"FORM02"},{"t":"Registrar Stakeholders","d":"Identificação e análise das partes interessadas no projeto.","r":"GP, PMO","f":"FORM03"},{"t":"Definir Governança","d":"Organização interna do projeto e fluxo de decisão por nível.","r":"GP, PMO","f":"FORM04"},{"t":"Definir Papéis","d":"Criação da Matriz RACI com as responsabilidades de cada ator.","r":"GP, PMO","f":"FORM05"},{"t":"Obter Autorização","d":"Assinatura formal do Sponsor autorizando o início do projeto.","r":"Sponsor","f":""}],"forms":[{"c":"FORM01","n":"Solicitação de Projeto","d":"Entrada das demandas dos setores (equivalente ao TAP). Chega pelo formulário de solicitação e é analisada pelo PMO em Demandas; não é responsabilidade do GP.","w":"Recebido pelo PMO antes do início do projeto.","tipo":"Controle","at":"Específica","f":"","ext":1},{"c":"FORM02","n":"Business Case","d":"Justificativa financeira e estratégica do projeto.","w":"Após a solicitação ser aceita pelo PMO.","tipo":"Controle","at":"Específica","f":"form02-business-case.html"},{"c":"FORM03","n":"Registro de Stakeholders","d":"Partes interessadas, influência e interesse.","w":"Ao formalizar o projeto.","tipo":"Controle","at":"Contínua","f":"form03-registro-de-stakeholders.html"},{"c":"FORM04","n":"Governança do Projeto","d":"Organização interna e fluxo de decisão.","w":"Ao formalizar o projeto.","tipo":"Controle","at":"Específica","f":"form04-governanca-do-projeto.html"},{"c":"FORM05","n":"Matriz RACI","d":"Responsável, Aprovador, Consultado e Informado por atividade.","w":"Ao definir os papéis da equipe.","tipo":"Controle","at":"Específica","f":"form05-matriz-raci.html"}]},{"k":"pla","n":"Planejamento","sub":"Estruturação e baseline","entra":"Projeto autorizado","sai":"Plano do projeto aprovado (baseline)","desc":"Define o que será entregue, os requisitos, o custo, os riscos e como a comunicação vai funcionar.","acts":[{"t":"Levantar Escopo","d":"Delimitação do que está dentro e fora do projeto.","r":"GP, Equipe","f":"FORM06"},{"t":"Levantar Requisitos","d":"Requisitos funcionais, não funcionais e regras de negócio.","r":"GP, Área de negócio","f":"FORM07"},{"t":"Definir Cronograma","d":"Cronograma detalhado do projeto no Portal PMO, na aba Gestão.","r":"GP, Equipe","f":"","lk":"#/gestao","lkt":"Abrir a Gestão"},{"t":"Elaborar Orçamento","d":"Detalhamento do orçamento por categoria.","r":"GP, PMO","f":"FORM08"},{"t":"Identificar Riscos","d":"Probabilidade, impacto e plano de resposta.","r":"GP, Equipe","f":"FORM09"},{"t":"Planejar Comunicação","d":"Quem recebe o quê, quando e por qual canal.","r":"GP","f":"FORM10"},{"t":"Aprovar Baseline","d":"Aprovação do escopo, prazo e custo de referência.","r":"Sponsor, Comitê","f":""}],"forms":[{"c":"FORM06","n":"Levantamento de Escopo","d":"O que está dentro e fora do escopo.","w":"Início do planejamento.","tipo":"Controle","at":"Específica","f":"form06-levantamento-de-escopo.html"},{"c":"FORM07","n":"Levantamento de Requisitos","d":"Requisitos funcionais, não funcionais e regras de negócio.","w":"Depois do escopo.","tipo":"Controle","at":"Específica","f":"form07-levantamento-de-requisitos.html"},{"c":"FORM08","n":"Detalhamento do Orçamento","d":"Orçamento por categoria com gráficos.","w":"Antes de aprovar a baseline.","tipo":"Controle","at":"Contínua","f":"form08-detalhamento-do-orcamento.html"},{"c":"FORM09","n":"Matriz de Riscos","d":"Riscos, probabilidade, impacto e resposta.","w":"Antes de aprovar a baseline.","tipo":"Controle","at":"Contínua","f":"form09-matriz-de-riscos.html"},{"c":"FORM10","n":"Plano de Comunicação","d":"Público, frequência e canal de cada comunicação.","w":"Antes de aprovar a baseline.","tipo":"Controle","at":"Específica","f":"form10-plano-de-comunicacao.html"}]},{"k":"exe","n":"Execução","sub":"Construção das entregas","entra":"Plano do projeto aprovado","sai":"Entregas concluídas","desc":"Construção das entregas. Toda mudança de escopo, prazo ou custo passa pela Gestão de Mudanças, o único registro que guarda histórico.","acts":[{"t":"Kick off","d":"Formalizar o Kick off do projeto: benefícios, entregas, premissas, restrições, riscos e o roadmap de implantação, aprovado pelo Sponsor.","r":"GP, PMO, Sponsor","f":"FORM11A"},{"t":"Executar Entregas","d":"Desenvolvimento dos pacotes de trabalho conforme o escopo.","r":"GP, Equipe","f":""},{"t":"Gerenciar Equipe","d":"Coordenação, motivação e resolução de conflitos.","r":"GP","f":""},{"t":"Gerenciar Mudanças","d":"Abertura e decisão das Change Requests no portal.","r":"GP, Sponsor","f":"FORM11"},{"t":"Garantir Qualidade","d":"Inspeção contínua e validação técnica das entregas.","r":"GP, Qualidade","f":""},{"t":"Gerenciar Fornecedores","d":"Acompanhamento de contratos e entregas de terceiros.","r":"GP","f":""},{"t":"Comunicar Progresso","d":"Atualização dos stakeholders sobre o andamento.","r":"GP","f":""}],"forms":[{"c":"FORM11A","n":"Kick off","d":"Benefícios, entregas, premissas, restrições, riscos, equipe e roadmap de implantação com mini cronograma.","w":"No início da execução, antes da primeira entrega.","tipo":"Controle","at":"Específica","f":"form11a-kick-off.html"},{"c":"FORM11","n":"Gestão de Mudanças","d":"Portal por projeto: Change Requests, painel de gestão e PDFs. Único com histórico salvo.","w":"Durante todo o projeto, a cada mudança.","tipo":"Controle","at":"Contínua","f":"form11-gestao-de-mudancas.html"}]},{"k":"hom","n":"Homologação e Testes","sub":"Testes, aceite e Go-Live","entra":"Entregas concluídas","sai":"Aceite do Go-Live","desc":"Testes, aceite do negócio, preparação da virada e implantação em produção.","acts":[{"t":"Realizar Testes","d":"Testes funcionais e de integração das entregas.","r":"Qualidade","f":"FORM12"},{"t":"Corrigir Não Conformidades","d":"Ajustes dos defeitos encontrados nos testes.","r":"Equipe, GP","f":""},{"t":"Obter Aceite dos Testes","d":"Aprovação formal das entregas pelo negócio.","r":"Cliente, Sponsor","f":"FORM13"},{"t":"Planejar Cutover e Rollback","d":"Roteiro da virada e plano de reversão.","r":"GP, TI","f":"FORM14 · FORM15"},{"t":"Autorizar Go-Live","d":"Autorização formal para implantar em produção.","r":"Sponsor, Comitê","f":"FORM16"},{"t":"Implantar e Estabilizar","d":"Deploy em produção e acompanhamento (Hypercare).","r":"TI, GP","f":""},{"t":"Obter Aceite de Implantação","d":"Validação pós-implantação e início da operação.","r":"Sponsor, Cliente","f":"FORM17"}],"forms":[{"c":"FORM12","n":"Relatório de Testes","d":"Resultados, casos aprovados/reprovados e defeitos.","w":"Ao fim da rodada de testes.","tipo":"Report","at":"Específica","f":"form12-relatorio-de-testes.html"},{"c":"FORM13","n":"Termo de Aceite dos Testes","d":"Aceite formal das entregas pelo negócio.","w":"Após os testes aprovados.","tipo":"Controle","at":"Específica","f":"form13-termo-de-aceite-dos-testes.html"},{"c":"FORM14","n":"Plano de Cutover","d":"Sequência e responsáveis pela virada.","w":"Antes da implantação.","tipo":"Controle","at":"Específica","f":"form14-plano-de-cutover.html"},{"c":"FORM15","n":"Plano de Rollback","d":"Passos para reverter em caso de falha.","w":"Antes da implantação.","tipo":"Controle","at":"Específica","f":"form15-plano-de-rollback.html"},{"c":"FORM16","n":"Termo de Aceite do Go Live","d":"Autorização para implantar em produção.","w":"Antes da virada.","tipo":"Controle","at":"Específica","f":"form16-termo-de-aceite-do-go-live.html"},{"c":"FORM17","n":"Termo de Aceite de Implantação","d":"Validação pós-implantação.","w":"Depois da virada.","tipo":"Controle","at":"Específica","f":"form17-termo-de-aceite-de-implantacao.html"}]},{"k":"enc","n":"Encerramento","sub":"Formalização e lições aprendidas","entra":"Aceite do Go-Live","sai":"Projeto encerrado e arquivado","desc":"Registro das lições, verificação do escopo entregue e arquivamento dos PDFs nas pastas do projeto no SharePoint.","acts":[{"t":"Ajustes Pós Go-Live","d":"Suporte imediato e estabilização da solução.","r":"Equipe, GP","f":""},{"t":"Encerrar Pagamentos e Contratos","d":"Finalização das pendências financeiras e com fornecedores.","r":"GP, PMO","f":""},{"t":"Passagem para Sustentação","d":"Treinamentos, documentos técnicos e acessos entregues à sustentação, com evidências.","r":"GP, Sustentação","f":"FORM18"},{"t":"Lições Aprendidas","d":"Registro dos aprendizados para os próximos projetos.","r":"GP","f":"FORM19"},{"t":"Termo de Encerramento","d":"Verificação da entrega do escopo e assinaturas.","r":"GP, Sponsor","f":"FORM20"},{"t":"Arquivar o Projeto","d":"Salvar os PDFs nas pastas do projeto no SharePoint e concluir o projeto no Portal PMO.","r":"GP","f":"","lk":"#/gestao","lkt":"Abrir a Gestão"}],"forms":[{"c":"FORM18","n":"Termo de Passagem para Sustentação","d":"Checklist da transição para a operação (treinamentos, documentação, acessos) com evidências e aceite da sustentação.","w":"Ao fim da operação assistida.","tipo":"Controle","at":"Específica","f":"form18-termo-de-passagem-para-sustentacao.html"},{"c":"FORM19","n":"Lições Aprendidas","d":"O que manter, o que ajustar e plano de ação.","w":"Após o Go-Live.","tipo":"Controle","at":"Específica","f":"form19-licoes-aprendidas.html"},{"c":"FORM20","n":"Termo de Encerramento do Projeto","d":"Confirma se todos os pontos do escopo foram entregues.","w":"Último documento do projeto.","tipo":"Controle","at":"Específica","f":"form20-termo-de-encerramento-do-projeto.html"}]}];
@@ -5533,19 +5533,125 @@ function flxCanonDemanda(it){
 }
 const flxLinhas = s => String(s || "").split(/\n|;/).map(x => x.replace(/^\s*(?:[-•*]\s*)/, "").trim()).filter(Boolean);
 /* Dados do formulário de solicitação → campos do Levantamento de Escopo */
-function flxDeSolic(c){
+/* ---------- Análise da solicitação (TAP) para o Levantamento de Escopo ---------- */
+const flxN = t => flxSemAcento(t);
+const flxCap = t => { t = String(t || "").trim().replace(/[.;,\s]+$/, ""); return t ? t.charAt(0).toUpperCase() + t.slice(1) : ""; };
+/* Divide um texto em itens: linhas, marcadores, numeração, ";" e frases; reconhece cabeçalhos de seção ("Fora do escopo:") */
+function flxItensTap(texto, secaoPadrao){
+  const out = [];
+  let secao = secaoPadrao || "";
+  const SEC = [["excl", /^(fora do escopo|exclus(?:ao|oes)|nao (?:inclui|contempla|faz parte)|nao esta(?:o)? no escopo)\b/], ["ent", /^(entregas?|inclui|incluso|dentro do escopo|escopo)\b/], ["func", /^(funcionalidades?)\b/], ["req", /^(requisitos?)\b/]];
+  String(texto || "").split(/\r?\n/).forEach(linha => {
+    let l = linha.replace(/^\s*(?:[-•*▪●]+|\d+[.)])\s*/, "").trim();
+    if (!l) return;
+    const n = flxN(l);
+    for (const [k, re] of SEC) {
+      const m = n.match(re);
+      if (m && /^[\s:–-]*$/.test(n.slice(m[0].length)) ) { secao = k; return; }
+      if (m && /^\s*:/.test(n.slice(m[0].length))) { secao = k; l = l.slice(l.indexOf(":") + 1).trim(); break; }
+    }
+    if (!l) return;
+    const partes = l.length > 110 ? l.split(/(?<=[.!?])\s+(?=[A-ZÁÉÍÓÚÂÊÔÃÕÇ])/) : [l];
+    partes.forEach(p => p.split(/;|\s*,\s*(?=[a-zà-ú]+\w*\s)(?=.{0,60}$)/i).forEach(q => {
+      q = flxCap(q.replace(/^\s*(?:e|ou)\s+/i, ""));
+      if (q.length > 2) out.push({t: q.length > 170 ? q.slice(0, 167).trim() + "…" : q, secao});
+    }));
+  });
+  const vistos = new Set();
+  return out.filter(x => { const k = flxN(x.t); if (vistos.has(k)) return false; vistos.add(k); return true; });
+}
+const FLX_RE_EXCL = /\b(nao (?:inclui|contempla|faz parte|sera|serao|havera|prevê|preve)|fora do escopo|exceto|excluindo|exclui|sem (?:integracao|customizacao|migracao))\b/;
+const FLX_RE_REQ = /\b(desempenho|performance|seguranca|lgpd|disponibilidade|backup|usabilidade|acessibilidade|auditoria|log de|perfis? de acesso|permiss|criptograf|escalabilidade|tempo de resposta|sla\b|integra(?:cao|r) com|integrado|compatib|homologacao em|\d+\s*(?:segundos|minutos|ms|usuarios simultaneos))/;
+const FLX_RE_FUNC = /^(permit|gerar|emitir|importar|exportar|consultar|cadastrar|registrar|calcular|enviar|notificar|alertar|conciliar|aprovar|visualizar|pesquis|filtrar|baixar|extrair|validar|controlar|acompanhar|monitorar|criar|editar|excluir|gerenciar|automatizar|disponibilizar|integrar|classificar|atribuir|solicitar|emissao|geracao|calculo|cadastro|consulta|notificacao|aprovacao|envio|importacao|exportacao|controle|acompanhamento|automacao)|\b(deve poder|possibilit|permitir|usuario podera)/;
+function flxMetaDe(t){
+  const o = {base: "", meta: "", prazo: ""}, nu = (n, u) => n + (u && u.trim() ? (u.trim() === "%" ? "" : " ") + u.trim() : ""), UN = "(?:%|dias?|horas?|h\\b|min\\w*|seg\\w*|semanas?|meses|r\\$)?";
+  let m = t.match(new RegExp("de\\s+(\\d[\\d.,]*)\\s*(" + UN + ")\\s+para\\s+(\\d[\\d.,]*)\\s*(" + UN + ")", "i"));
+  if (m) { const un2 = m[4].trim(), un1 = m[2].trim() || un2; o.base = nu(m[1], un1); o.meta = nu(m[3], un2); }
+  else if ((m = t.match(new RegExp("(abaixo de|menos de|menor que|ate|até|em ate|maximo de|acima de|mais de|pelo menos|minimo de|meta(?:\\s+de)?[:\\s]+|para)\\s*(\\d[\\d.,]*)\\s*(" + UN + ")", "i")))) {
+    const q = flxN(m[1]), pre = /abaixo|menos|menor|ate|maximo/.test(q) ? "< " : /acima|mais de|pelo menos|minimo/.test(q) ? "> " : "";
+    o.meta = pre + nu(m[2], m[3]);
+  }
+  else if ((m = t.match(/(?:reduzir|diminuir|aumentar|elevar|ganhar)[^.\d]{0,40}?(\d[\d.,]*\s*%)/i))) o.meta = (/reduzir|diminuir/i.test(m[0]) ? "-" : "+") + m[1].trim();
+  const pz = t.match(/\b(?:em|ate|até|ate o|até o|ate o fim de)\s+((?:\d{1,2}\/)?\d{1,2}\/\d{2,4}|(?:jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez)\w*(?:\/|\s+de\s+)\d{2,4}|\d+\s*(?:dias|semanas|meses))/i);
+  if (pz) o.prazo = pz[1].trim();
+  return o;
+}
+function flxAnaliseSolic(c){
   c = c || {};
-  const obj = flxLinhas(c.objetivos).slice(0, 6);
-  const rk = flxLinhas(c.obstaculos).map(x => ({desc: x, prob: "", imp: "", mit: ""}));
-  flxLinhas(c.consequencias).forEach(x => rk.push({desc: "Se não executado: " + x, prob: "", imp: "", mit: ""}));
-  const esc = flxLinhas(c.escopo);
-  return {
-    id: {nome: c.titulo || "", tipo: c.tipo || "", solic: [c.solicitante, c.departamento].filter(Boolean).join(" / "), po: c.solicitante || "", area: c.departamento || ""},
-    jus: {problema: c.necessidade || "", benef: [c.beneficio, c.retorno].filter(Boolean).join("\n"), alin: c.justificativa || ""},
-    obj, prod: {ent: esc.join("\n"), func: "", req: ""},
-    kpi: {inds: flxLinhas(c.medicao).map(x => ({ind: x.slice(0, 80), desc: x, base: "", meta: "", prazo: ""}))},
-    rk: {riscos: rk, dint: c.processos || "", dext: ""}
+  const txt = [c.titulo, c.necessidade, c.justificativa, c.escopo, c.objetivos, c.beneficio, c.retorno, c.medicao, c.processos, c.obstaculos, c.consequencias].join(" \n ");
+  const N = flxN(txt);
+  /* Escopo: separa entregas, funcionalidades, requisitos de alto nível e exclusões */
+  const ent = [], func = [], req = [], excl = [];
+  flxItensTap(c.escopo).forEach(({t, secao}) => {
+    const n = flxN(t);
+    const cat = secao === "excl" || FLX_RE_EXCL.test(n) ? "excl" : secao === "func" ? "func" : secao === "req" ? "req" : FLX_RE_REQ.test(n) ? "req" : FLX_RE_FUNC.test(n) ? "func" : "ent";
+    (cat === "excl" ? excl : cat === "func" ? func : cat === "req" ? req : ent).push(t.replace(/^(?:nao inclui|n[aã]o contempla|fora do escopo)\s*:?\s*/i, "").trim() || t);
+  });
+  /* Se não houve entrega explícita mas há funcionalidades, o conjunto delas descreve o produto */
+  const objs = flxItensTap(c.objetivos).map(x => x.t).slice(0, 5);
+  const ben = [...flxItensTap(c.beneficio).map(x => x.t), ...flxItensTap(c.retorno).map(x => x.t)];
+  /* Indicadores de sucesso, com base/meta/prazo quando o texto traz números */
+  const inds = flxItensTap(c.medicao).slice(0, 6).map(({t}) => {
+    const m = flxMetaDe(t);
+    const ind = t.split(/\s*[:–-]\s+/)[0].replace(/^(?:reduzir|aumentar|diminuir|elevar)\s+(?:o|a|os|as)?\s*/i, "").slice(0, 70);
+    return {ind: flxCap(ind), desc: t, base: m.base, meta: m.meta, prazo: m.prazo};
+  });
+  /* Obstáculos e consequências: premissas, restrições, dependências externas e riscos */
+  const prem = [{t: "Disponibilidade de Recursos", d: []}, {t: "Ambiente Tecnológico", d: []}, {t: "Aprovação de Terceiros", d: []}];
+  const rest = [{t: "Prazo Improrrogável", d: []}, {t: "Orçamento Limitado (Budget)", d: []}, {t: "Compliance e Regulação", d: []}];
+  const riscos = [], dext = [];
+  flxItensTap(c.obstaculos).forEach(({t}) => {
+    const n = flxN(t); let uso = true;
+    if (/fornecedor|terceiro|contrato|aprovacao|diretoria|comite|parceiro|externo|banco|cliente/.test(n)) { prem[2].d.push(t); dext.push(t); }
+    else if (/prazo|data limite|deadline|ate \d|fechamento|calendario/.test(n)) rest[0].d.push(t);
+    else if (/orcamento|budget|verba|custo|investimento|recurso financeiro/.test(n)) rest[1].d.push(t);
+    else if (/lgpd|lei |legal|norma|regulat|compliance|auditoria|fiscal|contabil|sox/.test(n)) rest[2].d.push(t);
+    else if (/equipe|pessoas|time\b|disponibilidade|capacidade|recurso humano|alocac/.test(n)) prem[0].d.push(t);
+    else if (/sistema|ambiente|infra|integra|erp|sap|api|licenca|servidor|rede|base de dados|dados/.test(n)) prem[1].d.push(t);
+    else uso = false;
+    if (!uso || /risco|pode |podera|incerte|dificuld|resistenc|atraso/.test(n))
+      riscos.push({desc: t, prob: /ja |atualmente|hoje|existe|frequente|recorrente/.test(n) ? "Alta" : "Média", imp: /critic|grave|parada|multa|perda|financeir|legal|paralis/.test(n) ? "Alto" : "Médio", mit: ""});
+  });
+  flxItensTap(c.consequencias).forEach(({t}) => riscos.push({desc: "Se não executado: " + t, prob: "Média", imp: /critic|grave|parada|multa|perda|financeir|legal|paralis/.test(flxN(t)) ? "Alto" : "Médio", mit: ""}));
+  const juntar = a => a.d.length ? {t: a.t, d: a.d.map(x => "• " + x).join("\n")} : {t: a.t, d: ""};
+  /* Critérios de aceite: partem dos indicadores e das entregas */
+  const crit = [...inds.filter(x => x.meta).map(x => `${x.ind}: meta ${x.meta}${x.prazo ? " até " + x.prazo : ""}`), ...ent.slice(0, 5).map(x => `${x}: entrega validada pelo solicitante`)];
+  /* Tipo e prioridade sugeridos */
+  const tipo = /infraestrutura|servidor|nuvem|cloud|datacenter|\brede\b/.test(N) ? "Infraestrutura" : /sistema|software|aplicativo|portal|erp|sap|automa|relatorio|dashboard|app\b/.test(N) ? "Software" : /integra|api\b|webservice/.test(N) ? "Integração" : /processo|fluxo|procedimento|rotina/.test(N) ? "Processo" : "";
+  const prio = /urgente|critic|obrigatori|exigencia legal|regulat|multa|auditoria|prazo legal/.test(N) ? "Alta" : /baixa prioridade|quando possivel|sem urgencia/.test(N) ? "Baixa" : "";
+  const gl = txt.match(/(?:go-?live|entrega final|conclus[aã]o|prazo(?: final)?|ate)\D{0,25}(\d{2})\/(\d{2})\/(\d{4})/i);
+  const patch = {
+    id: {nome: c.titulo || "", tipo: tipo || c.tipo || "", prio, solic: [c.solicitante, c.departamento].filter(Boolean).join(" / "), po: c.solicitante || "", area: c.departamento || ""},
+    jus: {problema: c.necessidade || "", benef: ben.join("\n"), alin: [c.justificativa, c.beneficio ? "Benefício estratégico: " + c.beneficio : ""].filter(Boolean).join("\n\n")},
+    obj: objs,
+    prod: {ent: ent.join("\n"), func: func.join("\n"), req: req.join("\n")},
+    esc: {excl: excl.join("\n"), crit: crit.join("\n")},
+    prem: prem.map(juntar), rest: rest.map(juntar),
+    kpi: {inds},
+    rk: {riscos, dint: c.processos || "", dext: [...new Set(dext)].join("\n")},
+    cr: {golive: gl ? `${gl[3]}-${gl[2]}-${gl[1]}` : ""}
   };
+  const resumo = [`${ent.length} entrega(s), ${func.length} funcionalidade(s), ${req.length} requisito(s) de alto nível e ${excl.length} exclusão(ões) identificados no escopo`,
+    `${objs.length} objetivo(s), ${inds.length} indicador(es) de sucesso, ${riscos.length} risco(s), ${prem.filter(x => x.d.length).length} premissa(s) e ${rest.filter(x => x.d.length).length} restrição(ões) preenchidos`];
+  const revisar = [];
+  if (!prio) revisar.push("Prioridade estratégica: não dá para inferir da solicitação.");
+  if (!ent.length && !func.length) revisar.push("Entregas e funcionalidades: o resumo do escopo não trouxe itens claros.");
+  if (!excl.length) revisar.push("Fora do escopo: a solicitação não cita exclusões; vale definir com o solicitante.");
+  if (crit.length) revisar.push("Critérios de aceite: são sugestões feitas a partir dos indicadores e entregas.");
+  if (riscos.length) revisar.push("Riscos: probabilidade e impacto são estimativas; falta definir a mitigação.");
+  return {patch, resumo, revisar};
+}
+const flxDeSolic = c => flxAnaliseSolic(c).patch;
+/* Caminhos preenchidos de um patch (para destacar no formulário o que veio da solicitação) */
+function flxCaminhos(o, pref){
+  const out = [];
+  Object.keys(o || {}).forEach(k => {
+    const v = o[k], p = pref ? pref + "." + k : k;
+    if (Array.isArray(v)) v.forEach((x, i) => { if (x && typeof x === "object") out.push(...flxCaminhos(x, p + "." + i)); else if (String(x || "").trim()) out.push(p + "." + i); });
+    else if (v && typeof v === "object") out.push(...flxCaminhos(v, p));
+    else if (String(v || "").trim()) out.push(p);
+  });
+  return out;
 }
 function flxSolicBtn(r, grande){
   const ok = !!(r.fluxo && r.fluxo.solic);
@@ -5828,7 +5934,8 @@ async function flxSolicSalvar(r, campos, arq, origem){
   if (!campos.escopo) alertas.push("O resumo do escopo não foi identificado: o Escopo abrirá sem entregas sugeridas.");
   if (arq && /pdf/i.test(arq.nome) && !n) alertas.push("O PDF foi arquivado, mas nenhum campo foi reconhecido: preencha os dados na janela para alimentar o Escopo.");
   salvar();
-  flxUltima = {pid: r.ID, cod: "FORM01", an: {resumo: [`${n} campo(s) da solicitação reconhecidos`, campos.titulo ? "Título: " + campos.titulo : ""].filter(Boolean), alertas}, novos: 0};
+  const an = flxAnaliseSolic(campos);
+  flxUltima = {pid: r.ID, cod: "FORM01", an: {resumo: [`${n} campo(s) da solicitação reconhecidos`, campos.titulo ? "Título: " + campos.titulo : "", ...an.resumo].filter(Boolean), alertas: [...alertas, ...an.revisar]}, novos: 0};
   flxFechar(); flxRef = null; pVisao = "docs";
   if (location.hash === "#/gestao/" + r.ID) route(); else location.hash = "#/gestao/" + r.ID;
 }
@@ -5863,7 +5970,7 @@ window.addEventListener("message", e => {
     const chave = r.ID + "|" + cod, pend = flxPend[chave];
     delete flxPend[chave];
     const estado = d && (d.rascunho || d.dados) ? (d.rascunho && !d.ok ? d.rascunho : d.dados) : null;
-    flxEnviar(c.fr, {t: "init", sp: spLigado(), cad: flxCadBase(), proj: {id: r.ID, nome: r["Título"]}, estado, patch: pend || (estado ? (cod === "FORM06" && r.fluxo.solic ? flxDeSolic(r.fluxo.solic.campos) : null) : flxPrefillInicial(cod, r)), ro: !podeEditar() || pmo});
+    flxEnviar(c.fr, {t: "init", sp: spLigado(), cad: flxCadBase(), proj: {id: r.ID, nome: r["Título"]}, estado, patch: pend || (estado ? (cod === "FORM06" && r.fluxo.solic ? flxDeSolic(r.fluxo.solic.campos) : null) : flxPrefillInicial(cod, r)), auto: cod === "FORM06" && r.fluxo.solic && !estado ? flxCaminhos(flxDeSolic(r.fluxo.solic.campos)) : [], ro: !podeEditar() || pmo});
   } else if (m.t === "buscar") {
     flxBuscarIr(r, cod, m.estado);
   } else if (m.t === "draft") {

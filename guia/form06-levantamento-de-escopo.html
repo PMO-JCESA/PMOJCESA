@@ -974,6 +974,7 @@ buildStatic();$('#btnFinish').onclick=finish;$('#btnFinish2').onclick=finish;fil
       const s = src[k], d = dst[k];
       if (vazio(s)) return;
       if (d === undefined) return;
+      if (Array.isArray(d) && Array.isArray(s) && (k === 'prem' || k === 'rest' || k === 'sh')) { s.forEach((x, i) => { if (d[i] && x && typeof x === 'object') fillEmpty(d[i], x); }); return; }
       if (Array.isArray(d)) { const vz = k === 'req' && typeof emptyReq === 'function' ? d.every(emptyReq) : vazio(d); if (vz) dst[k] = JSON.parse(JSON.stringify(s)); return; }
       if (d && typeof d === 'object' && s && typeof s === 'object') { fillEmpty(d, s); return; }
       if (vazio(d)) dst[k] = s;
@@ -999,7 +1000,7 @@ buildStatic();$('#btnFinish').onclick=finish;$('#btnFinish2').onclick=finish;fil
     + '#gdBr b{font-weight:700}#gdBr .gdn{flex:1;min-width:200px}#gdBr button{font:inherit;font-weight:600;padding:6px 12px;border-radius:8px;border:1px solid #2b7f8e;background:#fff;color:#1d6573;cursor:pointer}'
     + '#gdBr button:hover{background:#e3f1f4}#gdBr .gdro{color:#8a5a00;font-weight:700}'
     + 'body.gd-ro main input,body.gd-ro main textarea,body.gd-ro main select{pointer-events:none;background:#f4f6f8}body.gd-ro main button:not(.tab){pointer-events:none;opacity:.55}'
-    + '.gd-aviso{display:block;color:#b3261e;font-size:11.5px;font-weight:600;margin-top:3px}.gd-pdfbox{display:grid;gap:10px;margin:12px 0}.gd-pdfbox .st{border:1px solid #cdd7dd;border-radius:10px;padding:10px 12px;background:#fafcfd}.gd-pdfbox .st b{display:block;margin-bottom:4px}'
+    + '.gd-auto{box-shadow:inset 3px 0 0 #3B82F6!important;background-color:#f0f6ff!important}.gdauto{color:#1d4f9c}.gd-aviso{display:block;color:#b3261e;font-size:11.5px;font-weight:600;margin-top:3px}.gd-pdfbox{display:grid;gap:10px;margin:12px 0}.gd-pdfbox .st{border:1px solid #cdd7dd;border-radius:10px;padding:10px 12px;background:#fafcfd}.gd-pdfbox .st b{display:block;margin-bottom:4px}'
     + '.gd-pdfbox .ok{color:#17803d;font-weight:700}.gd-pdfbox .err{color:#b3261e;font-weight:700}';
   document.head.appendChild(css);
 
@@ -1010,7 +1011,7 @@ buildStatic();$('#btnFinish').onclick=finish;$('#btnFinish2').onclick=finish;fil
       const h = document.querySelector('header.topbar');
       if (h) h.insertAdjacentElement('afterend', b); else document.body.prepend(b);
     }
-    b.innerHTML = '<div class="gdn">Projeto: <b>' + esc(projNome) + '</b> · ligado ao portal' + (ro ? ' · <span class="gdro">somente leitura</span>' : '') + '</div>'
+    b.innerHTML = '<div class="gdn">Projeto: <b>' + esc(projNome) + '</b> · ligado ao portal' + (ro ? ' · <span class="gdro">somente leitura</span>' : '') + (autoN ? '<br><span class="gdauto"><b id="gdAutoN">' + autoN + '</b> campo(s) preenchidos a partir da solicitação, marcados em azul: revise e ajuste o que precisar.</span>' : '') + '</div>'
       + (ro ? '' : (COD === 'FORM06' ? '' : '<button type="button" id="gdBuscar" title="Preencher com informações de um documento de referência">Buscar informações</button>') + '<button type="button" id="gdRasc" title="Guarda o que já foi preenchido, sem concluir">Salvar rascunho no portal</button>');
     const bb = document.getElementById('gdBuscar'); if (bb) bb.onclick = () => { post({t: 'buscar', estado: JSON.parse(JSON.stringify(S))}); limpo(); };
     const br = document.getElementById('gdRasc'); if (br) br.onclick = () => { post({t: 'draft', estado: JSON.parse(JSON.stringify(S))}); limpo(); };
@@ -1085,6 +1086,14 @@ buildStatic();$('#btnFinish').onclick=finish;$('#btnFinish2').onclick=finish;fil
     Object.keys(MAPA).forEach(p => { const el = document.querySelector('[data-path="' + p + '"]'); if (el) { el.setAttribute('list', 'gdl-' + MAPA[p]); el.setAttribute('autocomplete', 'off'); } });
     const tn = document.getElementById('tNome'); if (tn) tn.setAttribute('list', 'gdl-pes');
   }
+  let autoN = 0;
+  function marcarAuto(paths){
+    if (!paths || !paths.length) return;
+    const ok = [];
+    paths.forEach(p => { const el = document.querySelector('[data-path="' + p + '"]'); if (el && String(el.value || '').trim()) { el.classList.add('gd-auto'); el.title = 'Preenchido a partir da solicitação. Revise e ajuste.'; ok.push(p); } });
+    autoN = ok.length; barra();
+  }
+  document.addEventListener('input', e => { if (e.target.classList && e.target.classList.contains('gd-auto')) { e.target.classList.remove('gd-auto'); e.target.removeAttribute('title'); autoN = document.querySelectorAll('.gd-auto').length; const n = document.getElementById('gdAutoN'); if (n) n.textContent = autoN; } }, true);
   function revisar(){
     if (!CAD) return;
     Object.keys(MAPA).forEach(p => { const el = document.querySelector('[data-path="' + p + '"]'); if (!el) return; const v = String(el.value || '').trim(); aviso(el, v && canon(MAPA[p], v) === null ? msgFora(v, MAPA[p]) : ''); });
@@ -1138,6 +1147,7 @@ buildStatic();$('#btnFinish').onclick=finish;$('#btnFinish2').onclick=finish;fil
       refresh();
       listas(); revisar();
       barra();
+      marcarAuto(m.auto);
       const a = document.querySelector('.gpback');
       if (a) { a.dataset.gdHash = '#/gestao/' + (m.proj ? m.proj.id : ''); a.textContent = '← Documentos do projeto'; }
       if (!ro) {
