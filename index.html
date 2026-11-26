@@ -927,19 +927,50 @@ body:not(.ro) .sr-wrap .sr-f[data-sr-edit]:hover,body:not(.ro) .sr-wrap .sr-av[d
 .dem-linha:hover td{background:color-mix(in srgb,var(--teal) 10%,transparent)}
 .dem-linha.on td{background:color-mix(in srgb,var(--teal) 18%,transparent)}
 .dem-det{margin-top:14px}
-.dem-ind{margin:0 0 14px}.dem-ind>summary{cursor:pointer;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding:8px 2px}.dem-ind[open]>summary{margin-bottom:8px}
+.dem-ind{margin:14px 0}
+.dcrit input:not([type=checkbox]),.dcrit select{width:100%;box-sizing:border-box;font:inherit;font-size:13px;padding:7px 9px;border-radius:8px;border:1px solid var(--line);background:var(--surface3);color:var(--hi)}.dcrit th:nth-child(1){width:52px!important}.dcrit th:nth-child(2){width:26%!important}.dcrit th:nth-child(3){width:74px!important}.dcrit th:nth-child(5){width:48px}
+.dcats{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px}
+.dcat{font:inherit;font-size:12.5px;font-weight:700;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface2);color:var(--hi);cursor:pointer}
+.dcat b{margin-left:4px;color:var(--muted)}.dcat.on{background:var(--teal);border-color:var(--teal);color:#fff}.dcat.on b{color:#fff}
+.dpr{border:1px solid var(--line);border-radius:16px;padding:16px 18px;margin:0 0 14px;background:linear-gradient(135deg,color-mix(in srgb,var(--teal) 14%,var(--surface2)),var(--surface2))}
+.dpr-h{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-bottom:12px}
+.dpr-h h3{margin:0 0 4px;font-size:17px}.dpr-h p{margin:0;font-size:12.5px;color:var(--muted)}.dpr-h p b{color:var(--hi)}
+.dpr-acts{display:flex;gap:8px;flex-wrap:wrap}
+.dpr-top{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.dpr-card{display:flex;gap:10px;align-items:flex-start;text-align:left;font:inherit;color:inherit;background:var(--surface3);border:1px solid var(--line);border-radius:12px;padding:10px;cursor:pointer;min-width:0}
+.dpr-card:hover{border-color:var(--teal-l)}
+.dpr-n{flex:0 0 24px;height:24px;border-radius:50%;background:var(--teal);color:#fff;font-weight:800;font-size:12px;display:grid;place-items:center}
+.dpr-b{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.dpr-t{font-weight:700;font-size:13px;line-height:1.25;color:var(--hi);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.dpr-m{font-size:11px;color:var(--muted)}
+.dkb-sc{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:48px;padding:5px 6px;border-radius:10px;border:1px solid currentColor;line-height:1.1}
+.dkb-sc b{font-size:16px}.dkb-sc small{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;opacity:.85}
+.dkb-sc.a{color:#4cc38a;background:rgba(76,195,138,.1)}.dkb-sc.m{color:#e7b24a;background:rgba(231,178,74,.1)}.dkb-sc.b,.dkb-sc.n{color:#9aa4b8;background:rgba(154,164,184,.08)}
+.dkb-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.dkb-m{font-size:11.5px;color:var(--muted)}
+.dkb-crit{font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:999px;background:color-mix(in srgb,var(--teal) 22%,transparent);color:var(--hi)}
+.dkb-crit.tx{background:transparent;border:1px dashed var(--line);color:var(--muted)}
+.dem-ov{position:fixed;inset:0;background:rgba(5,10,25,.55);z-index:58}
+#demDetalhe:not(:empty){position:fixed;top:0;right:0;bottom:0;width:min(640px,100%);overflow:auto;z-index:59;background:var(--surface);border-left:1px solid var(--line);box-shadow:-20px 0 60px rgba(0,0,0,.4);padding:14px}
+#demDetalhe .dem-det{margin:0;border:0;box-shadow:none}
+#demDetalhe .dem-dl{grid-template-columns:170px 1fr}
+#demDetalhe .dem-form{grid-template-columns:1fr}
+.dem-dh{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.dpr-det-h{display:flex;gap:12px;align-items:flex-start;margin-bottom:10px}
+@media (max-width:1300px){.dpr-top{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:800px){.dpr-top{grid-template-columns:1fr}}.dem-ind>summary{cursor:pointer;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding:8px 2px}.dem-ind[open]>summary{margin-bottom:8px}
 .dem-tb{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .dem-tb select{font:inherit;font-size:13px;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface3);color:var(--hi)}
 .dem-tg{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--muted);font-weight:600}
 .dem-vis{margin-left:auto;display:flex;gap:6px}.dem-vis .btn.on{background:var(--teal);color:#fff;border-color:var(--teal)}
 .dkb{display:flex;gap:12px;overflow-x:auto;padding:2px 2px 10px;align-items:flex-start}
-.dkb-col{flex:0 0 272px;background:var(--surface2);border:1px solid var(--line);border-radius:14px;padding:10px;max-height:78vh;overflow:auto}
+.dkb-col{flex:1 1 270px;min-width:270px;background:var(--surface2);border:1px solid var(--line);border-radius:14px;padding:10px;max-height:78vh;overflow:auto}
 .dkb-h{display:flex;justify-content:space-between;align-items:center;margin:2px 4px 10px;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--hi)}
 .dkb-h small{font-weight:700;color:var(--muted);background:var(--surface3);border-radius:999px;padding:1px 8px}
-.dkb-card{display:block;width:100%;text-align:left;font:inherit;color:inherit;background:var(--surface3);border:1px solid var(--line);border-left:4px solid var(--c,#7D879C);border-radius:12px;padding:10px 11px;margin:0 0 8px;cursor:pointer}
+.dkb-card{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;font:inherit;color:inherit;background:var(--surface3);border:1px solid var(--line);border-radius:12px;padding:10px 11px;margin:0 0 8px;cursor:pointer}
 .dkb-card:hover{border-color:var(--teal-l)}.dkb-card.on{outline:2px solid var(--teal-l)}
-.dkb-top{display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:11px;color:var(--muted);font-weight:700}
-.dkb-t{display:block;margin:5px 0 7px;font-weight:700;font-size:13.5px;color:var(--hi);line-height:1.3}
+.dkb-top{font-size:11px;color:var(--muted);font-weight:700}
+.dkb-t{display:block;margin:0;font-weight:700;font-size:13.5px;color:var(--hi);line-height:1.3}
 .dkb-chips{display:flex;flex-wrap:wrap;gap:5px}
 .dkb-chip{font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:999px;background:rgba(255,255,255,.07);border:1px solid var(--line);color:var(--hi)}
 .dkb-f{display:flex;justify-content:space-between;margin-top:8px;font-size:11px;color:var(--muted)}
@@ -1280,12 +1311,14 @@ button.btn.sm.on{background:var(--teal);color:#fff}
       <div class="acts"><span class="note" id="demStatus" style="margin:0"></span><button class="btn" id="demAtualizar">Atualizar agora</button></div></div>
     <div id="demResumo"></div>
     <div id="demPrio"></div>
+    <div class="dcats" id="demCats"></div>
     <div class="toolbar dem-tb"><input type="search" id="demBusca" placeholder="Buscar por título, setor, status, tipo ou categoria…" aria-label="Buscar demandas">
-      <select id="demFCat" aria-label="Filtrar por categoria"><option value="">Todas as categorias</option></select>
       <select id="demFSetor" aria-label="Filtrar por setor"><option value="">Todos os setores</option></select>
       <label class="dem-tg"><input type="checkbox" id="demFEnc"> Mostrar encerradas</label>
       <div class="dem-vis"><button type="button" class="btn sm on" data-dem-vis="kanban">Kanban</button><button type="button" class="btn sm" data-dem-vis="lista">Lista</button></div></div>
     <div id="demTabela"></div>
+    <div id="demInd"></div>
+    <div class="dem-ov" id="demOv" hidden></div>
     <div id="demDetalhe"></div>
   </section>
 
@@ -4894,10 +4927,10 @@ const DEM_CAMPOS = {
   token: ["Token de complemento", "TokenAjuste", "Token"],
   dados: ["Dados do formulário", "DadosSistema", "DadosFormulario"],
   tipo: ["Tipo"], setor: ["Setor"], prio: ["Prioridade"], benef: ["Benefício estratégico", "BeneficioEstrategico"],
-  tec: ["Análise técnica", "AnaliseTecnica"], cat: ["Categoria", "CategoriaPMO"]
+  cat: ["Categoria", "CategoriaPMO"]
 };
 /* Campos mostrados em outro bloco ou que pertencem aos fluxos (não entram em "Dados da solicitação") */
-const DEM_FORA_DADOS = ["tec", "cat", "status", "just", "orient", "info", "notif", "desde", "decPor", "decEm", "ultJust", "ultOrient", "hist", "pdf", "token", "dados"];
+const DEM_FORA_DADOS = ["cat", "status", "just", "orient", "info", "notif", "desde", "decPor", "decEm", "ultJust", "ultOrient", "hist", "pdf", "token", "dados"];
 const DEM_OCULTAS = ["TokenAjuste", "DadosSistema", "AuthorLookupId", "EditorLookupId", "ContentType", "ContentTypeId", "Edit", "AppAuthor", "AppEditor", "Modified", "Created", "ID", "Title", "LinkTitle", "LinkTitleNoMenu", "Attachments", "Author", "Editor", "ItemChildCount", "FolderChildCount", "ComplianceAssetId", "DocIcon"];
 let demColunas = [], demCache = {};
 const demNorm = t => String(t || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
@@ -5045,6 +5078,7 @@ function demAvisaNovas(){
 function demRender(){
   demAtualizarBadge();
   const resumo = $("demResumo");
+  $("demInd").innerHTML = ""; $("demCats").innerHTML = ""; $("demPrio").innerHTML = "";
   if (perfil() !== "admin") { resumo.innerHTML = `<div class="card empty">Área exclusiva do Administrador.</div>`; $("demTabela").innerHTML = ""; $("demDetalhe").innerHTML = ""; return; }
   if (!spLigado()) { resumo.innerHTML = `<div class="card empty">Entre com sua conta Microsoft (indicador do topo) para ver as demandas.</div>`; $("demTabela").innerHTML = ""; $("demDetalhe").innerHTML = ""; return; }
   if (!demItens.length) { resumo.innerHTML = `<div class="card empty">Nenhuma demanda cadastrada na lista ainda.</div>`; $("demTabela").innerHTML = ""; $("demDetalhe").innerHTML = ""; return; }
@@ -5064,7 +5098,8 @@ function demRender(){
       ${kc("Em atraso", atraso, "mais de 5 dias em análise ou 30 em backlog", "var(--st3)")}
       ${kc("Encerradas", encerr, "reprovadas, canceladas ou convertidas", "var(--st4)")}
     </div>
-    <details class="dem-ind"${demIndAberto ? " open" : ""}><summary>Indicadores (status, tipo, setor, mês e benefício)</summary><div class="dg-grid">
+    `;
+  $("demInd").innerHTML = `<details class="dem-ind"${demIndAberto ? " open" : ""}><summary>Indicadores (status, tipo, setor, mês e benefício)</summary><div class="dg-grid">
       <div class="dg-card"><h4>Demandas por status</h4>${demBarras(demAgrupa("status"))}</div>
       <div class="dg-card"><h4>Demandas por tipo</h4>${demBarras(demAgrupa("tipo"))}</div>
       <div class="dg-card"><h4>Demandas por setor</h4>${demBarras(demAgrupa("setor").slice(0, 8))}</div>
@@ -5077,18 +5112,27 @@ function demRender(){
   demRenderDetalhe();
 }
 /* ================= Priorização das demandas =================
-   Nota = peso do benefício estratégico (o maior, se houver vários) ÷ análise técnica (Alto 3, Médio 2, Baixo 1).
-   Mostrada com uma casa decimal (sem arredondar para inteiro), para não empatar notas diferentes. */
-const DEM_PESOS = [
-  [/requisito legal|legal|legislac|\blei\b|regulat|obrigac/, 5, "Requisito legal"],
-  [/reduc\w* de custo|custo/, 5, "Redução de custos"],
-  [/receita/, 4, "Aumento de receita"],
-  [/auditoria|compliance/, 3, "Auditoria"],
-  [/produtividade/, 2, "Aumento de produtividade"],
-  [/diferencial/, 2, "Diferencial estratégico"]
+   Critérios configuráveis (Demandas › Critérios de priorização). Cada critério tem peso (0 a 5) e palavras-chave.
+   Para cada demanda o portal lê o campo Benefício estratégico e o texto da solicitação:
+   - critério marcado no campo Benefício estratégico: conta o peso inteiro;
+   - critério só citado no texto (necessidade, objetivos, retorno…): conta metade do peso.
+   Pontos = soma. Faixas relativas ao maior peso (W): Alta ≥ W, Média ≥ W/2, Baixa abaixo. */
+const DEM_CRIT_KEY = "portal_pmo_criterios_prioridade";
+const DEM_CRIT_PADRAO = [
+  {nome: "Requisito legal", peso: 5, chaves: "requisito legal, legislação, lei, obrigação legal, fiscal, regulatório, lgpd, sped", ativo: true},
+  {nome: "Redução de custos", peso: 5, chaves: "redução de custo, reduzir custo, economia, custo, despesa, gasto, desperdício", ativo: true},
+  {nome: "Aumento de receita", peso: 4, chaves: "aumento de receita, receita, faturamento, vendas, novos clientes, margem", ativo: true},
+  {nome: "Benefício organizacional", peso: 3, chaves: "benefício organizacional, auditoria, compliance, controle, rastreabilidade, segurança, qualidade, satisfação", ativo: true},
+  {nome: "Aumento de produtividade", peso: 2, chaves: "produtividade, automatizar, retrabalho, tempo, agilidade, manual, planilha", ativo: true},
+  {nome: "Diferencial estratégico", peso: 2, chaves: "diferencial estratégico, diferencial, inovação, competitivo, estratégia", ativo: true}
 ];
-const DEM_TEC = {alto: 3, medio: 2, baixo: 1};
-const DEM_TEC_OPC = ["Alto", "Médio", "Baixo"];
+function demCriterios(){
+  try { const j = JSON.parse(localStorage.getItem(DEM_CRIT_KEY) || "null"); if (Array.isArray(j) && j.length) return j; } catch (e) {}
+  return JSON.parse(JSON.stringify(DEM_CRIT_PADRAO));
+}
+function demCritSalvar(l){ try { localStorage.setItem(DEM_CRIT_KEY, JSON.stringify(l)); } catch (e) {} }
+const demChaves = c => String(c.chaves || "").split(",").map(x => demNorm(x)).filter(x => x.length >= 3).concat(demNorm(c.nome));
+const demRe = k => new RegExp("(^|[^a-z0-9])" + k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "");
 const DEM_CATS = [
   ["Compliance / Legal", /\blgpd\b|\blei\b|legisla|fiscal|\bsped\b|auditoria|compliance|norma regulament|regulat|obrigatori/],
   ["Integração", /integra|\bapi\b|interface entre|sincroniz|webservice|\bedi\b|importac\w* automatic|exportac\w* automatic/],
@@ -5099,29 +5143,39 @@ const DEM_CATS = [
   ["Melhoria de sistema", /melhoria|ajuste|alterac|correc|\bcampo\b|\btela\b|\berp\b|sistema/]
 ];
 const DEM_CAT_NOMES = DEM_CATS.map(c => c[0]).concat("Outros");
-let demIndAberto = false, demVis = "kanban", demFCat = "", demFSetor = "", demFEnc = false;
+let demIndAberto = false, demVis = "kanban", demFCat = "", demFSetor = "", demFEnc = false, demFVazias = false;
 const demFinal = it => DEM_FINAIS.includes(demStatus(it));
-function demBeneficio(it){
-  const lst = demLista(demValor(it, "benef"));
-  let melhor = null;
-  lst.forEach(b => { const n = demNorm(b); const p = DEM_PESOS.find(x => x[0].test(n)); if (p && (!melhor || p[1] > melhor.peso)) melhor = {peso: p[1], nome: p[2], orig: b}; });
-  return {lista: lst, melhor};
-}
-function demTecnica(it){ const t = demTxt(demValor(it, "tec")).trim(); const n = DEM_TEC[demNorm(t)]; return n ? {txt: t, n} : null; }
-function demNota(it){
-  const b = demBeneficio(it), t = demTecnica(it);
-  const nota = b.melhor && t ? b.melhor.peso / t.n : null;
-  return {ben: b, tec: t, nota};
-}
-const demNotaTxt = n => n == null ? "—" : n.toFixed(1).replace(".", ",");
-const demFaixa = n => n == null ? "n" : n >= 3 ? "a" : n >= 1.5 ? "m" : "b";
-const DEM_FAIXA_TXT = {a: "Alta", m: "Média", b: "Baixa", n: "Sem nota"};
 function demTextoTodo(it){
-  const c = it.campos;
+  const c = it.campos, ben = demAchar("benef");
   const partes = [demTxt(c.Title)];
-  Object.keys(c).forEach(k => { if (!/^(@|_)|LookupId$|Token|odata/.test(k)) { const v = c[k]; if (typeof v === "string" && v.length < 20000) partes.push(v); else if (Array.isArray(v)) partes.push(v.join(" ")); } });
+  Object.keys(c).forEach(k => { if (ben && k === ben.name) return; if (!/^(@|_)|LookupId$|Token|odata/.test(k)) { const v = c[k]; if (typeof v === "string" && v.length < 20000) partes.push(demTexto(v)); else if (Array.isArray(v)) partes.push(v.join(" ")); } });
   return demNorm(partes.join(" \n "));
 }
+const demValores = t => [...new Set((String(t).match(/r\$\s?\d[\d.]*(,\d+)?(\s?(mil|milh\w*|k)\b)?/gi) || []).map(x => x.replace(/\s+/g, " ").replace(/^r\$/i, "R$").trim()))].slice(0, 3);
+const demCache2 = new Map();
+function demNota(it){
+  const chave = it.id + "|" + it.alterado + "|" + (localStorage.getItem(DEM_CRIT_KEY) || "");
+  if (demCache2.has(chave)) return demCache2.get(chave);
+  const crit = demCriterios().filter(c => c.ativo !== false && +c.peso > 0);
+  const benLista = demLista(demValor(it, "benef")).map(demNorm);
+  const texto = demTextoTodo(it);
+  const itens = [];
+  crit.forEach(c => {
+    const ks = demChaves(c);
+    const noCampo = benLista.some(b => ks.some(k => b.includes(k) || k.includes(b)));
+    const noTexto = !noCampo && ks.some(k => demRe(k).test(texto));
+    if (noCampo || noTexto) itens.push({nome: c.nome, peso: +c.peso, fonte: noCampo ? "campo" : "texto", pts: noCampo ? +c.peso : +c.peso / 2});
+  });
+  itens.sort((a, b) => b.pts - a.pts);
+  const pts = itens.reduce((a, x) => a + x.pts, 0);
+  const r = {itens, pts, valores: demValores(Object.values(it.campos).filter(v => typeof v === "string").map(demTexto).join(" "))};
+  demCache2.set(chave, r);
+  return r;
+}
+const demPesoMax = () => Math.max(1, ...demCriterios().filter(c => c.ativo !== false).map(c => +c.peso || 0));
+const demNotaTxt = n => (Math.round(n * 10) / 10).toFixed(1).replace(".", ",");
+const demFaixa = n => { const W = demPesoMax(); return !n ? "n" : n >= W ? "a" : n >= W / 2 ? "m" : "b"; };
+const DEM_FAIXA_TXT = {a: "Alta", m: "Média", b: "Baixa", n: "Sem critério"};
 function demCatAuto(it){
   const t = demTextoTodo(it);
   let best = "Outros", bn = 0;
@@ -5131,29 +5185,27 @@ function demCatAuto(it){
 function demCategoria(it){ const m = demTxt(demValor(it, "cat")).trim(); return m ? {nome: m, auto: false} : {nome: demCatAuto(it), auto: true}; }
 function demOrdenar(a, b){
   const na = demNota(a), nb = demNota(b);
-  if ((na.nota == null) !== (nb.nota == null)) return na.nota == null ? 1 : -1;
-  if (na.nota !== nb.nota) return (nb.nota || 0) - (na.nota || 0);
-  const pa = na.ben.melhor ? na.ben.melhor.peso : 0, pb = nb.ben.melhor ? nb.ben.melhor.peso : 0;
-  if (pa !== pb) return pb - pa;
+  if (na.pts !== nb.pts) return nb.pts - na.pts;
+  const ma = na.itens[0] ? na.itens[0].peso : 0, mb = nb.itens[0] ? nb.itens[0].peso : 0;
+  if (ma !== mb) return mb - ma;
   return (demDias(b) || 0) - (demDias(a) || 0);
 }
-function demJustificativa(it){
-  const {ben, tec, nota} = demNota(it), st = demStatus(it), d = demDias(it);
+function demJustificativa(it, curta){
+  const n = demNota(it), st = demStatus(it), d = demDias(it);
   const p = [];
-  if (!ben.melhor) p.push(ben.lista.length ? `Benefício "${ben.lista.join(", ")}" sem peso definido nos critérios.` : "Sem benefício estratégico informado.");
-  if (!tec) p.push("Falta a análise técnica do PMO (Alto, Médio ou Baixo) para calcular a nota.");
-  if (nota != null) {
-    p.push(`Peso ${ben.melhor.peso} (${ben.melhor.nome}) ÷ análise técnica ${tec.txt} (${tec.n}) = ${demNotaTxt(nota)}.`);
-    if (ben.melhor.peso >= 4 && tec.n === 1) p.push("Alto benefício com baixa complexidade: vitória rápida, atacar primeiro.");
-    else if (ben.melhor.peso >= 4 && tec.n === 3) p.push("Alto benefício, mas complexidade alta: tratar como projeto planejado, com escopo e orçamento.");
-    else if (ben.melhor.peso >= 4) p.push("Alto benefício com complexidade moderada: boa candidata para o próximo ciclo.");
-    else if (tec.n === 1) p.push("Benefício menor e baixa complexidade: encaixar em janelas da equipe.");
-    else if (tec.n === 3) p.push("Benefício menor e complexidade alta: reavaliar se compensa ou reduzir o escopo.");
-    else p.push("Benefício e complexidade médios: manter no backlog priorizado.");
+  if (!n.itens.length) p.push("Nenhum critério de priorização identificado no benefício ou no texto da solicitação.");
+  else {
+    p.push(n.itens.map(x => `${x.nome} (${x.fonte === "campo" ? "peso " + x.peso : "citado no texto: " + demNotaTxt(x.pts)})`).join(" + ") + ` = ${demNotaTxt(n.pts)} pontos.`);
+    const top = n.itens[0];
+    if (!curta) {
+      if (top.fonte === "campo" && top.peso >= 4) p.push(`Benefício principal de alto impacto: ${top.nome.toLowerCase()}.`);
+      if (n.itens.length >= 3) p.push("Atende vários critérios ao mesmo tempo.");
+      if (n.itens.every(x => x.fonte === "texto")) p.push("Os critérios vêm só do texto: confirme o benefício estratégico com o solicitante.");
+    }
   }
-  if (ben.melhor && ben.lista.length > 1) p.push(`Considerado o maior peso entre: ${ben.lista.join(", ")}.`);
-  if (demBloqueado(st)) p.push("Está bloqueada aguardando o complemento do solicitante: não atacar até a resposta.");
-  if (d != null) p.push(`${d} ${d === 1 ? "dia" : "dias"} em "${st || "—"}"${demAtrasado(it) ? " (atrasada)" : ""}.`);
+  if (n.valores.length && !curta) p.push("Valores citados: " + n.valores.join(", ") + ".");
+  if (demBloqueado(st)) p.push("Bloqueada: aguarda o complemento do solicitante.");
+  if (d != null && !curta) p.push(`${d} ${d === 1 ? "dia" : "dias"} em "${st || "—"}"${demAtrasado(it) ? " (atrasada)" : ""}.`);
   return p.join(" ");
 }
 function demFiltrados(){
@@ -5163,87 +5215,105 @@ function demFiltrados(){
     const cat = demCategoria(it).nome, setor = demTxt(demValor(it, "setor"));
     if (demFCat && cat !== demFCat) return false;
     if (demFSetor && setor !== demFSetor) return false;
-    if (q && !demNorm([it.campos.Title, setor, demStatus(it), demValor(it, "tipo"), demValor(it, "prio"), cat, "#" + (it.campos.ID || it.id)].map(demTxt).join(" ")).includes(q)) return false;
+    if (q && !demNorm([it.campos.Title, setor, demStatus(it), demValor(it, "tipo"), cat, "#" + (it.campos.ID || it.id)].map(demTxt).join(" ")).includes(q)) return false;
     return true;
   });
 }
 function demPreencherFiltros(){
-  const cs = [...new Set(demItens.map(it => demCategoria(it).nome))].sort((a, b) => DEM_CAT_NOMES.indexOf(a) - DEM_CAT_NOMES.indexOf(b));
   const ss = [...new Set(demItens.map(it => demTxt(demValor(it, "setor"))).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR"));
-  const fc = $("demFCat"), fs = $("demFSetor");
-  if (fc) fc.innerHTML = `<option value="">Todas as categorias</option>` + cs.map(c => `<option ${c === demFCat ? "selected" : ""}>${esc(c)}</option>`).join("");
+  const fs = $("demFSetor");
   if (fs) fs.innerHTML = `<option value="">Todos os setores</option>` + ss.map(c => `<option ${c === demFSetor ? "selected" : ""}>${esc(c)}</option>`).join("");
+  const base = demItens.filter(it => demFEnc || !demFinal(it));
+  const cont = {};
+  base.forEach(it => { const c = demCategoria(it).nome; cont[c] = (cont[c] || 0) + 1; });
+  const cs = Object.keys(cont).sort((a, b) => DEM_CAT_NOMES.indexOf(a) - DEM_CAT_NOMES.indexOf(b));
+  const bx = $("demCats");
+  if (bx) bx.innerHTML = `<button type="button" class="dcat${demFCat ? "" : " on"}" data-dem-cat="">Todas <b>${base.length}</b></button>` + cs.map(c => `<button type="button" class="dcat${demFCat === c ? " on" : ""}" data-dem-cat="${esc(c)}">${esc(c)} <b>${cont[c]}</b></button>`).join("");
+}
+function demCritTags(n, max){
+  return n.itens.slice(0, max || 3).map(x => `<span class="dkb-crit${x.fonte === "texto" ? " tx" : ""}" title="${x.fonte === "campo" ? "Benefício estratégico informado" : "Citado no texto da solicitação (meio peso)"}">${esc(x.nome)}</span>`).join("") + (n.itens.length > (max || 3) ? `<span class="dkb-crit tx">+${n.itens.length - (max || 3)}</span>` : "");
 }
 function demCardHtml(it){
-  const c = it.campos, st = demStatus(it), {ben, tec, nota} = demNota(it), cat = demCategoria(it), d = demDias(it), f = demFaixa(nota);
-  return `<button type="button" class="dkb-card${demSel === it.id ? " on" : ""}" style="--c:${demCorStatus(st)}" data-dem="${esc(it.id)}">
-    <span class="dkb-top"><span>#${esc(c.ID || it.id)}${demPendenteFluxo(it) ? ` <span class="dem-tag">e-mail pendente</span>` : ""}</span><span class="dsc ${f}" title="${f === "n" ? "Sem nota: falta benefício com peso ou análise técnica" : "Nota de prioridade: " + DEM_FAIXA_TXT[f]}">${f === "n" ? "sem nota" : demNotaTxt(nota)}</span></span>
-    <span class="dkb-t">${esc(demTxt(c.Title) || "—")}</span>
-    <span class="dkb-chips"><span class="dkb-chip" title="${cat.auto ? "Categoria sugerida pelo portal" : "Categoria definida pelo PMO"}">${esc(cat.nome)}${cat.auto ? " ·auto" : ""}</span>${demTxt(demValor(it, "setor")) ? `<span class="dkb-chip">${esc(demTxt(demValor(it, "setor")))}</span>` : ""}${demTxt(demValor(it, "tipo")) ? `<span class="dkb-chip">${esc(demTxt(demValor(it, "tipo")))}</span>` : ""}</span>
-    <span class="dkb-f"><span>${esc(ben.melhor ? ben.melhor.nome : (ben.lista[0] || "sem benefício"))} · técnica ${esc(tec ? tec.txt : "—")}</span><span>${d == null ? "" : d + "d"}${demAtrasado(it) ? ` <span class="dem-tag atr">atrasada</span>` : ""}</span></span>
+  const c = it.campos, st = demStatus(it), n = demNota(it), cat = demCategoria(it), d = demDias(it), f = demFaixa(n.pts);
+  const setor = demTxt(demValor(it, "setor")), tipo = demTxt(demValor(it, "tipo"));
+  return `<button type="button" class="dkb-card${demSel === it.id ? " on" : ""}" data-dem="${esc(it.id)}">
+    <span class="dkb-sc ${f}" title="Prioridade ${DEM_FAIXA_TXT[f]}"><b>${n.pts ? demNotaTxt(n.pts) : "–"}</b><small>${DEM_FAIXA_TXT[f]}</small></span>
+    <span class="dkb-body">
+      <span class="dkb-top">#${esc(c.ID || it.id)} · ${esc(cat.nome)}${demAtrasado(it) ? ` <span class="dem-tag atr">atrasada</span>` : ""}${demPendenteFluxo(it) ? ` <span class="dem-tag">e-mail pendente</span>` : ""}</span>
+      <span class="dkb-t">${esc(demTxt(c.Title) || "—")}</span>
+      <span class="dkb-m">${esc([setor, tipo].filter(Boolean).join(" · ") || "—")}${d == null ? "" : ` · ${d}d no status`}</span>
+      <span class="dkb-chips">${demCritTags(n, 2) || `<span class="dkb-crit tx">sem critério</span>`}</span>
+    </span>
   </button>`;
 }
 function demRenderKanban(lista){
   const abertos = DEM_STATUS.filter(x => !DEM_FINAIS.includes(x));
   const extras = [...new Set(lista.map(demStatus))].filter(x => x && !DEM_STATUS.includes(x));
-  const cols = abertos.concat(extras).map(stt => ({nome: stt, itens: lista.filter(it => demStatus(it) === stt)}));
+  let cols = abertos.concat(extras).map(stt => ({nome: stt, itens: lista.filter(it => demStatus(it) === stt)}));
   if (demFEnc) cols.push({nome: "Encerradas", itens: lista.filter(demFinal)});
   const semSt = lista.filter(it => !demStatus(it));
   if (semSt.length) cols.unshift({nome: "Sem status", itens: semSt});
-  return `<div class="dkb">${cols.filter(c => c.itens.length || abertos.includes(c.nome)).map(c => `<div class="dkb-col"><div class="dkb-h"><span><i class="dem-dot" style="background:${demCorStatus(c.nome)}"></i>${esc(c.nome)}</span><small>${c.itens.length}</small></div>${c.itens.sort(demOrdenar).map(demCardHtml).join("") || `<p class="note" style="margin:4px">Nenhuma.</p>`}</div>`).join("")}</div>`;
+  const vazias = cols.filter(c => !c.itens.length);
+  if (!demFVazias) cols = cols.filter(c => c.itens.length);
+  return `<div class="dkb">${cols.map(c => `<div class="dkb-col"><div class="dkb-h"><span><i class="dem-dot" style="background:${demCorStatus(c.nome)}"></i>${esc(c.nome)}</span><small>${c.itens.length}</small></div>${c.itens.sort(demOrdenar).map(demCardHtml).join("") || `<p class="note" style="margin:4px">Nenhuma.</p>`}</div>`).join("")}</div>
+    ${vazias.length ? `<p class="note" style="margin:4px 2px 0">${demFVazias ? "" : `Sem demandas em: ${vazias.map(c => esc(c.nome)).join(", ")}. `}<a href="#" class="pf-link" data-dem-vazias>${demFVazias ? "Ocultar colunas vazias" : "Mostrar colunas vazias"}</a></p>` : ""}`;
 }
 function demRenderPrio(){
   const box = $("demPrio"); if (!box) return;
   if (perfil() !== "admin" || !spLigado() || !demItens.length) { box.innerHTML = ""; return; }
   const abertas = demItens.filter(it => !demFinal(it) && !demBloqueado(demStatus(it)));
-  const top = abertas.filter(it => demNota(it).nota != null).sort(demOrdenar).slice(0, 5);
-  const semTec = demItens.filter(it => !demFinal(it) && !demTecnica(it)).length;
-  const temCol = !demColunas.length || (demAchar("tec") && demAchar("cat"));
-  const porCat = {};
-  demItens.filter(it => !demFinal(it)).forEach(it => { const c = demCategoria(it).nome; porCat[c] = (porCat[c] || 0) + 1; });
-  const cats = Object.entries(porCat).sort((a, b) => b[1] - a[1]);
-  box.innerHTML = `<div class="dem-prio">
-    <div class="dg-card"><h4>Atacar primeiro · maiores notas (benefício ÷ análise técnica)</h4>
-      ${top.length ? `<ol>${top.map(it => { const n = demNota(it); return `<li><a href="#" data-dem-ir="${esc(it.id)}" class="pf-link">#${esc(it.campos.ID || it.id)} ${esc(demTxt(it.campos.Title))}</a> <span class="dsc ${demFaixa(n.nota)}">${demNotaTxt(n.nota)}</span><small>${esc(demJustificativa(it))}</small></li>`; }).join("")}</ol>` : `<p class="note" style="margin:0">Nenhuma demanda aberta com nota ainda. Preencha a <b>análise técnica</b> nas demandas (no detalhe de cada card) para o portal calcular a prioridade.</p>`}
-      <div class="dem-prio-acts"><button type="button" class="btn primary" id="demAnalisar">Analisar priorização</button><button type="button" class="btn" id="demExportar" title="Arquivo para a Skill de priorização do Claude">Exportar para análise (Claude)</button></div>
-      ${semTec ? `<p class="note" style="margin:8px 0 0">${semTec} demanda(s) aberta(s) sem análise técnica: ficam sem nota.</p>` : ""}
-      ${temCol ? "" : `<p class="note" style="margin:8px 0 0;color:var(--st2)">A lista ainda não tem as colunas <b>Análise técnica</b> e <b>Categoria</b>. <button type="button" class="btn sm" id="demCriarCols">Criar colunas na lista</button></p>`}
-    </div>
-    <div class="dg-card"><h4>Demandas abertas por categoria</h4>${demBarras(cats.map(([l, n], i) => ({l, n, c: DEM_CORES[i % DEM_CORES.length]})))}</div>
-  </div>`;
+  const top = abertas.filter(it => demNota(it).pts > 0).sort(demOrdenar).slice(0, 5);
+  const crit = demCriterios().filter(c => c.ativo !== false && +c.peso > 0).sort((a, b) => b.peso - a.peso);
+  box.innerHTML = `<section class="dpr">
+    <div class="dpr-h"><div><h3>Prioridades sugeridas</h3><p>Pontos pelos critérios: ${crit.map(c => `${esc(c.nome)} <b>${c.peso}</b>`).join(" · ")}</p></div>
+      <div class="dpr-acts"><button type="button" class="btn" id="demCrit">Critérios de priorização</button><button type="button" class="btn" id="demExportar" title="Arquivo para a Skill de priorização do Claude">Exportar para o Claude</button><button type="button" class="btn primary" id="demAnalisar">Analisar priorização</button></div></div>
+    ${top.length ? `<div class="dpr-top">${top.map((it, i) => { const n = demNota(it); return `<button type="button" class="dpr-card" data-dem-ir="${esc(it.id)}"><span class="dpr-n">${i + 1}</span><span class="dpr-b"><span class="dpr-t">${esc(demTxt(it.campos.Title))}</span><span class="dpr-m">#${esc(it.campos.ID || it.id)} · ${esc(demTxt(demValor(it, "setor")) || "—")}</span><span class="dkb-chips">${demCritTags(n, 2)}</span></span><span class="dkb-sc ${demFaixa(n.pts)}"><b>${demNotaTxt(n.pts)}</b><small>pontos</small></span></button>`; }).join("")}</div>`
+      : `<p class="note" style="margin:0">Nenhuma demanda aberta atende aos critérios. Revise os critérios ou o benefício estratégico das solicitações.</p>`}
+  </section>`;
 }
 function demAnaliseHtml(){
   const abertas = demItens.filter(it => !demFinal(it));
-  const com = abertas.filter(it => demNota(it).nota != null).sort(demOrdenar);
-  const sem = abertas.filter(it => demNota(it).nota == null);
-  const bloq = com.filter(it => demBloqueado(demStatus(it)));
-  const prontas = com.filter(it => !demBloqueado(demStatus(it)));
-  const faixa = f => prontas.filter(it => demFaixa(demNota(it).nota) === f);
-  const linha = (it, i) => { const n = demNota(it), cat = demCategoria(it); return `<tr><td>${i + 1}</td><td><b>#${esc(it.campos.ID || it.id)} ${esc(demTxt(it.campos.Title))}</b><br><small class="note" style="margin:0">${esc(cat.nome)} · ${esc(demTxt(demValor(it, "setor")) || "—")} · ${esc(demStatus(it))}</small></td><td><span class="dsc ${demFaixa(n.nota)}">${demNotaTxt(n.nota)}</span></td><td>${esc(demJustificativa(it))}</td></tr>`; };
-  const tabela = (lst, ini) => lst.length ? `<table class="dem-rank"><thead><tr><th>#</th><th>Demanda</th><th>Nota</th><th>Justificativa</th></tr></thead><tbody>${lst.map((it, i) => linha(it, i + ini)).join("")}</tbody></table>` : `<p class="note">Nenhuma.</p>`;
-  const a = faixa("a"), m = faixa("m"), b = faixa("b");
+  const prontas = abertas.filter(it => !demBloqueado(demStatus(it))).sort(demOrdenar);
+  const bloq = abertas.filter(it => demBloqueado(demStatus(it))).sort(demOrdenar);
+  const faixa = f => prontas.filter(it => demFaixa(demNota(it).pts) === f);
+  const linha = (it, i) => { const n = demNota(it), cat = demCategoria(it); return `<tr><td>${i + 1}</td><td><b>#${esc(it.campos.ID || it.id)} ${esc(demTxt(it.campos.Title))}</b><br><small class="note" style="margin:0">${esc(cat.nome)} · ${esc(demTxt(demValor(it, "setor")) || "—")} · ${esc(demStatus(it))}</small></td><td><span class="dsc ${demFaixa(n.pts)}">${n.pts ? demNotaTxt(n.pts) : "–"}</span></td><td>${esc(demJustificativa(it))}</td></tr>`; };
+  const tabela = (lst, ini) => lst.length ? `<table class="dem-rank"><thead><tr><th>#</th><th>Demanda</th><th>Pontos</th><th>Justificativa</th></tr></thead><tbody>${lst.map((it, i) => linha(it, i + ini)).join("")}</tbody></table>` : `<p class="note">Nenhuma.</p>`;
+  const a = faixa("a"), m = faixa("m"), b = faixa("b"), n = faixa("n"), W = demPesoMax();
   return `<h3>Análise de priorização das demandas</h3>
-    <p class="note" style="margin:0 0 10px">Nota = peso do benefício estratégico (Requisito legal 5, Redução de custos 5, Aumento de receita 4, Auditoria 3, Aumento de produtividade 2, Diferencial estratégico 2; vale o maior se houver vários) ÷ análise técnica (Alto 3, Médio 2, Baixo 1). Empates: maior peso de benefício e, depois, mais tempo esperando. ${abertas.length} demanda(s) aberta(s) analisadas.</p>
-    <h4>1. Atacar primeiro · nota alta (3,0 ou mais)</h4>${tabela(a, 0)}
-    <h4>2. Próximas · nota média (1,5 a 2,9)</h4>${tabela(m, a.length)}
-    <h4>3. Avaliar depois · nota baixa (abaixo de 1,5)</h4>${tabela(b, a.length + m.length)}
+    <p class="note" style="margin:0 0 10px">O portal leu o benefício estratégico e o texto de ${abertas.length} demanda(s) aberta(s). Critério marcado no benefício conta o peso inteiro; critério só citado no texto conta meio peso. Pontos = soma. Faixas: Alta a partir de ${W} pontos, Média a partir de ${demNotaTxt(W / 2)}. Empate: maior peso principal e, depois, mais tempo esperando.</p>
+    <h4>1. Atacar primeiro · prioridade alta</h4>${tabela(a, 0)}
+    <h4>2. Próximas · prioridade média</h4>${tabela(m, a.length)}
+    <h4>3. Avaliar depois · prioridade baixa</h4>${tabela(b, a.length + m.length)}
+    ${n.length ? `<h4>Sem critério identificado</h4>${tabela(n, a.length + m.length + b.length)}` : ""}
     ${bloq.length ? `<h4>Bloqueadas (aguardam o solicitante)</h4>${tabela(bloq, 0)}` : ""}
-    ${sem.length ? `<h4>Sem nota (completar)</h4><ul>${sem.map(it => `<li>#${esc(it.campos.ID || it.id)} ${esc(demTxt(it.campos.Title))}: ${esc(demJustificativa(it))}</li>`).join("")}</ul>` : ""}
-    <div class="flx-acts"><button type="button" class="btn" data-dem-exp>Exportar para análise (Claude)</button><button type="button" class="btn primary" data-dem-fechar>Fechar</button></div>`;
+    <div class="flx-acts"><button type="button" class="btn" data-dem-exp>Exportar para o Claude</button><button type="button" class="btn primary" data-dem-fechar>Fechar</button></div>`;
 }
+function demCritHtml(l){
+  return `<h3>Critérios de priorização</h3>
+    <p class="note" style="margin:0 0 10px">Peso de 0 a 5. O critério conta o peso inteiro quando aparece no campo Benefício estratégico e meio peso quando só é citado no texto da solicitação (palavras-chave separadas por vírgula). Fica salvo neste navegador.</p>
+    <table class="dem-rank dcrit"><thead><tr><th>Ativo</th><th>Critério</th><th>Peso</th><th>Palavras-chave no texto</th><th></th></tr></thead><tbody>
+    ${l.map((c, i) => `<tr data-crit="${i}"><td><input type="checkbox" name="ativo" ${c.ativo !== false ? "checked" : ""}></td><td><input name="nome" value="${esc(c.nome)}"></td><td><select name="peso">${[0, 1, 2, 3, 4, 5].map(p => `<option ${+c.peso === p ? "selected" : ""}>${p}</option>`).join("")}</select></td><td><input name="chaves" value="${esc(c.chaves || "")}"></td><td><button type="button" class="btn sm" data-crit-del="${i}" title="Excluir">✕</button></td></tr>`).join("")}
+    </tbody></table>
+    <div class="flx-acts"><button type="button" class="btn" data-crit-add>Adicionar critério</button><button type="button" class="btn" data-crit-padrao>Restaurar padrão</button><button type="button" class="btn" data-dem-fechar>Cancelar</button><button type="button" class="btn primary" data-crit-ok>Salvar critérios</button></div>`;
+}
+function demCritLer(){
+  return [...document.querySelectorAll("#flxModal [data-crit]")].map(tr => ({nome: tr.querySelector("[name=nome]").value.trim(), peso: +tr.querySelector("[name=peso]").value, chaves: tr.querySelector("[name=chaves]").value.trim(), ativo: tr.querySelector("[name=ativo]").checked})).filter(c => c.nome);
+}
+function demCritAbrir(l){ flxModal(demCritHtml(l)); const bx = document.querySelector("#flxModal .flx-box"); if (bx) bx.style.width = "min(1000px,100%)"; }
 function demExportar(){
   const camposTxt = it => {
     const o = {};
     (demColunas.length ? demColunas.filter(demMostra) : Object.keys(it.campos).map(k => ({name: k, displayName: k}))).forEach(col => { const t = demTexto(it.campos[col.name]); if (t && !/token/i.test(col.name)) o[col.displayName] = t; });
     return o;
   };
+  const crit = demCriterios();
   const dados = {
     gerado_em: new Date().toISOString(), origem: "Portal PMO · lista " + DEM_LISTA,
-    criterio: {formula: "nota = peso do benefício estratégico (maior, se vários) ÷ análise técnica", pesos_beneficio: Object.fromEntries(DEM_PESOS.map(p => [p[2], p[1]])), analise_tecnica: {Alto: 3, "Médio": 2, Baixo: 1}, faixas: {alta: ">= 3,0", media: "1,5 a 2,9", baixa: "< 1,5"}, desempate: ["maior peso de benefício", "mais dias no status"]},
+    criterios: {regra: "critério no campo Benefício estratégico = peso inteiro; só citado no texto = meio peso; pontos = soma", faixas: {alta: ">= " + demPesoMax(), media: ">= " + demPesoMax() / 2}, desempate: ["maior peso principal", "mais dias no status"], lista: crit},
     demandas: demItens.map(it => { const n = demNota(it), cat = demCategoria(it); return {
       id: String(it.campos.ID || it.id), titulo: demTxt(it.campos.Title), status: demStatus(it), encerrada: demFinal(it), bloqueada: demBloqueado(demStatus(it)),
-      setor: demTxt(demValor(it, "setor")), tipo: demTxt(demValor(it, "tipo")), beneficios: n.ben.lista, beneficio_considerado: n.ben.melhor ? n.ben.melhor.nome : null, peso_beneficio: n.ben.melhor ? n.ben.melhor.peso : null,
-      analise_tecnica: n.tec ? n.tec.txt : null, nota: n.nota == null ? null : Math.round(n.nota * 100) / 100, faixa: DEM_FAIXA_TXT[demFaixa(n.nota)],
+      setor: demTxt(demValor(it, "setor")), tipo: demTxt(demValor(it, "tipo")), beneficio_estrategico: demLista(demValor(it, "benef")),
+      criterios_atendidos: n.itens.map(x => ({criterio: x.nome, peso: x.peso, fonte: x.fonte, pontos: x.pts})), pontos: n.pts, faixa: DEM_FAIXA_TXT[demFaixa(n.pts)], valores_citados: n.valores,
       categoria: cat.nome, categoria_definida_pelo_pmo: !cat.auto, dias_no_status: demDias(it), atrasada: demAtrasado(it), criada_em: it.criado, justificativa_portal: demJustificativa(it), link: it.web || "", campos: camposTxt(it)}; })
   };
   const blob = new Blob([JSON.stringify(dados, null, 2)], {type: "application/json"});
@@ -5252,41 +5322,33 @@ function demExportar(){
 }
 async function demCriarColunas(){
   const id = await demObterListaId();
-  const defs = [];
-  if (!demAchar("tec")) defs.push({name: "AnaliseTecnica", displayName: "Análise técnica", choice: {choices: DEM_TEC_OPC, displayAs: "dropDownMenu", allowTextEntry: false}});
-  if (!demAchar("cat")) defs.push({name: "CategoriaPMO", displayName: "Categoria", choice: {choices: DEM_CAT_NOMES, displayAs: "dropDownMenu", allowTextEntry: true}});
   try {
-    for (const d of defs) await gx("POST", `/sites/${spSt.siteId}/lists/${id}/columns`, d);
+    if (!demAchar("cat")) await gx("POST", `/sites/${spSt.siteId}/lists/${id}/columns`, {name: "CategoriaPMO", displayName: "Categoria", choice: {choices: DEM_CAT_NOMES, displayAs: "dropDownMenu", allowTextEntry: true}});
     demColunas = []; demCache = {}; await demCarregar(); demRender();
-    toast("Colunas criadas na lista SolicitacoesPMO.");
+    toast("Coluna Categoria criada na lista SolicitacoesPMO.");
   } catch (e) {
-    flxModal(`<h3>Não consegui criar as colunas</h3><p class="note">${esc(e.message || e)}</p><p>Crie manualmente na lista <b>SolicitacoesPMO</b> (Configurações da lista › Criar coluna):</p><ul><li><b>Análise técnica</b> · tipo Escolha · opções: Alto, Médio, Baixo</li><li><b>Categoria</b> · tipo Escolha · opções: ${DEM_CAT_NOMES.join(", ")} (permitir valores de preenchimento)</li></ul><div class="flx-acts"><button class="btn primary" data-dem-fechar>Fechar</button></div>`);
+    flxModal(`<h3>Não consegui criar a coluna</h3><p class="note">${esc(e.message || e)}</p><p>Crie manualmente na lista <b>SolicitacoesPMO</b>: coluna <b>Categoria</b>, tipo Escolha, opções ${DEM_CAT_NOMES.join(", ")} (permitir valores de preenchimento).</p><div class="flx-acts"><button class="btn primary" data-dem-fechar>Fechar</button></div>`);
   }
 }
 async function demSalvarPrio(){
   const it = demItens.find(x => x.id === demSel), f = $("demPForm");
   if (!it || !f) return;
-  const corpo = {};
-  const tec = f.elements.tec.value, cat = f.elements.cat.value;
-  if (tec !== demTxt(demValor(it, "tec")).trim()) { if (!demAchar("tec")) { toast('A lista não tem a coluna "Análise técnica". Use "Criar colunas na lista".'); return; } corpo[demNomeInterno("tec")] = tec || null; }
-  const catAtual = demTxt(demValor(it, "cat")).trim();
-  const catNova = cat === "__auto" ? "" : cat;
-  if (catNova !== catAtual) { if (!demAchar("cat")) { toast('A lista não tem a coluna "Categoria". Use "Criar colunas na lista".'); return; } corpo[demNomeInterno("cat")] = catNova || null; }
-  if (!Object.keys(corpo).length) { toast("Nenhuma alteração na priorização."); return; }
+  const cat = f.elements.cat.value, catNova = cat === "__auto" ? "" : cat;
+  if (catNova === demTxt(demValor(it, "cat")).trim()) { toast("Categoria sem alteração."); return; }
+  if (!demAchar("cat")) { flxModal(`<h3>Falta a coluna Categoria</h3><p>A lista SolicitacoesPMO ainda não tem a coluna <b>Categoria</b> para guardar a correção.</p><div class="flx-acts"><button class="btn" data-dem-fechar>Cancelar</button><button class="btn primary" id="demCriarCols">Criar coluna na lista</button></div>`); return; }
   try {
-    await gx("PATCH", `/sites/${spSt.siteId}/lists/${demListaId}/items/${it.id}/fields`, corpo);
-    toast(`Priorização da demanda #${it.campos.ID || it.id} salva (sem e-mail ao solicitante).`);
+    await gx("PATCH", `/sites/${spSt.siteId}/lists/${demListaId}/items/${it.id}/fields`, {[demNomeInterno("cat")]: catNova || null});
+    toast(`Categoria da demanda #${it.campos.ID || it.id} salva (sem e-mail ao solicitante).`);
     await demCarregar(); demRender();
   } catch (e) { toast("A lista recusou a alteração: " + (e.message || e)); }
 }
 function demPrioSecHtml(it){
-  const n = demNota(it), cat = demCategoria(it), tecAt = n.tec ? n.tec.txt : "";
-  return `<section class="dem-sec"><h4>Priorização</h4>
-    <p class="note" style="margin:0 0 10px">Nota: <span class="dsc ${demFaixa(n.nota)}">${demNotaTxt(n.nota)}</span> · ${esc(demJustificativa(it))}</p>
+  const n = demNota(it), cat = demCategoria(it), f = demFaixa(n.pts);
+  return `<section class="dem-sec dpr-det"><h4>Priorização</h4>
+    <div class="dpr-det-h"><span class="dkb-sc ${f}"><b>${n.pts ? demNotaTxt(n.pts) : "–"}</b><small>${DEM_FAIXA_TXT[f]}</small></span><div>${n.itens.length ? `<div class="dkb-chips" style="margin-bottom:6px">${demCritTags(n, 9)}</div>` : ""}<p class="note" style="margin:0">${esc(demJustificativa(it))}</p></div></div>
     <form id="demPForm" class="dem-pform">
-      <label>Análise técnica (complexidade)<select name="tec"><option value="">— não avaliada —</option>${DEM_TEC_OPC.map(o => `<option ${demNorm(o) === demNorm(tecAt) ? "selected" : ""}>${o}</option>`).join("")}</select></label>
       <label>Categoria<select name="cat"><option value="__auto" ${cat.auto ? "selected" : ""}>Automática (${esc(demCatAuto(it))})</option>${[...new Set(DEM_CAT_NOMES.concat(cat.auto ? [] : [cat.nome]))].map(o => `<option ${!cat.auto && o === cat.nome ? "selected" : ""}>${esc(o)}</option>`).join("")}</select></label>
-      <button type="submit" class="btn primary">Salvar priorização</button>
+      <button type="submit" class="btn">Salvar categoria</button>
     </form></section>`;
 }
 function demRenderTabela(){
@@ -5298,9 +5360,9 @@ function demRenderTabela(){
 function demRenderLista(){
   const lista = demFiltrados().sort(demOrdenar);
   $("demTabela").innerHTML = lista.length
-    ? `<div class="tbl-wrap"><table class="dir-tb"><thead><tr><th>ID</th><th>Título</th><th>Nota</th><th>Categoria</th><th>Status</th><th>No status</th><th>Tipo</th><th>Setor</th><th>Criada em</th><th>PDF</th></tr></thead><tbody>${lista.map(it => {
+    ? `<div class="tbl-wrap"><table class="dir-tb"><thead><tr><th>ID</th><th>Título</th><th>Pontos</th><th>Critérios</th><th>Categoria</th><th>Status</th><th>No status</th><th>Tipo</th><th>Setor</th><th>Criada em</th><th>PDF</th></tr></thead><tbody>${lista.map(it => {
         const c = it.campos, pdf = demUrl(demValor(it, "pdf")), st = demStatus(it), dias = demDias(it), atr = demAtrasado(it);
-        return `<tr class="dem-linha${demSel === it.id ? " on" : ""}${atr ? " atraso" : ""}" data-dem="${esc(it.id)}"><td>#${esc(c.ID || it.id)}</td><td>${esc(demTxt(c.Title) || "—")}</td><td><span class="dsc ${demFaixa(demNota(it).nota)}">${demNota(it).nota == null ? "sem nota" : demNotaTxt(demNota(it).nota)}</span></td><td>${esc(demCategoria(it).nome)}</td>`
+        return `<tr class="dem-linha${demSel === it.id ? " on" : ""}${atr ? " atraso" : ""}" data-dem="${esc(it.id)}"><td>#${esc(c.ID || it.id)}</td><td>${esc(demTxt(c.Title) || "—")}</td><td><span class="dsc ${demFaixa(demNota(it).pts)}">${demNota(it).pts ? demNotaTxt(demNota(it).pts) : "–"}</span></td><td><span class="dkb-chips">${demCritTags(demNota(it), 3)}</span></td><td>${esc(demCategoria(it).nome)}</td>`
           + `<td><i class="dem-dot" style="background:${demCorStatus(st)}"></i>${esc(st || "—")}${demPendenteFluxo(it) ? `<span class="dem-tag" title="O Fluxo 2 ainda não registrou esta decisão">e-mail pendente</span>` : ""}</td>`
           + `<td>${dias == null ? "—" : dias + (dias === 1 ? " dia" : " dias")}${atr ? `<span class="dem-tag atr">atrasado</span>` : ""}</td>`
           + `<td>${esc(demTxt(demValor(it, "tipo")) || "—")}</td><td>${esc(demTxt(demValor(it, "setor")) || "—")}</td><td>${demDataBR(it.criado)}</td>`
@@ -5310,6 +5372,7 @@ function demRenderLista(){
 }
 function demRenderDetalhe(){
   const it = demItens.find(x => x.id === demSel);
+  $("demOv").hidden = !it; document.body.classList.toggle("dem-aberto", !!it);
   if (!it) { $("demDetalhe").innerHTML = ""; return; }
   const c = it.campos;
   const st = demStatus(it), notif = demNotif(it), dias = demDias(it), desde = demDesde(it);
@@ -5359,7 +5422,7 @@ function demRenderDetalhe(){
     aviso = `<div class="dem-aviso"><b>E-mail pendente.</b> O Status (${esc(st)}) ainda é diferente do Status notificado (${esc(notif)}): o Fluxo 2 não terminou de registrar a decisão.${min > 10 ? " Já passaram mais de 10 minutos: confira se o fluxo está ligado." : " Costuma levar alguns segundos."}</div>`;
   }
   $("demDetalhe").innerHTML = `<div class="card dem-det">
-    <div class="dir-rh"><h3>Demanda #${esc(c.ID || it.id)} · ${esc(demTxt(c.Title) || "")}</h3>
+    <div class="dir-rh dem-dh"><h3>Demanda #${esc(c.ID || it.id)} · ${esc(demTxt(c.Title) || "")}</h3><button type="button" class="btn sm" data-dem-x title="Fechar">✕</button>
       ${it.web ? `<a class="btn" href="${esc(it.web)}" target="_blank" rel="noopener" title="Abre o item no SharePoint: anexos, histórico de versões e o botão Decidir da lista">Ver no SharePoint</a>` : ""}</div>
     ${aviso}
     ${demPrioSecHtml(it)}
@@ -5463,16 +5526,23 @@ $("demDetalhe").addEventListener("submit", e => {
 $("demAtualizar").addEventListener("click", () => demAtualizar(true));
 $("demBusca").addEventListener("input", e => { demBusca = e.target.value; demRenderTabela(); });
 document.addEventListener("toggle", e => { if (e.target.classList && e.target.classList.contains("dem-ind")) demIndAberto = e.target.open; }, true);
-$("demFCat").addEventListener("change", e => { demFCat = e.target.value; demRenderTabela(); });
 $("demFSetor").addEventListener("change", e => { demFSetor = e.target.value; demRenderTabela(); });
 $("demFEnc").addEventListener("change", e => { demFEnc = e.target.checked; demRenderTabela(); });
 document.addEventListener("click", e => {
   const v = e.target.closest("[data-dem-vis]"); if (v) { demVis = v.dataset.demVis; demRenderTabela(); return; }
-  const ir = e.target.closest("[data-dem-ir]"); if (ir) { e.preventDefault(); demSel = ir.dataset.demIr; demRenderTabela(); demRenderDetalhe(); const d = $("demDetalhe"); if (d) d.scrollIntoView({behavior: "smooth", block: "start"}); return; }
+  const ir = e.target.closest("[data-dem-ir]"); if (ir) { e.preventDefault(); demSel = ir.dataset.demIr; demRenderTabela(); demRenderDetalhe(); return; }
   if (e.target.closest("#demAnalisar")) { flxModal(demAnaliseHtml()); const bx = document.querySelector("#flxModal .flx-box"); if (bx) bx.style.width = "min(1100px,100%)"; return; }
   if (e.target.closest("#demExportar,[data-dem-exp]")) { demExportar(); return; }
   if (e.target.closest("#demCriarCols")) { demCriarColunas(); return; }
   if (e.target.closest("[data-dem-fechar]")) { flxFechar(); return; }
+  const ct = e.target.closest("[data-dem-cat]"); if (ct) { demFCat = ct.dataset.demCat; demRenderTabela(); return; }
+  if (e.target.closest("[data-dem-vazias]")) { e.preventDefault(); demFVazias = !demFVazias; demRenderTabela(); return; }
+  if (e.target.closest("#demCrit")) { demCritAbrir(demCriterios()); return; }
+  if (e.target.closest("[data-crit-add]")) { const l = demCritLer(); l.push({nome: "Novo critério", peso: 1, chaves: "", ativo: true}); demCritAbrir(l); return; }
+  const cd = e.target.closest("[data-crit-del]"); if (cd) { const l = demCritLer(); l.splice(+cd.dataset.critDel, 1); demCritAbrir(l); return; }
+  if (e.target.closest("[data-crit-padrao]")) { demCritAbrir(JSON.parse(JSON.stringify(DEM_CRIT_PADRAO))); return; }
+  if (e.target.closest("[data-crit-ok]")) { const l = demCritLer(); if (!l.length) { toast("Mantenha ao menos um critério."); return; } demCritSalvar(l); demCache2.clear(); flxFechar(); demRender(); toast("Critérios de priorização salvos."); return; }
+  if (e.target.closest("[data-dem-x]") || e.target.id === "demOv") { demSel = null; demRenderTabela(); demRenderDetalhe(); return; }
 });
 $("demDetalhe").addEventListener("submit", e => { if (e.target.id !== "demPForm") return; e.preventDefault(); if (perfil() !== "admin") return; demSalvarPrio(); });
 $("demTabela").addEventListener("click", e => {
@@ -5481,7 +5551,7 @@ $("demTabela").addEventListener("click", e => {
   demSel = demSel === l.dataset.dem ? null : l.dataset.dem;
   demRenderTabela();
   demRenderDetalhe();
-  if (demSel) { const d = $("demDetalhe"); if (d) d.scrollIntoView({behavior: "smooth", block: "start"}); }
+
 });
 setInterval(() => demAtualizar(false), DEM_INTERVALO);
 setTimeout(() => demAtualizar(false), 10000);
