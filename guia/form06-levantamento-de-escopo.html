@@ -966,7 +966,7 @@ buildStatic();$('#btnFinish').onclick=finish;$('#btnFinish2').onclick=finish;fil
 (function(){
   if (window.parent === window || typeof S === 'undefined' || typeof validate !== 'function' || typeof doPrint !== 'function' || typeof makeState !== 'function') return;
   const COD = (typeof CFG !== 'undefined' && CFG.form) || '';
-  let ro = false, ativo = false, projNome = '';
+  let ro = false, ativo = false, projNome = '', roMotivo = '';
   const post = m => { try { parent.postMessage(Object.assign({gd: 1, cod: COD}, m), '*'); } catch (e) {} };
   const vazio = v => v == null ? true : typeof v === 'string' ? (!v.trim() || v === 'Não executado') : Array.isArray(v) ? v.every(vazio) : typeof v === 'object' ? Object.values(v).every(vazio) : false;
   function fillEmpty(dst, src){
@@ -1011,7 +1011,7 @@ buildStatic();$('#btnFinish').onclick=finish;$('#btnFinish2').onclick=finish;fil
       const h = document.querySelector('header.topbar');
       if (h) h.insertAdjacentElement('afterend', b); else document.body.prepend(b);
     }
-    b.innerHTML = '<div class="gdn">Projeto: <b>' + esc(projNome) + '</b> · ligado ao portal' + (ro ? ' · <span class="gdro">somente leitura</span>' : '') + '</div>'
+    b.innerHTML = '<div class="gdn">Projeto: <b>' + esc(projNome) + '</b> · ligado ao portal' + (ro ? ' · <span class="gdro">somente leitura' + (roMotivo ? ': ' + esc(roMotivo) : '') + '</span>' : '') + '</div>'
       + (ro ? '' : (COD === 'FORM06' ? '' : '<button type="button" id="gdBuscar" title="Preencher com informações de um documento de referência">Buscar informações</button>') + '<button type="button" id="gdRasc" title="Guarda o que já foi preenchido, sem concluir">Salvar rascunho no portal</button>');
     const bb = document.getElementById('gdBuscar'); if (bb) bb.onclick = () => { post({t: 'buscar', estado: JSON.parse(JSON.stringify(S))}); limpo(); };
     const br = document.getElementById('gdRasc'); if (br) br.onclick = () => { post({t: 'draft', estado: JSON.parse(JSON.stringify(S))}); limpo(); };
@@ -1137,11 +1137,9 @@ buildStatic();$('#btnFinish').onclick=finish;$('#btnFinish2').onclick=finish;fil
     if (m.t === 'init') {
       if (m.cad) { CAD = m.cad; ro = !!m.ro; listas(); revisar(); }
       if (m.std) { const a0 = document.querySelector('.gpback'); if (a0) { a0.dataset.gdHash = '#/gestao/' + (m.proj ? m.proj.id : ''); a0.textContent = '← Documentos do projeto'; } return; }
-      ativo = true; spOn = !!m.sp; ro = !!m.ro; projNome = (m.proj && m.proj.nome) || '';
-      if (ro) {
-        document.body.classList.add('gd-ro');
-        document.addEventListener('beforeinput', ev => ev.preventDefault(), true);
-      }
+      ativo = true; spOn = !!m.sp; ro = !!m.ro; roMotivo = m.roMotivo || ''; projNome = (m.proj && m.proj.nome) || '';
+      document.addEventListener('beforeinput', ev => { if (ro) ev.preventDefault(); }, true);
+      if (ro) document.body.classList.add('gd-ro');
       if (m.estado) { const b = makeState(); assign(b, m.estado); S = b; }
       if (m.patch) fillEmpty(S, m.patch);
       refresh();
@@ -1154,6 +1152,11 @@ buildStatic();$('#btnFinish').onclick=finish;$('#btnFinish2').onclick=finish;fil
         try { askClear = function(){}; } catch (x) {}
       } else { [$('#btnFinish'), $('#btnFinish2')].forEach(b => { if (b) b.hidden = true; }); }
       limpo();
+    } else if (m.t === 'ro' && ativo) {
+      ro = !!m.ro; roMotivo = m.motivo || '';
+      document.body.classList.toggle('gd-ro', ro);
+      [$('#btnFinish'), $('#btnFinish2')].forEach(x => { if (x) { x.hidden = ro; if (!ro) { x.onclick = concluir; x.textContent = 'Concluir e enviar ao portal'; } } });
+      barra();
     } else if (m.t === 'patch' && ativo && !ro) {
       fillEmpty(S, m.patch || {});
       refresh();
