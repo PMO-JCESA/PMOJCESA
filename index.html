@@ -986,9 +986,9 @@ body:not(.ro) .sr-wrap .sr-f[data-sr-edit]:hover,body:not(.ro) .sr-wrap .sr-av[d
 .dem-pform{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end}
 .dem-pform label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;color:var(--muted)}
 .dem-pform select{font:inherit;font-size:13px;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface3);color:var(--hi)}
-.dem-rform{display:grid;grid-template-columns:200px 1fr auto;gap:12px;align-items:end;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}.dem-rform h5{grid-column:1/-1;margin:0}
+.dem-rform{display:grid;grid-template-columns:150px 1fr;gap:12px;align-items:end;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}.dem-rform h5{grid-column:1/-1;margin:0}.dem-rform label:nth-of-type(3),.dem-rform button{grid-column:1/-1}.dem-rform button{justify-self:end}
 .dem-rform label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;color:var(--muted)}
-.dem-rform select,.dem-rform textarea{font:inherit;font-size:13px;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface3);color:var(--hi);resize:vertical}
+.dem-rform input,.dem-rform select,.dem-rform textarea{font:inherit;font-size:13px;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface3);color:var(--hi);resize:vertical}
 .dem-rhist{margin-top:12px}.dem-rhist h5{margin:0 0 6px}.dem-rhist p{margin:0 0 6px;font-size:12.5px;padding:6px 10px;border-left:3px solid var(--teal);background:var(--surface3);border-radius:0 8px 8px 0}
 @media (max-width:1000px){.dem-prio{grid-template-columns:1fr}.dem-pform,.dem-rform{grid-template-columns:1fr}}
 .dem-dl{display:grid;grid-template-columns:240px 1fr;gap:7px 16px;font-size:13px;margin:0}
@@ -4949,6 +4949,7 @@ const DEM_CAMPOS = {
   decEm: ["Decidido em", "DecididoEm"],
   ultJust: ["Última justificativa", "UltimaJustificativa"],
   ultOrient: ["Última orientação", "UltimaOrientacao"],
+  notaPmo: ["Nota PMO", "NotaPMO"],
   prioPmo: ["Prioridade PMO", "PrioridadePMO"],
   reclass: ["Reclassificação PMO", "ReclassificacaoPMO"],
   hist: ["Histórico de decisões", "Histórico", "HistoricoDecisoes", "Historico"],
@@ -5187,7 +5188,7 @@ const demFinal = it => DEM_FINAIS.includes(demStatus(it));
 function demTextoTodo(it){
   const c = it.campos, ben = demAchar("benef"), pp = demAchar("prioPmo"), rcl = demAchar("reclass");
   const partes = [demTxt(c.Title)];
-  Object.keys(c).forEach(k => { if (ben && k === ben.name) return; if ((pp && k === pp.name) || (rcl && k === rcl.name) || /^(PrioridadePMO|ReclassificacaoPMO)$/.test(k)) return; if (!/^(@|_)|LookupId$|Token|odata/.test(k)) { const v = c[k]; if (typeof v === "string" && v.length < 20000) partes.push(demTexto(v)); else if (Array.isArray(v)) partes.push(v.join(" ")); } });
+  Object.keys(c).forEach(k => { if (ben && k === ben.name) return; if ((pp && k === pp.name) || (rcl && k === rcl.name) || (demAchar("notaPmo") && k === demAchar("notaPmo").name) || /^(PrioridadePMO|ReclassificacaoPMO|NotaPMO)$/.test(k)) return; if (!/^(@|_)|LookupId$|Token|odata/.test(k)) { const v = c[k]; if (typeof v === "string" && v.length < 20000) partes.push(demTexto(v)); else if (Array.isArray(v)) partes.push(v.join(" ")); } });
   return demNorm(partes.join(" \n "));
 }
 const demValores = t => [...new Set((String(t).match(/r\$\s?\d[\d.]*(,\d+)?(\s?(mil|milh\w*|k)\b)?/gi) || []).map(x => x.replace(/\s+/g, " ").replace(/^r\$/i, "R$").trim()))].slice(0, 3);
@@ -5202,12 +5203,16 @@ function demNota(it){
   crit.forEach(c => {
     const ks = demChaves(c);
     const noCampo = benLista.some(b => ks.some(k => b.includes(k) || k.includes(b)));
-    const noTexto = !noCampo && ks.some(k => demRe(k).test(texto));
-    if (noCampo || noTexto) itens.push({nome: c.nome, peso: +c.peso, fonte: noCampo ? "campo" : "texto", pts: noCampo ? +c.peso : +c.peso / 2});
+    const ach = [...new Set(ks.filter(k => demRe(k).test(texto)))];
+    /* texto: uma palavra solta e genérica não basta; exige uma expressão (2+ palavras) ou 2 palavras-chave diferentes */
+    const noTexto = !noCampo && ach.length > 0 && (ach.length >= 2 || ach.some(k => k.includes(" ")));
+    if (noCampo || noTexto) itens.push({nome: c.nome, peso: +c.peso, fonte: noCampo ? "campo" : "texto", pts: noCampo ? +c.peso : +c.peso / 2, ev: noCampo ? [] : ach.slice(0, 4)});
   });
   itens.sort((a, b) => b.pts - a.pts);
   const pts = itens.reduce((a, x) => a + x.pts, 0);
-  const r = {itens, pts, valores: demValores(Object.values(it.campos).filter(v => typeof v === "string").map(demTexto).join(" "))};
+  const nm = parseFloat(String(demTxt(demValor(it, "notaPmo"))).replace(",", "."));
+  const manual = isFinite(nm);
+  const r = {itens, calc: pts, pts: manual ? nm : pts, manual, valores: demValores(Object.values(it.campos).filter(v => typeof v === "string").map(demTexto).join(" "))};
   demCache2.set(chave, r);
   return r;
 }
@@ -5219,6 +5224,7 @@ const DEM_FAIXA_RANK = {a: 3, m: 2, b: 1, n: 0};
 const DEM_FAIXA_DE = t => { const x = demNorm(t); return x === "alta" ? "a" : x === "media" ? "m" : x === "baixa" ? "b" : ""; };
 const demFaixaCalc = it => demFaixa(demNota(it).pts);
 const demFaixaIt = it => DEM_FAIXA_DE(demTxt(demValor(it, "prioPmo"))) || demFaixaCalc(it);
+const demMotivo = h => String(h || "").split(" — Motivo: ")[1] || String(h || "");
 const demReclassHist = it => demTxt(demValor(it, "reclass")).split(/\n+/).map(x => x.trim()).filter(Boolean);
 function demCatAuto(it){
   const t = demTextoTodo(it);
@@ -5239,9 +5245,10 @@ function demOrdenar(a, b){
 function demJustificativa(it, curta){
   const n = demNota(it), st = demStatus(it), d = demDias(it);
   const p = [];
+  if (n.manual) { const h = demReclassHist(it)[0]; p.push(`Nota ajustada pelo PMO para ${demNotaTxt(n.pts)} (calculada pelos critérios: ${demNotaTxt(n.calc)}).${h ? " Motivo: " + demMotivo(h).replace(/[.\s]+$/, "") + "." : ""}`); }
   if (!n.itens.length) p.push("Nenhum critério de priorização identificado no benefício ou no texto da solicitação.");
   else {
-    p.push(n.itens.map(x => `${x.nome} (${x.fonte === "campo" ? "peso " + x.peso : "citado no texto: " + demNotaTxt(x.pts)})`).join(" + ") + ` = ${demNotaTxt(n.pts)} pontos.`);
+    p.push(n.itens.map(x => `${x.nome} (${x.fonte === "campo" ? "peso " + x.peso : "citado no texto: " + demNotaTxt(x.pts) + (x.ev && x.ev.length ? " ← “" + x.ev.join("”, “") + "”" : "")})`).join(" + ") + ` = ${demNotaTxt(n.calc)} pontos pelos critérios.`);
     const top = n.itens[0];
     if (!curta) {
       if (top.fonte === "campo" && top.peso >= 4) p.push(`Benefício principal de alto impacto: ${top.nome.toLowerCase()}.`);
@@ -5280,7 +5287,7 @@ function demCritTags(n, max){
   return n.itens.slice(0, max || 3).map(x => `<span class="dkb-crit${x.fonte === "texto" ? " tx" : ""}" title="${x.fonte === "campo" ? "Benefício estratégico informado" : "Citado no texto da solicitação (meio peso)"}">${esc(x.nome)}</span>`).join("") + (n.itens.length > (max || 3) ? `<span class="dkb-crit tx">+${n.itens.length - (max || 3)}</span>` : "");
 }
 function demCardHtml(it){
-  const c = it.campos, st = demStatus(it), n = demNota(it), cat = demCategoria(it), d = demDias(it), f = demFaixaIt(it), rc = f !== demFaixaCalc(it);
+  const c = it.campos, st = demStatus(it), n = demNota(it), cat = demCategoria(it), d = demDias(it), f = demFaixaIt(it), rc = f !== demFaixaCalc(it) || n.manual;
   const setor = demTxt(demValor(it, "setor")), tipo = demTxt(demValor(it, "tipo"));
   return `<button type="button" class="dkb-card${demSel === it.id ? " on" : ""}" data-dem="${esc(it.id)}">
     <span class="dkb-sc ${f}" title="Prioridade ${DEM_FAIXA_TXT[f]}${rc ? " (reclassificada pelo PMO; calculada: " + DEM_FAIXA_TXT[demFaixaCalc(it)] + ")" : ""}"><b>${n.pts ? demNotaTxt(n.pts) : "–"}</b><small>${DEM_FAIXA_TXT[f]}${rc ? " ✎" : ""}</small></span>
@@ -5324,7 +5331,7 @@ function demAnaliseHtml(){
   const prontas = abertas.filter(it => !demBloqueado(demStatus(it))).sort(demOrdenar);
   const bloq = abertas.filter(it => demBloqueado(demStatus(it))).sort(demOrdenar);
   const faixa = f => prontas.filter(it => demFaixaIt(it) === f);
-  const linha = (it, i) => { const n = demNota(it), cat = demCategoria(it); return `<tr><td>${i + 1}</td><td><b>#${esc(it.campos.ID || it.id)} ${esc(demTxt(it.campos.Title))}</b><br><small class="note" style="margin:0">${esc(cat.nome)} · ${esc(demTxt(demValor(it, "setor")) || "—")} · ${esc(demStatus(it))}</small></td><td><span class="dsc ${demFaixaIt(it)}">${n.pts ? demNotaTxt(n.pts) : "–"}</span></td><td>${esc(demJustificativa(it))}${demFaixaIt(it) !== demFaixaCalc(it) ? `<br><b>Reclassificada pelo PMO para ${DEM_FAIXA_TXT[demFaixaIt(it)]}:</b> ${esc((demReclassHist(it)[0] || "").replace(/^.*?:\s/, ""))}` : ""}</td></tr>`; };
+  const linha = (it, i) => { const n = demNota(it), cat = demCategoria(it); return `<tr><td>${i + 1}</td><td><b>#${esc(it.campos.ID || it.id)} ${esc(demTxt(it.campos.Title))}</b><br><small class="note" style="margin:0">${esc(cat.nome)} · ${esc(demTxt(demValor(it, "setor")) || "—")} · ${esc(demStatus(it))}</small></td><td><span class="dsc ${demFaixaIt(it)}">${n.pts ? demNotaTxt(n.pts) : "–"}</span></td><td>${esc(demJustificativa(it))}${demFaixaIt(it) !== demFaixaCalc(it) || n.manual ? `<br><b>Reclassificada pelo PMO${n.manual ? " (nota " + demNotaTxt(n.pts) + ")" : ""} para ${DEM_FAIXA_TXT[demFaixaIt(it)]}:</b> ${esc(demMotivo(demReclassHist(it)[0]))}` : ""}</td></tr>`; };
   const tabela = (lst, ini) => lst.length ? `<table class="dem-rank"><thead><tr><th>#</th><th>Demanda</th><th>Pontos</th><th>Justificativa</th></tr></thead><tbody>${lst.map((it, i) => linha(it, i + ini)).join("")}</tbody></table>` : `<p class="note">Nenhuma.</p>`;
   const a = faixa("a"), m = faixa("m"), b = faixa("b"), n = faixa("n"), W = demPesoMax();
   return `<h3>Análise de priorização das demandas</h3>
@@ -5361,7 +5368,7 @@ function demExportar(){
     demandas: demItens.map(it => { const n = demNota(it), cat = demCategoria(it); return {
       id: String(it.campos.ID || it.id), titulo: demTxt(it.campos.Title), status: demStatus(it), encerrada: demFinal(it), bloqueada: demBloqueado(demStatus(it)),
       setor: demTxt(demValor(it, "setor")), tipo: demTxt(demValor(it, "tipo")), beneficio_estrategico: demLista(demValor(it, "benef")),
-      criterios_atendidos: n.itens.map(x => ({criterio: x.nome, peso: x.peso, fonte: x.fonte, pontos: x.pts})), pontos: n.pts, faixa: DEM_FAIXA_TXT[demFaixaIt(it)], faixa_calculada: DEM_FAIXA_TXT[demFaixaCalc(it)], reclassificada_pelo_pmo: demFaixaIt(it) !== demFaixaCalc(it), historico_reclassificacao: demReclassHist(it), valores_citados: n.valores,
+      criterios_atendidos: n.itens.map(x => ({criterio: x.nome, peso: x.peso, fonte: x.fonte, pontos: x.pts, palavras_encontradas: x.ev || []})), pontos: n.pts, pontos_calculados: n.calc, nota_ajustada_pelo_pmo: n.manual, faixa: DEM_FAIXA_TXT[demFaixaIt(it)], faixa_calculada: DEM_FAIXA_TXT[demFaixaCalc(it)], reclassificada_pelo_pmo: demFaixaIt(it) !== demFaixaCalc(it) || n.manual, historico_reclassificacao: demReclassHist(it), valores_citados: n.valores,
       categoria: cat.nome, categoria_definida_pelo_pmo: !cat.auto, dias_no_status: demDias(it), atrasada: demAtrasado(it), criada_em: it.criado, justificativa_portal: demJustificativa(it), link: it.web || "", campos: camposTxt(it)}; })
   };
   const blob = new Blob([JSON.stringify(dados, null, 2)], {type: "application/json"});
@@ -5372,19 +5379,26 @@ let demCatPend = null, demRecPend = null;
 async function demReclassificar(){
   const it = demItens.find(x => x.id === demSel), f = $("demRForm");
   if (!it || !f) return;
-  const pr = f.elements.pr.value, just = f.elements.just.value.trim();
+  const n = demNota(it);
+  const pr = f.elements.pr.value, just = f.elements.just.value.trim(), notaTxt = f.elements.nota.value.trim().replace(",", ".");
   const atual = demTxt(demValor(it, "prioPmo")).trim(), nova = pr === "__auto" ? "" : pr;
-  if (nova === atual || (!nova && !atual)) { toast("A prioridade já está assim."); return; }
+  const notaNova = notaTxt === "" ? null : parseFloat(notaTxt);
+  if (notaTxt !== "" && !isFinite(notaNova)) { toast("Nota inválida."); return; }
+  const mudaPr = nova !== atual, mudaNota = (notaNova == null ? null : notaNova) !== (n.manual ? n.pts : null);
+  if (!mudaPr && !mudaNota) { toast("Nada foi alterado."); return; }
   if (just.length < 5) { toast("Escreva a justificativa da reclassificação."); f.elements.just.focus(); return; }
-  const calc = DEM_FAIXA_TXT[demFaixaCalc(it)], antes = DEM_FAIXA_TXT[demFaixaIt(it)];
-  const d = new Date(), pad = n => String(n).padStart(2, "0");
+  const d = new Date(), pad = x => String(x).padStart(2, "0");
   const quem = (sessao && sessao.nome) || "PMO";
-  const linha = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())} · ${quem} · ${antes} → ${nova || "automática (" + calc + ")"} (calculada: ${calc}): ${just.replace(/\s*\n+\s*/g, " ")}`;
-  const hist = [linha].concat(demReclassHist(it)).join("\n");
-  const campos = {prioPmo: nova || null, reclass: hist};
-  if (!demAchar("prioPmo") || !demAchar("reclass")) {
+  const mud = [];
+  if (mudaNota) mud.push(`Nota ${demNotaTxt(n.pts)} → ${notaNova == null ? "calculada (" + demNotaTxt(n.calc) + ")" : demNotaTxt(notaNova)} (critérios: ${demNotaTxt(n.calc)})`);
+  if (mudaPr) mud.push(`Prioridade ${DEM_FAIXA_TXT[demFaixaIt(it)]} → ${nova || "automática"}`);
+  const linha = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())} · ${quem} · ${mud.join("; ")} — Motivo: ${just.replace(/\s*\n+\s*/g, " ")}`;
+  const campos = {reclass: [linha].concat(demReclassHist(it)).join("\n")};
+  if (mudaPr) campos.prioPmo = nova || null;
+  if (mudaNota) campos.notaPmo = notaNova;
+  if (Object.keys(campos).some(k => !demAchar(k))) {
     demRecPend = {id: it.id, num: it.campos.ID || it.id, campos};
-    flxModal(`<h3>Faltam colunas na lista</h3><p>Para guardar a reclassificação a lista SolicitacoesPMO precisa das colunas <b>Prioridade PMO</b> e <b>Reclassificação PMO</b>. Clique em <b>Criar colunas na lista</b>: o portal cria e já salva esta reclassificação.</p><div class="flx-acts"><button class="btn" data-dem-fechar>Cancelar</button><button class="btn primary" id="demCriarCols">Criar colunas na lista</button></div>`);
+    flxModal(`<h3>Faltam colunas na lista</h3><p>Para guardar a reclassificação a lista SolicitacoesPMO precisa das colunas <b>Nota PMO</b>, <b>Prioridade PMO</b> e <b>Reclassificação PMO</b>. Clique em <b>Criar colunas na lista</b>: o portal cria as que faltam e já salva esta reclassificação.</p><div class="flx-acts"><button class="btn" data-dem-fechar>Cancelar</button><button class="btn primary" id="demCriarCols">Criar colunas na lista</button></div>`);
     return;
   }
   try {
@@ -5400,13 +5414,14 @@ async function demCriarColunas(){
     const id = await demObterListaId();
     if (!demRecPend && !demAchar("cat")) await gx("POST", `/sites/${spSt.siteId}/lists/${id}/columns`, {name: "CategoriaPMO", displayName: "Categoria", choice: {choices: DEM_CAT_NOMES, displayAs: "dropDownMenu", allowTextEntry: true}});
     if (demRecPend) {
-      if (!demAchar("prioPmo")) await gx("POST", `/sites/${spSt.siteId}/lists/${id}/columns`, {name: "PrioridadePMO", displayName: "Prioridade PMO", choice: {choices: ["Alta", "Média", "Baixa"], displayAs: "dropDownMenu"}});
+      if (!demAchar("prioPmo") && ("prioPmo" in demRecPend.campos)) await gx("POST", `/sites/${spSt.siteId}/lists/${id}/columns`, {name: "PrioridadePMO", displayName: "Prioridade PMO", choice: {choices: ["Alta", "Média", "Baixa"], displayAs: "dropDownMenu"}});
+      if (!demAchar("notaPmo") && ("notaPmo" in demRecPend.campos)) await gx("POST", `/sites/${spSt.siteId}/lists/${id}/columns`, {name: "NotaPMO", displayName: "Nota PMO", number: {decimalPlaces: "one"}});
       if (!demAchar("reclass")) await gx("POST", `/sites/${spSt.siteId}/lists/${id}/columns`, {name: "ReclassificacaoPMO", displayName: "Reclassificação PMO", text: {allowMultipleLines: true, textType: "plain"}});
     }
     demColunas = []; demCache = {}; await demCarregar();
     flxFechar();
     const rp = demRecPend; demRecPend = null;
-    if (rp && demAchar("prioPmo") && demAchar("reclass")) {
+    if (rp && Object.keys(rp.campos).every(k => demAchar(k))) {
       const corpo = {}; Object.keys(rp.campos).forEach(k => { corpo[demNomeInterno(k)] = rp.campos[k]; });
       await gx("PATCH", `/sites/${spSt.siteId}/lists/${demListaId}/items/${rp.id}/fields`, corpo);
       await demCarregar(); demRender();
@@ -5423,7 +5438,7 @@ async function demCriarColunas(){
   } catch (e) {
     const perm = e.status === 403 || /denied|forbidden|acesso negado|insufficient/i.test(e.message || "");
     flxModal(`<h3>Não consegui criar a coluna</h3><p class="note">${perm ? "Sua conta não tem permissão para alterar a estrutura da lista pelo portal (o SharePoint exige permissão de proprietário do site)." : "O SharePoint respondeu: " + esc(e.message || e)}</p>
-      ${demRecPend ? `<p>Crie manualmente, uma única vez, na lista <b>SolicitacoesPMO</b> (+ Adicionar coluna): <b>Prioridade PMO</b> (Escolha: Alta, Média, Baixa) e <b>Reclassificação PMO</b> (Várias linhas de texto). Depois clique em Atualizar agora e reclassifique de novo.</p>` : ""}<p>Crie manualmente, uma única vez:</p>
+      ${demRecPend ? `<p>Crie manualmente, uma única vez, na lista <b>SolicitacoesPMO</b> (+ Adicionar coluna): <b>Nota PMO</b> (Número, 1 casa decimal), <b>Prioridade PMO</b> (Escolha: Alta, Média, Baixa) e <b>Reclassificação PMO</b> (Várias linhas de texto). Depois clique em Atualizar agora e reclassifique de novo.</p>` : ""}<p>Crie manualmente, uma única vez:</p>
       ${demRecPend ? "" : `      <ol><li>Abra a lista <b>SolicitacoesPMO</b> no SharePoint.</li><li>Clique em <b>+ Adicionar coluna</b> › <b>Escolha</b>.</li><li>Nome: <b>Categoria</b>.</li><li>Opções: ${DEM_CAT_NOMES.map(esc).join(", ")}.</li><li>Ative <b>Permitir valores de preenchimento manual</b> e salve.</li></ol>
       <p class="note">Depois clique em Atualizar agora no portal e salve a categoria de novo.</p>`}
       <div class="flx-acts"><button class="btn primary" data-dem-fechar>Fechar</button></div>`);
@@ -5442,14 +5457,15 @@ async function demSalvarPrio(){
   } catch (e) { toast("A lista recusou a alteração: " + (e.message || e)); }
 }
 function demPrioSecHtml(it){
-  const n = demNota(it), cat = demCategoria(it), f = demFaixaIt(it), calc = demFaixaCalc(it), rc = f !== calc, hist = demReclassHist(it);
+  const n = demNota(it), cat = demCategoria(it), f = demFaixaIt(it), calc = demFaixaCalc(it), rc = f !== calc || n.manual, hist = demReclassHist(it);
   return `<section class="dem-sec dpr-det"><h4>Priorização</h4>
-    <div class="dpr-det-h"><span class="dkb-sc ${f}"><b>${n.pts ? demNotaTxt(n.pts) : "–"}</b><small>${DEM_FAIXA_TXT[f]}${rc ? " ✎" : ""}</small></span><div>${rc ? `<p class="note" style="margin:0 0 6px"><b>Reclassificada pelo PMO</b> (calculada pelos critérios: ${DEM_FAIXA_TXT[calc]}).</p>` : ""}${n.itens.length ? `<div class="dkb-chips" style="margin-bottom:6px">${demCritTags(n, 9)}</div>` : ""}<p class="note" style="margin:0">${esc(demJustificativa(it))}</p></div></div>
+    <div class="dpr-det-h"><span class="dkb-sc ${f}"><b>${n.pts ? demNotaTxt(n.pts) : "–"}</b><small>${DEM_FAIXA_TXT[f]}${rc ? " ✎" : ""}</small></span><div>${rc ? `<p class="note" style="margin:0 0 6px"><b>Reclassificada pelo PMO</b> (calculada pelos critérios: ${demNotaTxt(n.calc)} pontos · ${DEM_FAIXA_TXT[demFaixa(n.calc)]}).</p>` : ""}${n.itens.length ? `<div class="dkb-chips" style="margin-bottom:6px">${demCritTags(n, 9)}</div>` : ""}<p class="note" style="margin:0">${esc(demJustificativa(it))}</p></div></div>
     <form id="demPForm" class="dem-pform">
       <label>Categoria<select name="cat"><option value="__auto" ${cat.auto ? "selected" : ""}>Automática (${esc(demCatAuto(it))})</option>${[...new Set(DEM_CAT_NOMES.concat(cat.auto ? [] : [cat.nome]))].map(o => `<option ${!cat.auto && o === cat.nome ? "selected" : ""}>${esc(o)}</option>`).join("")}</select></label>
       <button type="submit" class="btn">Salvar categoria</button>
     </form>
-    ${perfil() === "admin" ? `<form id="demRForm" class="dem-rform"><h5>Reclassificar prioridade</h5>
+    ${perfil() === "admin" ? `<form id="demRForm" class="dem-rform"><h5>Reclassificar nota e prioridade</h5>
+      <label>Nota final (pontos)<input name="nota" type="number" step="0.5" min="0" max="30" value="${n.manual ? n.pts : ""}" placeholder="calculada: ${demNotaTxt(n.calc)}"></label>
       <label>Nova prioridade<select name="pr"><option value="__auto" ${!demTxt(demValor(it, "prioPmo")) ? "selected" : ""}>Automática (${DEM_FAIXA_TXT[calc]})</option>${["Alta", "Média", "Baixa"].map(o => `<option ${demTxt(demValor(it, "prioPmo")) && DEM_FAIXA_DE(demTxt(demValor(it, "prioPmo"))) === DEM_FAIXA_DE(o) ? "selected" : ""}>${o}</option>`).join("")}</select></label>
       <label>Justificativa (obrigatória)<textarea name="just" rows="3" placeholder="Ex.: risco de acidente na operação, decisão da diretoria…"></textarea></label>
       <button type="submit" class="btn primary">Reclassificar</button></form>` : ""}
