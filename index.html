@@ -964,7 +964,7 @@ body:not(.ro) .sr-wrap .sr-f[data-sr-edit]:hover,body:not(.ro) .sr-wrap .sr-av[d
 .dem-tg{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--muted);font-weight:600}
 .dem-vis{margin-left:auto;display:flex;gap:6px}.dem-vis .btn.on{background:var(--teal);color:#fff;border-color:var(--teal)}
 .dkb{display:flex;gap:12px;overflow-x:auto;padding:2px 2px 10px;align-items:flex-start}
-.dkb-col{flex:1 1 270px;min-width:270px;background:var(--surface2);border:1px solid var(--line);border-radius:14px;padding:10px;max-height:78vh;overflow:auto}
+.dkb-col{flex:1 1 220px;min-width:220px;background:var(--surface2);border:1px solid var(--line);border-radius:14px;padding:10px;max-height:78vh;overflow:auto}
 .dkb-h{display:flex;justify-content:space-between;align-items:center;margin:2px 4px 10px;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--hi)}
 .dkb-h small{font-weight:700;color:var(--muted);background:var(--surface3);border-radius:999px;padding:1px 8px}
 .dkb-card{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;font:inherit;color:inherit;background:var(--surface3);border:1px solid var(--line);border-radius:12px;padding:10px 11px;margin:0 0 8px;cursor:pointer}
@@ -1168,6 +1168,27 @@ body:not(.ro) .sr-wrap .sr-f[data-sr-edit]:hover,body:not(.ro) .sr-wrap .sr-av[d
 .flx-refs{display:grid;gap:8px}
 .flx-ref{display:grid;gap:2px;text-align:left;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer;font:inherit}
 .flx-ref:hover{border-color:var(--teal)}.flx-ref small{color:var(--muted,#9aa4b5)}
+
+/* Tema claro: contraste das etiquetas e do guia da fase */
+:root.claro .flx-badge{background:#E3E8F1;color:#1B2740;border:1px solid rgba(12,27,56,.18)}
+:root.claro .flx-badge.ok{background:#D5EEDD;color:#14532D;border-color:#8CC9A3}
+:root.claro .flx-badge.bloq{background:#E3E6EC;color:#3F4A60;border-color:#B5BCC9}
+:root.claro .flx-badge.and{background:#FBE9C8;color:#7A4A06;border-color:#E3BC72}
+:root.claro .flx-badge.disp{background:#D3ECF2;color:#0B4F5E;border-color:#7FC0CE}
+:root.claro .flx-badge.pmo,:root.claro .flx-badge.na{background:#E6E0F7;color:#43318A;border-color:#B7A8E6}
+:root.claro .flx-tag{color:#1B2740;border:1px solid rgba(12,27,56,.2)}
+:root.claro .flx-tag.ok{background:#D5EEDD;color:#14532D}:root.claro .flx-tag.pend{background:#FBE9C8;color:#7A4A06}
+:root.claro .flx-tag.ob{background:#E3E6EC;color:#3F4A60}:root.claro .flx-tag.rq{background:#E6E0F7;color:#43318A}
+:root.claro .flx-guia{background:#fff;border:1px solid rgba(12,27,56,.28);box-shadow:0 1px 3px rgba(12,27,56,.08)}
+:root.claro .flx-guia-h b,:root.claro .flx-doc b,:root.claro .flx-guia li b{color:#0C1B38}
+:root.claro .flx-guia-h span,:root.claro .flx-guia li small,:root.claro .flx-doc .flx-dm small,:root.claro .flx-guia .note{color:#3F4A60}
+:root.claro .flx-guia h5{color:#0C1B38;font-weight:800}
+:root.claro .flx-guia li,:root.claro .flx-doc{border-top-color:rgba(12,27,56,.22)}
+:root.claro .flx-guia li i,:root.claro .flx-steps li i{background:#D6DDEA;color:#0C1B38}
+:root.claro .flx-guia a:not(.btn){color:#0B5A6B;font-weight:600}
+.btn.sm.on[data-flx="guia-fase"]{background:var(--teal);color:#fff;border-color:var(--teal)}
+:root.claro .btn.sm.on[data-flx="guia-fase"]{background:#0B5A6B;color:#fff;border-color:#0B5A6B}
+:root.claro .flx-ck li:before{color:#2E7D4F}
 .flx-drline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 @media (max-width:700px){.flx-doc{grid-template-columns:1fr}.flx-doc .flx-da{grid-column:1}}
 .flx-guia{margin:0 0 12px;padding:12px 14px;border:1px solid var(--border);border-radius:12px;background:var(--surface2)}
@@ -1314,7 +1335,7 @@ button.btn.sm.on{background:var(--teal);color:#fff}
     <div class="dcats" id="demCats"></div>
     <div class="toolbar dem-tb"><input type="search" id="demBusca" placeholder="Buscar por título, setor, status, tipo ou categoria…" aria-label="Buscar demandas">
       <select id="demFSetor" aria-label="Filtrar por setor"><option value="">Todos os setores</option></select>
-      <label class="dem-tg"><input type="checkbox" id="demFEnc"> Mostrar encerradas</label>
+      <label class="dem-tg"><input type="checkbox" id="demFEnc"> Mostrar canceladas e convertidas</label>
       <div class="dem-vis"><button type="button" class="btn sm on" data-dem-vis="kanban">Kanban</button><button type="button" class="btn sm" data-dem-vis="lista">Lista</button></div></div>
     <div id="demTabela"></div>
     <div id="demInd"></div>
@@ -2864,8 +2885,10 @@ $("v-emails").addEventListener("change", e => {
 
 /* ================= ROTEADOR ================= */
 const fasesFechadas = new Set();
+let rotaMantemY = false;
 function route(){
   if (!sessao) { mostrarLogin(); return; }
+  const yAnt = window.scrollY, manter = rotaMantemY; rotaMantemY = false;
   if (autoMover() | flxReparar()) salvar();
   closeDrawer();
   if (typeof novoForm !== "undefined") novoForm = null;
@@ -2893,7 +2916,7 @@ function route(){
   else if (view === "perfil") renderPerfil();
   else if (view === "emails") renderEmails();
   $("v-" + view).classList.add("active");
-  window.scrollTo(0, 0);
+  window.scrollTo(0, manter ? yAnt : 0);
   if (view === "gestao-projeto" && idTarefa && acharTarefa(achar(id), idTarefa)) openDrawer(id, idTarefa);
 }
 
@@ -5211,7 +5234,7 @@ function demJustificativa(it, curta){
 function demFiltrados(){
   const q = demNorm(demBusca);
   return demItens.filter(it => {
-    if (!demFEnc && demFinal(it)) return false;
+    if (!demFEnc && demFinal(it) && demStatus(it) !== "Reprovado") return false;
     const cat = demCategoria(it).nome, setor = demTxt(demValor(it, "setor"));
     if (demFCat && cat !== demFCat) return false;
     if (demFSetor && setor !== demFSetor) return false;
@@ -5223,7 +5246,7 @@ function demPreencherFiltros(){
   const ss = [...new Set(demItens.map(it => demTxt(demValor(it, "setor"))).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR"));
   const fs = $("demFSetor");
   if (fs) fs.innerHTML = `<option value="">Todos os setores</option>` + ss.map(c => `<option ${c === demFSetor ? "selected" : ""}>${esc(c)}</option>`).join("");
-  const base = demItens.filter(it => demFEnc || !demFinal(it));
+  const base = demItens.filter(it => demFEnc || !demFinal(it) || demStatus(it) === "Reprovado");
   const cont = {};
   base.forEach(it => { const c = demCategoria(it).nome; cont[c] = (cont[c] || 0) + 1; });
   const cs = Object.keys(cont).sort((a, b) => DEM_CAT_NOMES.indexOf(a) - DEM_CAT_NOMES.indexOf(b));
@@ -5250,11 +5273,13 @@ function demRenderKanban(lista){
   const abertos = DEM_STATUS.filter(x => !DEM_FINAIS.includes(x));
   const extras = [...new Set(lista.map(demStatus))].filter(x => x && !DEM_STATUS.includes(x));
   let cols = abertos.concat(extras).map(stt => ({nome: stt, itens: lista.filter(it => demStatus(it) === stt)}));
-  if (demFEnc) cols.push({nome: "Encerradas", itens: lista.filter(demFinal)});
+  /* Reprovados sempre têm coluna própria; as demais encerradas só com "Mostrar encerradas" */
+  cols.push({nome: "Reprovado", itens: lista.filter(it => demStatus(it) === "Reprovado"), fixa: true});
+  if (demFEnc) cols.push({nome: "Outras encerradas", itens: lista.filter(it => demFinal(it) && demStatus(it) !== "Reprovado")});
   const semSt = lista.filter(it => !demStatus(it));
   if (semSt.length) cols.unshift({nome: "Sem status", itens: semSt});
-  const vazias = cols.filter(c => !c.itens.length);
-  if (!demFVazias) cols = cols.filter(c => c.itens.length);
+  const vazias = cols.filter(c => !c.itens.length && !c.fixa);
+  if (!demFVazias) cols = cols.filter(c => c.itens.length || c.fixa);
   return `<div class="dkb">${cols.map(c => `<div class="dkb-col"><div class="dkb-h"><span><i class="dem-dot" style="background:${demCorStatus(c.nome)}"></i>${esc(c.nome)}</span><small>${c.itens.length}</small></div>${c.itens.sort(demOrdenar).map(demCardHtml).join("") || `<p class="note" style="margin:4px">Nenhuma.</p>`}</div>`).join("")}</div>
     ${vazias.length ? `<p class="note" style="margin:4px 2px 0">${demFVazias ? "" : `Sem demandas em: ${vazias.map(c => esc(c.nome)).join(", ")}. `}<a href="#" class="pf-link" data-dem-vazias>${demFVazias ? "Ocultar colunas vazias" : "Mostrar colunas vazias"}</a></p>` : ""}`;
 }
@@ -5320,14 +5345,27 @@ function demExportar(){
   const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `demandas_priorizacao_${new Date().toISOString().slice(0, 10)}.json`; document.body.appendChild(a); a.click(); a.remove();
   toast("Arquivo exportado. Anexe-o na conversa com o Claude e peça a análise de priorização.");
 }
+let demCatPend = null;
 async function demCriarColunas(){
-  const id = await demObterListaId();
+  flxModal(`<h3>Criando a coluna Categoria…</h3><p class="note">Aguarde alguns segundos.</p>`);
   try {
+    const id = await demObterListaId();
     if (!demAchar("cat")) await gx("POST", `/sites/${spSt.siteId}/lists/${id}/columns`, {name: "CategoriaPMO", displayName: "Categoria", choice: {choices: DEM_CAT_NOMES, displayAs: "dropDownMenu", allowTextEntry: true}});
-    demColunas = []; demCache = {}; await demCarregar(); demRender();
-    toast("Coluna Categoria criada na lista SolicitacoesPMO.");
+    demColunas = []; demCache = {}; await demCarregar();
+    flxFechar();
+    const p = demCatPend; demCatPend = null;
+    if (p && demAchar("cat")) {
+      await gx("PATCH", `/sites/${spSt.siteId}/lists/${demListaId}/items/${p.id}/fields`, {[demNomeInterno("cat")]: p.cat || null});
+      await demCarregar();
+      toast(`Coluna Categoria criada e categoria da demanda #${p.num} salva.`);
+    } else toast("Coluna Categoria criada na lista SolicitacoesPMO.");
+    demRender();
   } catch (e) {
-    flxModal(`<h3>Não consegui criar a coluna</h3><p class="note">${esc(e.message || e)}</p><p>Crie manualmente na lista <b>SolicitacoesPMO</b>: coluna <b>Categoria</b>, tipo Escolha, opções ${DEM_CAT_NOMES.join(", ")} (permitir valores de preenchimento).</p><div class="flx-acts"><button class="btn primary" data-dem-fechar>Fechar</button></div>`);
+    const perm = e.status === 403 || /denied|forbidden|acesso negado|insufficient/i.test(e.message || "");
+    flxModal(`<h3>Não consegui criar a coluna</h3><p class="note">${perm ? "Sua conta não tem permissão para alterar a estrutura da lista pelo portal (o SharePoint exige permissão de proprietário do site)." : "O SharePoint respondeu: " + esc(e.message || e)}</p>
+      <p>Crie manualmente, uma única vez:</p>
+      <ol><li>Abra a lista <b>SolicitacoesPMO</b> no SharePoint.</li><li>Clique em <b>+ Adicionar coluna</b> › <b>Escolha</b>.</li><li>Nome: <b>Categoria</b>.</li><li>Opções: ${DEM_CAT_NOMES.map(esc).join(", ")}.</li><li>Ative <b>Permitir valores de preenchimento manual</b> e salve.</li></ol>
+      <p class="note">Depois clique em Atualizar agora no portal e salve a categoria de novo.</p><div class="flx-acts"><button class="btn primary" data-dem-fechar>Fechar</button></div>`);
   }
 }
 async function demSalvarPrio(){
@@ -5335,7 +5373,7 @@ async function demSalvarPrio(){
   if (!it || !f) return;
   const cat = f.elements.cat.value, catNova = cat === "__auto" ? "" : cat;
   if (catNova === demTxt(demValor(it, "cat")).trim()) { toast("Categoria sem alteração."); return; }
-  if (!demAchar("cat")) { flxModal(`<h3>Falta a coluna Categoria</h3><p>A lista SolicitacoesPMO ainda não tem a coluna <b>Categoria</b> para guardar a correção.</p><div class="flx-acts"><button class="btn" data-dem-fechar>Cancelar</button><button class="btn primary" id="demCriarCols">Criar coluna na lista</button></div>`); return; }
+  if (!demAchar("cat")) { demCatPend = {id: it.id, num: it.campos.ID || it.id, cat: catNova}; flxModal(`<h3>Falta a coluna Categoria</h3><p>A lista SolicitacoesPMO ainda não tem a coluna <b>Categoria</b> para guardar a correção. Clique em <b>Criar coluna na lista</b>: o portal cria a coluna e já salva esta categoria.</p><div class="flx-acts"><button class="btn" data-dem-fechar>Cancelar</button><button class="btn primary" id="demCriarCols">Criar coluna na lista</button></div>`); return; }
   try {
     await gx("PATCH", `/sites/${spSt.siteId}/lists/${demListaId}/items/${it.id}/fields`, {[demNomeInterno("cat")]: catNova || null});
     toast(`Categoria da demanda #${it.campos.ID || it.id} salva (sem e-mail ao solicitante).`);
@@ -6933,7 +6971,7 @@ document.addEventListener("click", async e => {
   const ac = b.dataset.flx;
   const pid = flxPid() || (drawerCtx ? drawerCtx.pid : "");
   if (ac === "fechar") { flxFechar(); return; }
-  if (ac === "guia-fase") { const k = b.dataset.fase; if (flxGuiaAberto.has(k)) flxGuiaAberto.delete(k); else flxGuiaAberto.add(k); route(); return; }
+  if (ac === "guia-fase") { const k = b.dataset.fase; if (flxGuiaAberto.has(k)) flxGuiaAberto.delete(k); else flxGuiaAberto.add(k); rotaMantemY = true; route(); return; }
   if (ac === "abrir-card") { flxFechar(); return; }
   const r = achar(drawerCtx && ["vinc-ok","vinc-desfaz"].includes(ac) ? drawerCtx.pid : (ac === "ref-usar" || ac === "ref-nao") && flxRef ? flxRef.pid : pid);
   if (ac === "ir-docs") { e.preventDefault(); flxIrDocs(r ? r.ID : pid); return; }
