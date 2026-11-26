@@ -990,6 +990,8 @@ body:not(.ro) .sr-wrap .sr-f[data-sr-edit]:hover,body:not(.ro) .sr-wrap .sr-av[d
 .dpr-tb{width:100%;table-layout:fixed;border-collapse:collapse;font-size:12.5px}.dpr-tb th:nth-child(1){width:26%}.dpr-tb th:nth-child(3){width:62px}.dpr-tb td,.dpr-tb th{overflow-wrap:anywhere;white-space:normal;word-break:break-word}.dpr-tb td *{white-space:normal}.dpr-tb th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);padding:6px 8px;border-bottom:1px solid var(--line)}
 .dpr-tb td{padding:8px;border-bottom:1px solid var(--line);vertical-align:top}.dpr-tb small{color:var(--muted);display:block;margin-top:3px}.dpr-pt{text-align:right;font-weight:800;white-space:nowrap}
 .dpr-tb tr.tot td{font-weight:800;border-bottom:0}.dpr-tr{display:block;margin-bottom:6px}.dpr-tr i{color:var(--muted);font-style:normal}
+.dpr-res{margin:0 0 10px;font-size:13.5px;line-height:1.5}.dpr-tb tr.zero td{opacity:.62}.dpr-pal{margin:0 0 14px}.dpr-pal summary{cursor:pointer;font-weight:700;font-size:12.5px;color:var(--muted)}
+.dem-ia-l{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;color:var(--muted);margin-top:10px}.dem-ia-l input{font:inherit;font-size:13px;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface3);color:var(--hi)}
 .dem-faixas{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-top:12px;padding:10px 12px;border:1px solid var(--line);border-radius:10px}.dem-faixas label{display:flex;gap:6px;align-items:center;font-size:13px}.dem-faixas input{width:72px;font:inherit;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--surface3);color:var(--hi)}
 .dem-rform{display:grid;grid-template-columns:150px 1fr;gap:12px;align-items:end;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}.dem-rform h5{grid-column:1/-1;margin:0}.dem-rform label:nth-of-type(3),.dem-rform button{grid-column:1/-1}.dem-rform button{justify-self:end}
 .dem-rform label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;color:var(--muted)}
@@ -5062,6 +5064,7 @@ async function demAtualizar(manual){
     demAvisaNovas();
     demRender();
     if (st) st.textContent = "Atualizado às " + demHora() + " · atualização automática a cada 3 min";
+    demIaRodar();
   } catch (e) {
     if (st) st.textContent = "Não foi possível atualizar: " + (e.message || e);
   }
@@ -5158,6 +5161,8 @@ function demRender(){
 const DEM_CFG_ARQ = "PMO-Projetos/demandas_pmo_config.json", DEM_REC_KEY = "portal_pmo_reclass_demandas";
 let demRecs = (() => { try { return JSON.parse(localStorage.getItem(DEM_REC_KEY) || "{}") || {}; } catch (e) { return {}; } })();
 const demRec = it => demRecs[String(it && it.id)] || null;
+const DEM_IA_CACHE = "portal_pmo_ia_demandas", DEM_IA_KEY = "portal_pmo_claude_api", DEM_IA_MOD = "portal_pmo_claude_modelo";
+let demIas = (() => { try { return JSON.parse(localStorage.getItem(DEM_IA_CACHE) || "{}") || {}; } catch (e) { return {}; } })();
 async function demCfgCarregar(){
   if (!spLigado() || !spSt.siteId) return;
   let j = null;
@@ -5168,6 +5173,7 @@ async function demCfgCarregar(){
     if (Array.isArray(j.criterios) && j.criterios.length) localStorage.setItem(DEM_CRIT_KEY, JSON.stringify(j.criterios));
     if (j.faixas) localStorage.setItem(DEM_FAIXA_KEY, JSON.stringify(j.faixas));
     if (j.reclass && typeof j.reclass === "object") { demRecs = j.reclass; localStorage.setItem(DEM_REC_KEY, JSON.stringify(demRecs)); }
+    if (j.ia && typeof j.ia === "object") { demIas = j.ia; localStorage.setItem(DEM_IA_CACHE, JSON.stringify(demIas)); }
     localStorage.setItem(DEM_CRIT_KEY + "_seg", "1");
   } catch (e) {}
   demCache2.clear();
@@ -5176,10 +5182,10 @@ async function demCfgCarregar(){
 async function demCfgSalvar(alterar){
   if (spLigado() && spSt.siteId) { try { await demCfgCarregar(); } catch (e) {} }
   alterar();
-  try { localStorage.setItem(DEM_REC_KEY, JSON.stringify(demRecs)); } catch (e) {}
+  try { localStorage.setItem(DEM_REC_KEY, JSON.stringify(demRecs)); localStorage.setItem(DEM_IA_CACHE, JSON.stringify(demIas)); } catch (e) {}
   demCache2.clear();
   if (!spLigado() || !spSt.siteId) return "local";
-  const corpo = {atualizado_em: new Date().toISOString(), criterios: demCriterios(), faixas: demFaixaLim(), reclass: demRecs};
+  const corpo = {atualizado_em: new Date().toISOString(), criterios: demCriterios(), faixas: demFaixaLim(), reclass: demRecs, ia: demIas};
   await gx("PUT", `/sites/${spSt.siteId}/drive/root:/${DEM_CFG_ARQ}:/content?@microsoft.graph.conflictBehavior=replace`, new Blob([JSON.stringify(corpo, null, 1)], {type: "application/json"}), {bruto: true, headers: {"Content-Type": "application/json"}});
   return "sp";
 }
@@ -5257,7 +5263,7 @@ function demTrechos(it, ks, max){
 const demValores = t => [...new Set((String(t).match(/r\$\s?\d[\d.]*(,\d+)?(\s?(mil|milh\w*|k)\b)?/gi) || []).map(x => x.replace(/\s+/g, " ").replace(/^r\$/i, "R$").trim()))].slice(0, 3);
 const demCache2 = new Map();
 function demNota(it){
-  const chave = it.id + "|" + it.alterado + "|" + (localStorage.getItem(DEM_CRIT_KEY) || "") + "|" + JSON.stringify(demRec(it) || "");
+  const chave = it.id + "|" + it.alterado + "|" + (localStorage.getItem(DEM_CRIT_KEY) || "") + "|" + JSON.stringify(demRec(it) || "") + "|" + ((demIas[it.id] || {}).em || "");
   if (demCache2.has(chave)) return demCache2.get(chave);
   const crit = demCriterios().filter(c => c.ativo !== false && +c.peso > 0);
   const benLista = demLista(demValor(it, "benef")).map(demNorm);
@@ -5275,7 +5281,10 @@ function demNota(it){
   const pts = itens.reduce((a, x) => a + x.pts, 0);
   const rec = demRec(it), nm = rec && rec.nota != null ? parseFloat(rec.nota) : NaN;
   const manual = isFinite(nm);
-  const r = {itens, calc: pts, pts: manual ? nm : pts, manual, valores: demValores(Object.values(it.campos).filter(v => typeof v === "string").map(demTexto).join(" "))};
+  const ia = demIas[it.id] && Array.isArray(demIas[it.id].criterios) ? demIas[it.id] : null;
+  const itensIa = ia ? ia.criterios.filter(x => x.pontos > 0).map(x => ({nome: x.nome, peso: x.peso, fonte: "ia", pts: x.pontos, ev: [], trechos: x.ev ? [{campo: x.campo || "", palavra: "", trecho: x.ev}] : [], just: x.just})).sort((a, b) => b.pts - a.pts) : null;
+  const calc = ia ? ia.nota : pts;
+  const r = {itens: itensIa || itens, itensPalavras: itens, calcPalavras: pts, ia, iaVelha: !!ia && ia.hash !== demIaHashIt(it), calc, pts: manual ? nm : calc, manual, valores: demValores(Object.values(it.campos).filter(v => typeof v === "string").map(demTexto).join(" "))};
   demCache2.set(chave, r);
   return r;
 }
@@ -5314,12 +5323,13 @@ function demJustificativa(it, curta){
   if (n.manual) { const h = demReclassHist(it)[0]; p.push(`Nota ajustada pelo PMO para ${demNotaTxt(n.pts)} (calculada pelos critérios: ${demNotaTxt(n.calc)}).${h ? " Motivo: " + demMotivo(h).replace(/[.\s]+$/, "") + "." : ""}`); }
   if (!n.itens.length) p.push("Nenhum critério de priorização identificado no benefício ou no texto da solicitação.");
   else {
-    p.push(n.itens.map(x => `${x.nome} (${x.fonte === "campo" ? "peso " + x.peso : "citado no texto: " + demNotaTxt(x.pts) + (x.ev && x.ev.length ? " ← “" + x.ev.join("”, “") + "”" : "")})`).join(" + ") + ` = ${demNotaTxt(n.calc)} pontos pelos critérios.`);
+    if (n.ia) p.push("Análise do Claude" + (n.ia.resumo && !curta ? ": " + n.ia.resumo : "") + ".");
+    p.push(n.itens.map(x => `${x.nome} (${x.fonte === "ia" ? "Claude: " + demNotaTxt(x.pts) + " de " + x.peso : x.fonte === "campo" ? "peso " + x.peso : "citado no texto: " + demNotaTxt(x.pts) + (x.ev && x.ev.length ? " ← “" + x.ev.join("”, “") + "”" : "")})`).join(" + ") + ` = ${demNotaTxt(n.calc)} pontos pelos critérios.`);
     const top = n.itens[0];
     if (!curta) {
-      if (top.fonte === "campo" && top.peso >= 4) p.push(`Benefício principal de alto impacto: ${top.nome.toLowerCase()}.`);
+      if (top.fonte !== "texto" && top.pts >= 4) p.push(`Benefício principal de alto impacto: ${top.nome.toLowerCase()}.`);
       if (n.itens.length >= 3) p.push("Atende vários critérios ao mesmo tempo.");
-      if (n.itens.every(x => x.fonte === "texto")) p.push("Os critérios vêm só do texto: confirme o benefício estratégico com o solicitante.");
+      if (!n.ia && n.itens.every(x => x.fonte === "texto")) p.push("Os critérios vêm só do texto: confirme o benefício estratégico com o solicitante.");
     }
   }
   if (n.valores.length && !curta) p.push("Valores citados: " + n.valores.join(", ") + ".");
@@ -5350,7 +5360,7 @@ function demPreencherFiltros(){
   if (bx) bx.innerHTML = `<button type="button" class="dcat${demFCat ? "" : " on"}" data-dem-cat="">Todas <b>${base.length}</b></button>` + cs.map(c => `<button type="button" class="dcat${demFCat === c ? " on" : ""}" data-dem-cat="${esc(c)}">${esc(c)} <b>${cont[c]}</b></button>`).join("");
 }
 function demCritTags(n, max){
-  return n.itens.slice(0, max || 3).map(x => `<span class="dkb-crit${x.fonte === "texto" ? " tx" : ""}" title="${x.fonte === "campo" ? "Benefício estratégico informado" : "Citado no texto da solicitação (meio peso)"}">${esc(x.nome)}</span>`).join("") + (n.itens.length > (max || 3) ? `<span class="dkb-crit tx">+${n.itens.length - (max || 3)}</span>` : "");
+  return n.itens.slice(0, max || 3).map(x => `<span class="dkb-crit${x.fonte === "texto" ? " tx" : ""}" title="${x.fonte === "ia" ? "Avaliado pelo Claude: " + demNotaTxt(x.pts) + " de " + x.peso : x.fonte === "campo" ? "Benefício estratégico informado" : "Citado no texto da solicitação (meio peso)"}">${esc(x.nome)}${x.fonte === "ia" && x.pts < x.peso ? " ½" : ""}</span>`).join("") + (n.itens.length > (max || 3) ? `<span class="dkb-crit tx">+${n.itens.length - (max || 3)}</span>` : "");
 }
 function demCardHtml(it){
   const c = it.campos, st = demStatus(it), n = demNota(it), cat = demCategoria(it), d = demDias(it), f = demFaixaIt(it), rc = f !== demFaixaCalc(it) || n.manual;
@@ -5386,8 +5396,8 @@ function demRenderPrio(){
   const top = abertas.filter(it => demNota(it).pts > 0).sort(demOrdenar).slice(0, 5);
   const crit = demCriterios().filter(c => c.ativo !== false && +c.peso > 0).sort((a, b) => b.peso - a.peso);
   box.innerHTML = `<section class="dpr">
-    <div class="dpr-h"><div><h3>Prioridades sugeridas</h3><p>Pontos pelos critérios: ${crit.map(c => `${esc(c.nome)} <b>${c.peso}</b>`).join(" · ")}</p></div>
-      <div class="dpr-acts"><button type="button" class="btn" id="demCrit">Critérios de priorização</button><button type="button" class="btn" id="demExportar" title="Arquivo para a Skill de priorização do Claude">Exportar para o Claude</button><button type="button" class="btn primary" id="demAnalisar">Analisar priorização</button></div></div>
+    <div class="dpr-h"><div><h3>Prioridades sugeridas</h3><p>Pontos pelos critérios: ${crit.map(c => `${esc(c.nome)} <b>${c.peso}</b>`).join(" · ")}</p><p class="note" id="demIaSt" style="margin:4px 0 0">${esc(demIaMsg || (demIaChave() ? "Claude: ativo. As análises rodam no Atualizar agora." : "Claude: sem chave. Análise só por palavras-chave."))}</p></div>
+      <div class="dpr-acts"><button type="button" class="btn" id="demCrit">Critérios de priorização</button><button type="button" class="btn" id="demExportar" title="Só baixa o arquivo para a Skill de priorização do Claude">Exportar para o Claude</button><button type="button" class="btn" id="demIaCfg" title="Análise automática das demandas pelo Claude">Claude (IA)${demIaChave() ? " ✓" : ""}</button><button type="button" class="btn primary" id="demAnalisar">Analisar priorização</button></div></div>
     ${top.length ? `<div class="dpr-top">${top.map((it, i) => { const n = demNota(it); return `<button type="button" class="dpr-card" data-dem-ir="${esc(it.id)}"><span class="dpr-n">${i + 1}</span><span class="dpr-b"><span class="dpr-t">${esc(demTxt(it.campos.Title))}</span><span class="dpr-m">#${esc(it.campos.ID || it.id)} · ${esc(demTxt(demValor(it, "setor")) || "—")}</span><span class="dkb-chips">${demCritTags(n, 2)}</span></span><span class="dkb-sc ${demFaixa(n.pts)}"><b>${demNotaTxt(n.pts)}</b><small>pontos</small></span></button>`; }).join("")}</div>`
       : `<p class="note" style="margin:0">Nenhuma demanda aberta atende aos critérios. Revise os critérios ou o benefício estratégico das solicitações.</p>`}
   </section>`;
@@ -5425,7 +5435,24 @@ function demCritLer(){
   return [...document.querySelectorAll("#flxModal [data-crit]")].map(tr => ({nome: tr.querySelector("[name=nome]").value.trim(), peso: +tr.querySelector("[name=peso]").value, chaves: tr.querySelector("[name=chaves]").value.trim(), ativo: tr.querySelector("[name=ativo]").checked})).filter(c => c.nome);
 }
 function demCritAbrir(l){ flxModal(demCritHtml(l)); const bx = document.querySelector("#flxModal .flx-box"); if (bx) bx.style.width = "min(1000px,100%)"; }
-function demExportar(){
+function demSkillPedido(arq){
+  return `Use a skill priorizacao-demandas-pmo para analisar o arquivo anexo (${arq}), exportado do Portal PMO. Leia o escopo, a necessidade, os benefícios, o retorno esperado e todos os demais campos de cada demanda aberta, compare com a nota do portal e proponha nota, faixa e justificativa para cada uma, indicando as divergências a corrigir no portal.`;
+}
+function demAnalisarSkill(){
+  const arq = demExportar(true), pedido = demSkillPedido(arq);
+  try { navigator.clipboard && navigator.clipboard.writeText(pedido).catch(() => {}); } catch (e) {}
+  const url = "https://claude.ai/new?q=" + encodeURIComponent(pedido);
+  window.open(url, "_blank", "noopener");
+  flxModal(`<h3>Análise com a Skill de priorização</h3>
+    <p class="note" style="margin:0 0 10px">O portal não roda o Claude por conta própria. Ele baixou o arquivo e abriu o Claude com o pedido pronto. Falta só anexar o arquivo:</p>
+    <ol><li>Arquivo baixado: <b>${esc(arq)}</b> (pasta Downloads).</li>
+    <li>Na aba do Claude que abriu, <b>arraste esse arquivo</b> para a conversa (ou use o clipe de anexo).</li>
+    <li>Envie a mensagem. O pedido já está escrito; se a aba não preencheu, copie o texto do quadro abaixo.</li>
+    <li>Com a resposta, digite as notas sugeridas em <b>Reclassificar nota e prioridade</b> de cada demanda.</li></ol>
+    <textarea readonly rows="4" style="width:100%;margin-top:8px;font:inherit;font-size:12.5px;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface3);color:var(--hi)">${esc(pedido)}</textarea>
+    <div class="flx-acts"><button type="button" class="btn" data-skill-reabrir>Abrir o Claude de novo</button><button type="button" class="btn primary" data-dem-fechar>Fechar</button></div>`);
+}
+function demExportar(silencioso){
   const camposTxt = it => {
     const o = {};
     (demColunas.length ? demColunas.filter(demMostra) : Object.keys(it.campos).map(k => ({name: k, displayName: k}))).forEach(col => { const t = demTexto(it.campos[col.name]); if (t && !/token/i.test(col.name)) o[col.displayName] = t; });
@@ -5439,11 +5466,12 @@ function demExportar(){
       id: String(it.campos.ID || it.id), titulo: demTxt(it.campos.Title), status: demStatus(it), encerrada: demFinal(it), bloqueada: demBloqueado(demStatus(it)),
       setor: demTxt(demValor(it, "setor")), tipo: demTxt(demValor(it, "tipo")), beneficio_estrategico: demLista(demValor(it, "benef")),
       criterios_atendidos: n.itens.map(x => ({criterio: x.nome, peso: x.peso, fonte: x.fonte, pontos: x.pts, palavras_encontradas: x.ev || [], trechos: (x.trechos || []).map(t => ({campo: t.campo, palavra: t.palavra, trecho: t.trecho}))})), pontos: n.pts, pontos_calculados: n.calc, nota_ajustada_pelo_pmo: n.manual, faixa: DEM_FAIXA_TXT[demFaixaIt(it)], faixa_calculada: DEM_FAIXA_TXT[demFaixaCalc(it)], reclassificada_pelo_pmo: demFaixaIt(it) !== demFaixaCalc(it) || n.manual, historico_reclassificacao: demReclassHist(it), valores_citados: n.valores,
-      categoria: cat.nome, categoria_definida_pelo_pmo: !cat.auto, dias_no_status: demDias(it), atrasada: demAtrasado(it), criada_em: it.criado, justificativa_portal: demJustificativa(it), link: it.web || "", campos: camposTxt(it)}; })
+      categoria: cat.nome, categoria_definida_pelo_pmo: !cat.auto, dias_no_status: demDias(it), atrasada: demAtrasado(it), criada_em: it.criado, justificativa_portal: demJustificativa(it), analise_claude: n.ia ? {resumo: n.ia.resumo, nota: n.ia.nota, criterios: n.ia.criterios, lacunas: n.ia.lacunas, perguntas: n.ia.perguntas, observacoes: n.ia.obs, confianca: n.ia.conf, em: n.ia.em} : null, link: it.web || "", campos: camposTxt(it)}; })
   };
   const blob = new Blob([JSON.stringify(dados, null, 2)], {type: "application/json"});
-  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `demandas_priorizacao_${new Date().toISOString().slice(0, 10)}.json`; document.body.appendChild(a); a.click(); a.remove();
-  toast("Arquivo exportado. Anexe-o na conversa com o Claude e peça a análise de priorização.");
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); const nomeArq = `demandas_priorizacao_${new Date().toISOString().slice(0, 10)}.json`; a.download = nomeArq; document.body.appendChild(a); a.click(); a.remove();
+  if (!silencioso) toast("Arquivo exportado. Anexe-o na conversa com o Claude e peça a análise de priorização.");
+  return nomeArq;
 }
 let demCatPend = null, demRecPend = null;
 async function demReclassificar(){
@@ -5522,12 +5550,138 @@ async function demSalvarPrio(){
     demRender();
   } catch (e) { toast("Não consegui gravar no SharePoint: " + (e.message || e)); }
 }
+/* ================= Análise das demandas pelo Claude (API da Anthropic) =================
+   A chave fica só no navegador de quem a cadastrou (localStorage); nunca vai para o site nem para o SharePoint.
+   As análises vão para o arquivo de ajustes no SharePoint e aparecem para todos. Roda no "Atualizar agora" e na
+   atualização automática, só para demandas abertas novas ou com texto/critérios alterados. */
+const demIaChave = () => { try { return localStorage.getItem(DEM_IA_KEY) || ""; } catch (e) { return ""; } };
+const demIaModelo = () => { try { return localStorage.getItem(DEM_IA_MOD) || "claude-sonnet-4-5"; } catch (e) { return "claude-sonnet-4-5"; } };
+let demIaRodando = false, demIaMsg = "";
+function demHash(t){ let h = 5381; for (let i = 0; i < t.length; i++) h = ((h << 5) + h + t.charCodeAt(i)) | 0; return (h >>> 0).toString(36); }
+function demIaEntrada(it){
+  const campos = {}; demCampoTextos(it).forEach(x => { campos[x.campo] = x.texto.slice(0, 6000); });
+  return {id: String(it.campos.ID || it.id), titulo: demTxt(it.campos.Title), status: demStatus(it), setor: demTxt(demValor(it, "setor")), tipo: demTxt(demValor(it, "tipo")),
+    beneficio_estrategico_marcado: demLista(demValor(it, "benef")), campos};
+}
+function demIaHashIt(it){ return demHash(JSON.stringify(demIaEntrada(it)) + "|" + JSON.stringify(demCritTodos().map(c => [c.nome, +c.peso, c.chaves || ""]))); }
+const DEM_IA_SISTEMA = `Você é analista sênior de PMO da JCE SA. Avalie UMA solicitação de demanda de TI para priorização.
+Leia TODOS os campos (necessidade, escopo, justificativa, objetivos, benefício, retorno esperado, medição do sucesso, processos impactados, obstáculos, consequências se não executado etc.). Interprete o conteúdo: o que a pessoa quer, que problema resolve e que ganho real entrega.
+Para CADA critério da lista dê 0, metade do peso ou o peso inteiro:
+- peso inteiro: o texto demonstra de forma clara e específica que a demanda entrega esse benefício como objetivo principal;
+- metade do peso: o benefício existe mas é indireto, secundário ou não demonstrado;
+- 0: não há relação real. Palavra solta não conta (ex.: indicador de RH que só cita "custo" ou "acidente" como dado a acompanhar NÃO reduz custo nem protege pessoas).
+O benefício marcado pelo solicitante é uma declaração dele: só dê peso inteiro se o texto sustentar. Nunca invente fatos, valores ou prazos.
+Esforço técnico NÃO entra na nota; registre só em observações.
+Responda SOMENTE com JSON válido, sem nada fora dele, neste formato:
+{"resumo":"2 a 3 frases: o que pede e que problema resolve","criterios":[{"nome":"nome exato do critério","pontos":0,"justificativa":"por que esses pontos, 1 a 2 frases","evidencia":"trecho literal curto do texto que sustenta, ou vazio","campo":"nome do campo do trecho, ou vazio"}],"lacunas":["informação que falta para decidir"],"perguntas":["pergunta objetiva ao solicitante"],"observacoes":["riscos, dependências, urgência, esforço aparente"],"confianca":"alta|média|baixa"}
+Inclua TODOS os critérios da lista em "criterios", inclusive os com 0. Escreva em português do Brasil.`;
+async function demIaFetch(caminho, corpo){
+  const k = demIaChave();
+  const r = await fetch("https://api.anthropic.com" + caminho, {method: corpo ? "POST" : "GET",
+    headers: Object.assign({"x-api-key": k, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true"}, corpo ? {"content-type": "application/json"} : {}),
+    body: corpo ? JSON.stringify(corpo) : undefined});
+  const j = await r.json().catch(() => null);
+  if (!r.ok) throw Object.assign(new Error((j && j.error && j.error.message) || (r.status + " " + r.statusText)), {status: r.status});
+  return j;
+}
+async function demIaChamar(it){
+  const crit = demCritTodos();
+  const j = await demIaFetch("/v1/messages", {model: demIaModelo(), max_tokens: 3000, system: DEM_IA_SISTEMA,
+    messages: [{role: "user", content: JSON.stringify({criterios: crit.map(c => ({nome: c.nome, peso: +c.peso, metade: +c.peso / 2, temas: c.chaves || ""})), demanda: demIaEntrada(it)})}]});
+  const txt = (j.content || []).filter(c => c.type === "text").map(c => c.text).join("");
+  const m = txt.match(/\{[\s\S]*\}/);
+  if (!m) throw new Error("o Claude não devolveu a análise no formato esperado");
+  const o = JSON.parse(m[0]);
+  const arr = v => (Array.isArray(v) ? v : v ? [v] : []).map(x => String(x)).filter(Boolean).slice(0, 8);
+  const lst = crit.map(c => {
+    const x = (o.criterios || []).find(y => demNorm(y.nome) === demNorm(c.nome)) || {};
+    const opc = [0, +c.peso / 2, +c.peso], v = +x.pontos || 0;
+    return {nome: c.nome, peso: +c.peso, pontos: opc.reduce((a, b) => Math.abs(b - v) < Math.abs(a - v) ? b : a), just: String(x.justificativa || ""), ev: String(x.evidencia || "").slice(0, 400), campo: String(x.campo || "")};
+  });
+  return {hash: demIaHashIt(it), em: new Date().toISOString(), modelo: j.model || demIaModelo(), resumo: String(o.resumo || ""), criterios: lst, nota: lst.reduce((a, x) => a + x.pontos, 0),
+    lacunas: arr(o.lacunas), perguntas: arr(o.perguntas), obs: arr(o.observacoes), conf: String(o.confianca || "")};
+}
+function demIaStatus(t){ demIaMsg = t; const el = $("demIaSt"); if (el) el.textContent = t; }
+async function demIaRodar(todas){
+  if (demIaRodando || !demIaChave() || perfil() !== "admin") return;
+  const pend = demItens.filter(it => !demFinal(it) && (todas || !demIas[it.id] || demIas[it.id].hash !== demIaHashIt(it)));
+  if (!pend.length) { demIaStatus("Claude: análises em dia."); return; }
+  demIaRodando = true;
+  const novos = {}, erros = [];
+  let feitos = 0;
+  demIaStatus(`Claude analisando ${pend.length} demanda(s)…`);
+  for (let i = 0; i < pend.length; i += 3) {
+    await Promise.all(pend.slice(i, i + 3).map(async it => {
+      try { novos[it.id] = await demIaChamar(it); } catch (e) { erros.push({it, e}); }
+      feitos++; demIaStatus(`Claude analisando: ${feitos} de ${pend.length}…`);
+    }));
+    if (erros.some(x => x.e.status === 401 || x.e.status === 403)) break;
+  }
+  if (Object.keys(novos).length) {
+    try { await demCfgSalvar(() => Object.assign(demIas, novos)); }
+    catch (e) { Object.assign(demIas, novos); try { localStorage.setItem(DEM_IA_CACHE, JSON.stringify(demIas)); } catch (er) {} toast("Análises feitas, mas não gravei no SharePoint: " + (e.message || e)); }
+  }
+  demIaRodando = false;
+  demCache2.clear();
+  const n = Object.keys(novos).length, h = demHora();
+  if (erros.length) {
+    const e = erros[0].e;
+    demIaStatus(`Claude: ${n} analisada(s) às ${h}; ${erros.length} com erro (${e.status === 401 ? "chave inválida" : e.message}).`);
+    if (e.status === 401 || e.status === 403) toast("A chave da API do Claude foi recusada. Confira em Claude (IA).");
+  } else demIaStatus(`Claude: ${n} demanda(s) analisada(s) às ${h}.`);
+  demRender();
+}
+function demIaCfgHtml(msg){
+  const k = demIaChave();
+  return `<h3>Análise automática com o Claude</h3>
+    <p class="note" style="margin:0 0 10px">Com a chave cadastrada, o <b>Atualizar agora</b> (e a atualização automática) manda cada demanda aberta nova ou alterada para o Claude, que lê escopo, necessidade, benefícios e demais campos e avalia todos os critérios. A análise fica salva no SharePoint e aparece para todos. A chave fica <b>só neste navegador</b>: não vai para o site nem para o SharePoint.</p>
+    <label class="dem-ia-l">Chave da API da Anthropic<input type="password" id="demIaK" placeholder="sk-ant-…" value="${k ? "••••••••" + esc(k.slice(-4)) : ""}" autocomplete="off"></label>
+    <label class="dem-ia-l">Modelo<input id="demIaM" value="${esc(demIaModelo())}" list="demIaMods"><datalist id="demIaMods"></datalist></label>
+    ${msg ? `<p class="note" style="margin:8px 0 0">${msg}</p>` : ""}
+    <p class="note" style="margin:8px 0 0">Crie uma chave em console.anthropic.com (API keys) com limite de gasto. Cada análise custa poucos centavos de dólar.</p>
+    <div class="flx-acts">${k ? `<button type="button" class="btn" data-ia-del>Remover chave</button><button type="button" class="btn" data-ia-todas>Reanalisar todas</button>` : ""}<button type="button" class="btn" data-dem-fechar>Fechar</button><button type="button" class="btn primary" data-ia-ok>Testar e salvar</button></div>`;
+}
+async function demIaSalvarCfg(){
+  const kIn = $("demIaK").value.trim(), mod = $("demIaM").value.trim() || "claude-sonnet-4-5";
+  const antiga = demIaChave();
+  if (kIn && !kIn.startsWith("••")) localStorage.setItem(DEM_IA_KEY, kIn);
+  if (!demIaChave()) { flxModal(demIaCfgHtml("Informe a chave.")); return; }
+  localStorage.setItem(DEM_IA_MOD, mod);
+  flxModal(demIaCfgHtml("Testando a chave…"));
+  try {
+    const j = await demIaFetch("/v1/models?limit=50");
+    const ids = (j.data || []).map(x => x.id);
+    if (ids.length && !ids.includes(mod)) {
+      const sug = ids.find(x => /sonnet/.test(x)) || ids[0];
+      localStorage.setItem(DEM_IA_MOD, sug);
+      flxModal(demIaCfgHtml(`Chave válida. O modelo “${esc(mod)}” não está disponível; usei “${esc(sug)}”.`));
+    } else flxModal(demIaCfgHtml("Chave válida e salva neste navegador."));
+    const dl = $("demIaMods"); if (dl) dl.innerHTML = ids.map(x => `<option value="${esc(x)}">`).join("");
+    demRender(); demIaRodar();
+  } catch (e) {
+    if (e.status === 401 || e.status === 403) { if (antiga && antiga !== demIaChave()) localStorage.setItem(DEM_IA_KEY, antiga); else if (!antiga) localStorage.removeItem(DEM_IA_KEY); }
+    flxModal(demIaCfgHtml(e.status === 401 ? "Chave recusada pela Anthropic." : "Não consegui falar com a API da Anthropic: " + esc(e.message || e) + ". A rede da empresa pode estar bloqueando api.anthropic.com."));
+  }
+}
+function demIaSecHtml(it, n){
+  const a = n.ia;
+  return `<div class="dpr-why dpr-ia"><h5>Análise do Claude <span class="flx-badge ${n.iaVelha ? "and" : "ok"}">${n.iaVelha ? "desatualizada: o texto mudou" : "confiança " + esc(a.conf || "—")}</span></h5>
+    ${a.resumo ? `<p class="dpr-res">${esc(a.resumo)}</p>` : ""}
+    <table class="dpr-tb"><thead><tr><th>Critério</th><th>Avaliação</th><th>Pts</th></tr></thead><tbody>
+    ${a.criterios.slice().sort((x, y) => y.pontos - x.pontos || y.peso - x.peso).map(x => `<tr class="${x.pontos ? "" : "zero"}"><td><b>${esc(x.nome)}</b><small>peso ${x.peso}</small></td><td>${esc(x.just || "—")}${x.ev ? `<span class="dpr-tr"><b>${esc(x.campo || "Trecho")}</b><br><i>“${esc(x.ev)}”</i></span>` : ""}</td><td class="dpr-pt">${demNotaTxt(x.pontos)}</td></tr>`).join("")}
+    <tr class="tot"><td colspan="2">Total pelo Claude</td><td class="dpr-pt">${demNotaTxt(a.nota)}</td></tr></tbody></table>
+    ${a.lacunas.length ? `<h5>O que falta para decidir</h5><ul>${a.lacunas.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
+    ${a.perguntas.length ? `<h5>Perguntas ao solicitante</h5><ul>${a.perguntas.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
+    ${a.obs.length ? `<h5>Observações (não entram na nota)</h5><ul>${a.obs.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
+    <p class="note" style="margin:8px 0 0">${esc(a.modelo || "")} · ${esc(new Date(a.em).toLocaleString("pt-BR"))}. Pontuação por palavras-chave seria ${demNotaTxt(n.calcPalavras)}.</p></div>`;
+}
 function demPorQueHtml(it){
   const n = demNota(it), f = demFaixaIt(it), L = demFaixaLim(), st = demStatus(it);
   const abertas = demItens.filter(x => !demFinal(x)).sort(demOrdenar), pos = abertas.findIndex(x => x.id === it.id) + 1;
   const ben = demLista(demValor(it, "benef")), textos = demCampoTextos(it), chars = textos.reduce((a, x) => a + x.texto.length, 0);
-  const crit = demCritTodos(), achados = new Set(n.itens.map(x => x.nome)), sem = crit.filter(c => !achados.has(c.nome));
-  const linhas = n.itens.map(x => {
+  const ip = n.itensPalavras || n.itens;
+  const crit = demCritTodos(), achados = new Set(ip.map(x => x.nome)), sem = crit.filter(c => !achados.has(c.nome));
+  const linhas = ip.map(x => {
     const ev = x.fonte === "campo"
       ? `<b>Marcado pelo solicitante</b> no campo Benefício estratégico: “${esc(x.campoVal || ben.join(", "))}”.<br><small>Peso inteiro: o solicitante afirmou esse benefício.</small>`
       : `${x.trechos.map(t => `<span class="dpr-tr"><b>${esc(t.campo)}</b> · palavra “${esc(t.palavra)}”<br><i>${esc(t.trecho)}</i></span>`).join("")}<small>Só citado no texto: meio peso. ${x.nExt >= 2 ? x.nExt + " palavras-chave diferentes encontradas." : "Expressão específica encontrada, mas uma única evidência."}</small>`;
@@ -5547,11 +5701,13 @@ function demPorQueHtml(it){
   if (chars < 350) lei.push(`O texto da solicitação é curto (${chars} caracteres): há pouca base para avaliar.`);
   const d = demDias(it);
   if (d != null) lei.push(`${d} ${d === 1 ? "dia" : "dias"} em “${esc(st || "—")}”${demAtrasado(it) ? " (atrasada)" : ""}${demBloqueado(st) ? "; bloqueada aguardando o solicitante" : ""}.`);
-  return `<div class="dpr-why"><h5>Por que esta nota</h5>
-    ${n.itens.length ? `<table class="dpr-tb"><thead><tr><th>Critério</th><th>Evidência na solicitação</th><th>Pts</th></tr></thead><tbody>${linhas}<tr class="tot"><td colspan="2">Total pelos critérios</td><td class="dpr-pt">${demNotaTxt(n.calc)}</td></tr></tbody></table>` : `<p class="note" style="margin:0">Nenhuma evidência encontrada para pontuar.</p>`}
+  const pal = `<div class="dpr-why"><h5>Por que esta nota</h5>
+    ${ip.length ? `<table class="dpr-tb"><thead><tr><th>Critério</th><th>Evidência na solicitação</th><th>Pts</th></tr></thead><tbody>${linhas}<tr class="tot"><td colspan="2">Total pelos critérios</td><td class="dpr-pt">${demNotaTxt(n.calcPalavras)}</td></tr></tbody></table>` : `<p class="note" style="margin:0">Nenhuma evidência encontrada para pontuar.</p>`}
     ${sem.length ? `<h5>Critérios avaliados sem evidência</h5><div class="dkb-chips">${sem.map(c => `<span class="dkb-crit tx" title="Peso ${c.peso}: nenhuma palavra-chave no texto e não marcado no benefício">${esc(c.nome)} (${c.peso})</span>`).join("")}</div>` : ""}
     <h5>Leitura</h5><ul>${lei.map(x => `<li>${x}</li>`).join("")}</ul>
     <p class="note" style="margin:8px 0 0">A leitura é por palavras-chave e não entende o contexto. Se a nota não refletir a realidade, use <b>Reclassificar</b> abaixo ou <b>Exportar para o Claude</b> para uma análise do conteúdo.</p></div>`;
+  if (!n.ia) return pal + (perfil() === "admin" && !demIaChave() ? `<p class="note" style="margin:0 0 12px">Para o Claude ler e interpretar esta solicitação, cadastre a chave em <b>Claude (IA)</b>.</p>` : "");
+  return demIaSecHtml(it, n) + `<details class="dpr-pal"><summary>Leitura por palavras-chave (referência)</summary>${pal}</details>`;
 }
 function demPrioSecHtml(it){
   const n = demNota(it), cat = demCategoria(it), f = demFaixaIt(it), calc = demFaixaCalc(it), rc = f !== calc || n.manual, hist = demReclassHist(it);
@@ -5750,6 +5906,11 @@ document.addEventListener("click", e => {
   const v = e.target.closest("[data-dem-vis]"); if (v) { demVis = v.dataset.demVis; demRenderTabela(); return; }
   const ir = e.target.closest("[data-dem-ir]"); if (ir) { e.preventDefault(); demSel = ir.dataset.demIr; demRenderTabela(); demRenderDetalhe(); return; }
   if (e.target.closest("#demAnalisar")) { flxModal(demAnaliseHtml()); const bx = document.querySelector("#flxModal .flx-box"); if (bx) bx.style.width = "min(1100px,100%)"; return; }
+  if (e.target.closest("#demIaCfg")) { flxModal(demIaCfgHtml()); return; }
+  if (e.target.closest("[data-ia-ok]")) { demIaSalvarCfg(); return; }
+  if (e.target.closest("[data-ia-del]")) { try { localStorage.removeItem(DEM_IA_KEY); } catch (er) {} flxModal(demIaCfgHtml("Chave removida deste navegador.")); demRender(); return; }
+  if (e.target.closest("[data-ia-todas]")) { flxFechar(); demIaRodar(true); return; }
+  if (e.target.closest("[data-skill-reabrir]")) { window.open("https://claude.ai/new?q=" + encodeURIComponent(demSkillPedido(`demandas_priorizacao_${new Date().toISOString().slice(0, 10)}.json`)), "_blank", "noopener"); return; }
   if (e.target.closest("#demExportar,[data-dem-exp]")) { demExportar(); return; }
   if (e.target.closest("#demCriarCols")) { demCriarColunas(); return; }
   if (e.target.closest("[data-dem-fechar]")) { flxFechar(); return; }
