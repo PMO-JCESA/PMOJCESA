@@ -5797,9 +5797,9 @@ function flxDocHtml(r, f){
     acoes = `<a class="btn sm primary" href="${url}">${st.k === "ok" ? "Ver / editar" : st.k === "and" ? "Continuar" : "Preencher"}</a>`;
   } else {
     acoes = `<a class="btn sm" href="${url}">${st.k === "pmo" || !edit ? "Consultar" : "Abrir formulário"}</a>`;
-    if (edit && st.k !== "pmo" && st.k !== "ok" && st.k !== "na") acoes += spLigado() ? ` <button type="button" class="btn sm primary" data-pa-abrir="evid:${f.c}" title="Escolha o PDF já salvo na pasta do projeto">Anexar PDF final (pasta do projeto)</button>` : ` <label class="btn sm primary flx-file">Anexar PDF final<input type="file" accept="application/pdf,.pdf" data-flx-evid="${f.c}" hidden></label>`;
+    if (edit && st.k !== "pmo" && st.k !== "ok" && st.k !== "na") acoes += spLigado() ? ` <button type="button" class="btn sm primary" data-pa-abrir="evid:${f.c}" title="Escolha o PDF no SharePoint">Anexar PDF final</button>` : ` <label class="btn sm primary flx-file">Anexar PDF final<input type="file" accept="application/pdf,.pdf" data-flx-evid="${f.c}" hidden></label>`;
   }
-  if (edit && st.k === "ok" && !f.ext && fluxoAtivo(r)) acoes += spLigado() ? ` <button type="button" class="btn sm" data-pa-abrir="aprov:${f.c}" title="Escolha a evidência já salva na pasta do projeto">Anexar evidência de aprovação (pasta do projeto)</button>` : ` <label class="btn sm flx-file" title="Aprovação feita fora do portal (e-mail, Teams): guarde a evidência">Anexar evidência de aprovação<input type="file" data-flx-aprov="${f.c}" hidden></label>`;
+  if (edit && st.k === "ok" && !f.ext && fluxoAtivo(r)) acoes += spLigado() ? ` <button type="button" class="btn sm" data-pa-abrir="aprov:${f.c}" title="Escolha a evidência no SharePoint">Anexar evidência de aprovação</button>` : ` <label class="btn sm flx-file" title="Aprovação feita fora do portal (e-mail, Teams): guarde a evidência">Anexar evidência de aprovação<input type="file" data-flx-aprov="${f.c}" hidden></label>`;
   if (fluxoAtivo(r) && edit && st.k !== "bloq" && st.k !== "ok" && st.k !== "na" && st.k !== "pmo" && !f.ext && !FLX_BASE.includes(f.c) && f.c !== "FORM20") acoes += ` <button class="btn sm" data-flx="na" data-cod="${f.c}">Não se aplica</button>`;
   const card = flxCardDoc(r, f.c);
   const evid = card ? card.anexos.filter(a => a.flx === f.c) : [];
@@ -6215,9 +6215,36 @@ async function flxSolicEscolher(buf, nome, tam, extra){
 
 /* ---------- Anexos dos cards: somente arquivos da pasta do projeto no SharePoint ---------- */
 const anexoBotaoHtml = ctx => spLigado()
-  ? `<div style="margin-bottom:10px"><button type="button" class="btn sm primary" data-pa-abrir="${ctx}">Anexar da pasta do projeto</button> <small class="note" style="margin:0">Só aparecem os documentos salvos na pasta do projeto no SharePoint.</small></div>`
+  ? `<div style="margin-bottom:10px"><button type="button" class="btn sm primary" data-pa-abrir="${ctx}">Anexar do SharePoint</button></div>`
   : `<p class="note" style="margin:0 0 10px">Conecte o portal ao SharePoint para anexar documentos da pasta do projeto.</p>`;
-let flxPa = null, flxPdfDest = null;
+let flxPa = null, flxPdfDest = null, flxPdfLocal = null, flxSemSp = null;
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-sem-sp]"); if (!b || !flxSemSp) return;
+  const x = flxSemSp, r = achar(x.pid), c = flxFrame(); flxFechar();
+  if (b.dataset.semSp === "cancelar") { flxSemSp = null; return; }
+  if (b.dataset.semSp === "entrar") {
+    if (r) { const d = flxDoc(r, x.cod) || {}; r.fluxo.docs[x.cod] = Object.assign(d, {ok: false, dados: x.estado, rascunho: x.estado, em: new Date().toISOString(), por: autor}); salvar(); toast("Rascunho do documento guardado. Entrando na Microsoft…"); }
+    flxSemSp = null; spEntrar(); return;
+  }
+  flxSemSp = null; if (!c) return;
+  flxPdfDest = {pid: x.pid, cod: x.cod, estado: x.estado, nome: x.nome, local: true};
+  flxEnviar(c.fr, {t: "gerarpdf", local: true, nome: x.nome, libs: {h2c: $("flxLibH2c").textContent, jspdf: $("flxLibJspdf").textContent}});
+});
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-pdf-salvar],[data-pdf-cancelar]"); if (!b || !flxPdfLocal) return;
+  if (b.dataset.pdfCancelar !== undefined) { flxPdfLocal = null; flxFechar(); return; }
+  const L = flxPdfLocal, nome = spNomeArquivo(L.m.nome || L.d.nome);
+  try {
+    if (window.showSaveFilePicker) {
+      const h = await window.showSaveFilePicker({suggestedName: nome, types: [{description: "PDF", accept: {"application/pdf": [".pdf"]}}]});
+      const w = await h.createWritable(); await w.write(L.blob); await w.close();
+    } else {
+      const a = document.createElement("a"); a.href = URL.createObjectURL(L.blob); a.download = nome; document.body.appendChild(a); a.click(); a.remove();
+    }
+  } catch (err) { if (err && err.name === "AbortError") return; toast("Não foi possível salvar: " + err.message); return; }
+  flxPdfLocal = null; flxFechar();
+  flxPdfDest = L.d; flxPdfRecebido(L.c, L.r, L.cod, Object.assign({}, L.m, {salvo: true}));
+});
 async function flxPdfRecebido(c, r, cod, m){
   const d = flxPdfDest; flxPdfDest = null;
   if (!d || d.pid !== r.ID || d.cod !== cod) { flxEnviar(c.fr, {t: "pdferro", msg: "A solicitação de salvamento expirou. Tente novamente."}); return; }
@@ -6225,9 +6252,14 @@ async function flxPdfRecebido(c, r, cod, m){
   const blob = new Blob([m.buf], {type: "application/pdf"});
   let arq;
   try {
+    if (d.local && !m.salvo) {
+      flxPdfLocal = {c, r, cod, m, d, blob};
+      flxModal(`<h3>PDF gerado</h3><p class="note">Escolha em qual pasta do seu computador (ou do SharePoint sincronizado) quer salvar: <b>${esc(nome)}</b></p><div class="flx-acts"><button type="button" class="btn" data-pdf-cancelar>Cancelar</button><button type="button" class="btn primary" data-pdf-salvar>Escolher onde salvar…</button></div>`);
+      flxPdfDest = d;
+      return;
+    }
     if (d.local) {
       const dataUrl = blob.size <= 1.5 * 1024 * 1024 ? await new Promise(res => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.readAsDataURL(blob); }) : "";
-      const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = nome; document.body.appendChild(a); a.click(); a.remove();
       arq = {nome, tam: blob.size, tipo: "application/pdf", dataUrl};
     } else {
       if (!spSt.siteId) spSt.siteId = (await gx("GET", `/sites/${SP.host}:${SP.sitePath}?$select=id`)).id;
@@ -6278,15 +6310,15 @@ function flxPaHtml(){
       : flxPa.salvar ? "" : `<label class="flx-spi"><input type="checkbox" data-pa-sel="${i}" ${flxPa.sel[it.id] ? "checked" : ""}><span>📄</span><b>${esc(it.name)}</b><small>${Math.max(1, Math.round((it.size || 0) / 1024))} KB</small></label>`).join("")
       : `<p class="note" style="margin:6px 0">Pasta vazia.</p>`;
   const n = Object.keys(flxPa.sel).length;
-  if (flxPa.salvar) return `<h3>Salvar o PDF na pasta do projeto</h3>
-    <p class="note" style="margin:0 0 6px">Escolha em qual pasta do SharePoint salvar. Começa na pasta do projeto; use o caminho acima para voltar e navegue pelas pastas.</p>
-    <div class="flx-spc">${crumb}</div><div class="flx-spl" style="max-height:260px">${flxPa.itens.some(x => x.folder) || flxPa.erro ? lista : `<p class="note" style="margin:6px 0">Esta pasta não tem subpastas. Você pode salvar aqui ou voltar pelo caminho acima.</p>`}</div>
+  if (flxPa.salvar) return `<h3>Pasta de documentos do SharePoint</h3>
+    <p class="note" style="margin:0 0 6px">Navegue até a pasta onde quer salvar o PDF e clique em Salvar aqui.</p>
+    <div class="flx-spc">${crumb}</div><div class="flx-spl" style="max-height:260px">${flxPa.itens.some(x => x.folder) || flxPa.erro ? lista : `<p class="note" style="margin:6px 0">Esta pasta não tem subpastas.</p>`}</div>
     <p class="note" style="margin:8px 0 0">Arquivo: <b>${esc(flxPa.nome)}</b></p>
     <div class="flx-acts"><button type="button" class="btn" data-pa-fechar>Cancelar</button><button type="button" class="btn primary" data-pa-salvar ${flxPa.erro ? "disabled" : ""}>Salvar aqui</button></div>`;
-  return `<h3>Anexar da pasta do projeto</h3>
-    <p class="note" style="margin:0 0 6px">${flxPa.fixa ? "Escolha os documentos já salvos na pasta deste projeto." : "Não encontrei a pasta deste projeto automaticamente. Navegue até ela e confirme."}</p>
+  return `<h3>Pasta de documentos do SharePoint</h3>
+    <p class="note" style="margin:0 0 6px">Navegue pelas pastas e marque o documento.</p>
     <div class="flx-spc">${crumb}</div><div class="flx-spl" style="max-height:260px">${lista}</div>
-    <div class="flx-acts">${flxPa.fixa ? "" : `<button type="button" class="btn" data-pa-definir>Esta é a pasta do projeto</button>`}<button type="button" class="btn" data-pa-fechar>Cancelar</button><button type="button" class="btn primary" data-pa-ok ${n ? "" : "disabled"}>Anexar ${n ? n + " arquivo(s)" : ""}</button></div>`;
+    <div class="flx-acts"><button type="button" class="btn" data-pa-fechar>Cancelar</button><button type="button" class="btn primary" data-pa-ok ${n ? "" : "disabled"}>Anexar ${n ? n + " arquivo(s)" : ""}</button></div>`;
 }
 async function flxPaRender(){
   flxModal(`<p class="note">Carregando a pasta…</p>`);
@@ -6298,13 +6330,6 @@ async function flxPaAbrir(ctx, pidForce, estado, nome){
   const unico = /^(evid|aprov):/.test(ctx), salvar = /^salvar:/.test(ctx);
   if (!r) return;
   flxPa = {ctx, pid, unico, salvar, nome, estado, base: [], caminho: [], itens: [], sel: {}, fixa: false, erro: ""};
-  flxModal(`<p class="note">Procurando a pasta do projeto…</p>`);
-  try {
-    const achada = await flxPaAcharPasta(r);
-    if (achada && salvar) { flxPa.base = []; flxPa.caminho = achada.slice(); flxPa.fixa = false; }
-    else if (achada) { flxPa.base = achada; flxPa.caminho = []; flxPa.fixa = true; }
-    else { flxPa.base = []; flxPa.caminho = []; }
-  } catch (e) { flxPa.base = []; flxPa.caminho = []; }
   await flxPaRender();
 }
 document.addEventListener("click", async e => {
@@ -6466,7 +6491,12 @@ window.addEventListener("message", e => {
     toast("Rascunho salvo no portal.");
   } else if (m.t === "pdfpasta") {
     if (!podeEditar()) return;
-    flxPaAbrir("salvar:" + cod, r.ID, m.estado, m.nome);
+    (async () => {
+      if (!spLigado() && spFonte()) { flxModal(`<p class="note">Reconectando ao SharePoint…</p>`); try { await spConectar(); } catch (e) {} flxFechar(); }
+      if (spLigado()) { flxPaAbrir("salvar:" + cod, r.ID, m.estado, m.nome); return; }
+      flxSemSp = {pid: r.ID, cod, estado: m.estado, nome: m.nome};
+      flxModal(`<h3>SharePoint desconectado</h3><p class="note">O portal não está conectado ao SharePoint agora${spSt.msg ? " (" + esc(spSt.msg) + ")" : ""}, por isso não dá para escolher a pasta de lá. Reconecte para salvar na pasta do projeto, ou salve o PDF no seu computador.</p><div class="flx-acts"><button type="button" class="btn" data-sem-sp="cancelar">Cancelar</button><button type="button" class="btn" data-sem-sp="local">Salvar no computador</button><button type="button" class="btn primary" data-sem-sp="entrar">Entrar com Microsoft</button></div>`);
+    })();
   } else if (m.t === "pdfgerar") {
     if (!podeEditar()) return;
     flxPdfDest = {pid: r.ID, cod, estado: m.estado, nome: m.nome, local: true};

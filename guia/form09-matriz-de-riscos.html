@@ -1032,12 +1032,11 @@ showTab('s-proj');
     $$('.invalid').forEach(e => e.classList.remove('invalid'));
     const {E} = validate();
     if (E.length) { finish(); return; }
-    showModal('<h3>Concluir e arquivar no portal</h3><p>O documento está completo. ' + (spOn ? 'Escolha a pasta do projeto no SharePoint e clique em Salvar: o portal gera o PDF e grava lá.' : 'O portal vai gerar o PDF e guardar no projeto.') + '</p>'
-      + '<div class="acts"><button class="btn" type="button" id="gdCancel">Voltar e revisar</button><button class="btn primary" type="button" id="gdSalvar">' + (spOn ? 'Escolher a pasta e salvar o PDF' : 'Gerar e salvar o PDF') + '</button></div>');
+    showModal('<h3>Concluir e arquivar no portal</h3><p>O documento está completo. ' + 'Escolha a pasta do projeto no SharePoint e clique em Salvar: o portal gera o PDF e grava lá.' + '</p>'
+      + '<div class="acts"><button class="btn" type="button" id="gdCancel">Voltar e revisar</button><button class="btn primary" type="button" id="gdSalvar">' + 'Escolher a pasta e salvar o PDF' + '</button></div>');
     $('#gdCancel').onclick = closeModal;
     $('#gdSalvar').onclick = () => {
-      if (spOn) { post({t: 'pdfpasta', estado: JSON.parse(JSON.stringify(S)), nome: nomeArq()}); return; }
-      post({t: 'pdfgerar', estado: JSON.parse(JSON.stringify(S)), nome: nomeArq()});
+      post({t: 'pdfpasta', estado: JSON.parse(JSON.stringify(S)), nome: nomeArq()});
     };
   }
   async function executarPdf(m){
