@@ -990,6 +990,7 @@ body:not(.ro) .sr-wrap .sr-f[data-sr-edit]:hover,body:not(.ro) .sr-wrap .sr-av[d
 .dpr-tb{width:100%;table-layout:fixed;border-collapse:collapse;font-size:12.5px}.dpr-tb th:nth-child(1){width:26%}.dpr-tb th:nth-child(3){width:62px}.dpr-tb td,.dpr-tb th{overflow-wrap:anywhere;white-space:normal;word-break:break-word}.dpr-tb td *{white-space:normal}.dpr-tb th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);padding:6px 8px;border-bottom:1px solid var(--line)}
 .dpr-tb td{padding:8px;border-bottom:1px solid var(--line);vertical-align:top}.dpr-tb small{color:var(--muted);display:block;margin-top:3px}.dpr-pt{text-align:right;font-weight:800;white-space:nowrap}
 .dpr-tb tr.tot td{font-weight:800;border-bottom:0}.dpr-tr{display:block;margin-bottom:6px}.dpr-tr i{color:var(--muted);font-style:normal}
+.dpr-alert li{color:var(--hi)}
 .dpr-res{margin:0 0 10px;font-size:13.5px;line-height:1.5}.dpr-tb tr.zero td{opacity:.62}.dpr-pal{margin:0 0 14px}.dpr-pal summary{cursor:pointer;font-weight:700;font-size:12.5px;color:var(--muted)}
 .dem-ia-l{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;color:var(--muted);margin-top:10px}.dem-ia-l input{font:inherit;font-size:13px;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface3);color:var(--hi)}
 .dem-faixas{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-top:12px;padding:10px 12px;border:1px solid var(--line);border-radius:10px}.dem-faixas label{display:flex;gap:6px;align-items:center;font-size:13px}.dem-faixas input{width:72px;font:inherit;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--surface3);color:var(--hi)}
@@ -5214,7 +5215,21 @@ function demCriterios(){
 }
 function demCritSalvar(l){ try { localStorage.setItem(DEM_CRIT_KEY, JSON.stringify(l)); } catch (e) {} }
 const demChaves = c => String(c.chaves || "").split(",").map(x => demNorm(x)).filter(x => x.length >= 3).concat(demNorm(c.nome));
-const demRe = k => new RegExp("(^|[^a-z0-9])" + k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "");
+const demRe = k => new RegExp("(^|[^a-z0-9])" + k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + (k.length <= 4 ? "(?=s?([^a-z0-9]|$))" : ""), "");
+/* vocabulário embutido por tema do critério (soma-se às palavras-chave editáveis). Expressões com espaço = evidência forte. */
+const DEM_LEXICO = [
+  [/receita|faturamento|venda/, "retorno financeiro, ganho financeiro, retorno sobre investimento, roi, payback, receita, faturamento, aumentar vendas, vender mais, vendas, novos clientes, novos mercados, margem, lucro, lucratividade, rentabilidade, ticket medio, monetizar, recuperar receita, perda de vendas, conversao, resultado financeiro, gerar receita, aumento de faturamento"],
+  [/custo|economia|despesa/, "reducao de custo, reduzir custo, reduzir custos, economia, economizar, custo, despesa, gasto, desperdicio, otimizar recursos, horas extras, evitar multa, evitar perdas, perdas financeiras, reduzir perdas, cancelar licenca, licenca, frete, estoque parado, consumo, terceirizacao, corte de gastos, reduzir gastos"],
+  [/legal|\blei\b|regulat|fiscal/, "requisito legal, obrigacao legal, legislacao, lei, norma regulamentadora, fiscal, sped, esocial, reinf, lgpd, receita federal, sefaz, nota fiscal eletronica, nf-e, bloco k, regulatorio, exigencia legal, prazo legal, auditoria externa, anvisa, inmetro, multa"],
+  [/seguranca das pessoas|seguranca do trabalho|seguranca fisica|\bvidas?\b|\bsaude\b/, "seguranca do trabalho, seguranca das pessoas, integridade fisica, risco de acidente, acidente de trabalho, evitar acidentes, condicao insegura, ato inseguro, protecao de maquinas, trabalho em altura, espaco confinado, risco a vida, risco a saude, ergonomia, epi, cipa, sesmt"],
+  [/organizacional|auditoria|compliance|\bgestao\b|controle/, "tomada de decisao, visibilidade, controle, governanca, padronizacao, padronizar, rastreabilidade, indicadores, centralizar informacoes, informacao confiavel, transparencia, qualidade, satisfacao, gestao, organizacao, auditoria interna, compliance"],
+  [/produtiv|eficien|agilidade/, "aumento de produtividade, produtividade, automatizar, automacao, processo manual, manualmente, retrabalho, reduzir tempo, ganho de tempo, tempo gasto, horas gastas, agilidade, agilizar, eficiencia, planilha, digitacao, gargalo, demora, lentidao, fila, duplicidade"],
+  [/diferencial|estrateg|inovac/, "diferencial estrategico, diferencial competitivo, vantagem competitiva, inovacao, transformacao digital, experiencia do cliente, posicionamento, pioneiro, competitividade, estrategia"]
+];
+const demLexico = c => { const n = demNorm(c.nome); const l = DEM_LEXICO.find(([re]) => re.test(n)); return l ? l[1].split(",").map(x => demNorm(x)).filter(x => x.length >= 2) : []; };
+const demTermos = c => [...new Set(demChaves(c).concat(demLexico(c)))];
+const DEM_CAMPO_CENTRAL = /necessidade|justifi|escopo|objetiv|retorno|benef|descri|motiv|resultado|ganho|medic|consequ|problema|demanda/;
+const DEM_QUANT = /r\$\s?\d|\d+\s?%|\d+\s?(horas?|h\b|dias|minutos|pessoas|colaboradores|clientes|mil\b|milh|reais|notas|pedidos|ton)/;
 const DEM_CATS = [
   ["Compliance / Legal", /\blgpd\b|\blei\b|legisla|fiscal|\bsped\b|auditoria|compliance|norma regulament|regulat|obrigatori/],
   ["Integração", /integra|\bapi\b|interface entre|sincroniz|webservice|\bedi\b|importac\w* automatic|exportac\w* automatic/],
@@ -5269,13 +5284,24 @@ function demNota(it){
   const benLista = demLista(demValor(it, "benef")).map(demNorm);
   const texto = demTextoTodo(it);
   const itens = [];
+  const campos = demCampoTextos(it).map(x => ({campo: x.campo, texto: x.texto, n: demNorm(x.texto), central: DEM_CAMPO_CENTRAL.test(demNorm(x.campo))}));
   crit.forEach(c => {
-    const ks = demChaves(c);
-    const noCampo = benLista.some(b => ks.some(k => b.includes(k) || k.includes(b)));
-    const ach = [...new Set(ks.filter(k => demRe(k).test(texto)))];
-    /* texto: uma palavra solta e genérica não basta; exige uma expressão (2+ palavras) ou 2 palavras-chave diferentes */
-    const noTexto = !noCampo && ach.length > 0 && (ach.length >= 2 || ach.some(k => k.includes(" ")));
-    if (noCampo || noTexto) itens.push({nome: c.nome, peso: +c.peso, fonte: noCampo ? "campo" : "texto", pts: noCampo ? +c.peso : +c.peso / 2, ev: noCampo ? [] : ach.slice(0, 4), trechos: noCampo ? [] : demTrechos(it, ach, 2), nExt: noCampo ? 0 : ach.length, campoVal: noCampo ? benLista.join(", ") : ""});
+    const ks = demTermos(c);
+    const noCampo = benLista.some(b => ks.some(k => b.includes(k) || k.includes(b)) || b.includes(demNorm(c.nome)));
+    const porCampo = campos.map(f => ({f, ach: ks.filter(k => demRe(k).test(f.n))})).filter(x => x.ach.length);
+    /* um campo sustenta o critério quando traz uma expressão (2+ palavras) ou 2 termos diferentes do tema */
+    const sust = porCampo.filter(x => x.ach.some(k => k.includes(" ")) || new Set(x.ach).size >= 2);
+    const ach = [...new Set(porCampo.flatMap(x => x.ach))];
+    const quant = sust.some(x => DEM_QUANT.test(x.f.n));
+    const centrais = sust.filter(x => x.f.central).length;
+    const txtOk = sust.length > 0;
+    let pts = 0, motivo = "";
+    if (noCampo && txtOk) { pts = +c.peso; motivo = "Marcado pelo solicitante e sustentado no texto."; }
+    else if (noCampo) { pts = +c.peso / 2; motivo = "Marcado pelo solicitante, mas o texto não descreve esse benefício: meio peso."; }
+    else if (txtOk && sust.length >= 2 && centrais >= 1 && quant) { pts = +c.peso; motivo = `Descrito em ${sust.length} campos e com quantificação: peso inteiro.`; }
+    else if (txtOk) { pts = +c.peso / 2; motivo = `Citado em ${sust.length} campo(s)${quant ? "" : " sem quantificar (R$, %, horas)"}: meio peso.`; }
+    if (pts) itens.push({nome: c.nome, peso: +c.peso, fonte: noCampo ? "campo" : "texto", pts, motivo, ev: ach.slice(0, 5), nCampos: sust.length, quant,
+      camposCit: sust.map(x => x.f.campo), trechos: demTrechos(it, ach, 3), nExt: ach.length, campoVal: noCampo ? benLista.join(", ") : ""});
   });
   itens.sort((a, b) => b.pts - a.pts);
   const pts = itens.reduce((a, x) => a + x.pts, 0);
@@ -5368,7 +5394,7 @@ function demCardHtml(it){
   return `<button type="button" class="dkb-card${demSel === it.id ? " on" : ""}" data-dem="${esc(it.id)}">
     <span class="dkb-sc ${f}" title="Prioridade ${DEM_FAIXA_TXT[f]}${rc ? " (reclassificada pelo PMO; calculada: " + DEM_FAIXA_TXT[demFaixaCalc(it)] + ")" : ""}"><b>${n.pts ? demNotaTxt(n.pts) : "–"}</b><small>${DEM_FAIXA_TXT[f]}${rc ? " ✎" : ""}</small></span>
     <span class="dkb-body">
-      <span class="dkb-top">#${esc(c.ID || it.id)} · ${esc(cat.nome)}${demAtrasado(it) ? ` <span class="dem-tag atr">atrasada</span>` : ""}${demPendenteFluxo(it) ? ` <span class="dem-tag">e-mail pendente</span>` : ""}</span>
+      <span class="dkb-top">#${esc(c.ID || it.id)} · ${esc(cat.nome)}${!n.ia && demQualidade(it, n).conf === "baixa" ? ` <span class="dem-tag atr" title="Respostas genéricas ou sem quantificação: confira antes de priorizar">dados fracos</span>` : ""}${demAtrasado(it) ? ` <span class="dem-tag atr">atrasada</span>` : ""}${demPendenteFluxo(it) ? ` <span class="dem-tag">e-mail pendente</span>` : ""}</span>
       <span class="dkb-t">${esc(demTxt(c.Title) || "—")}</span>
       <span class="dkb-m">${esc([setor, tipo].filter(Boolean).join(" · ") || "—")}${d == null ? "" : ` · ${d}d no status`}</span>
       <span class="dkb-chips">${demCritTags(n, 2) || `<span class="dkb-crit tx">sem critério</span>`}</span>
@@ -5675,6 +5701,48 @@ function demIaSecHtml(it, n){
     ${a.obs.length ? `<h5>Observações (não entram na nota)</h5><ul>${a.obs.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
     <p class="note" style="margin:8px 0 0">${esc(a.modelo || "")} · ${esc(new Date(a.em).toLocaleString("pt-BR"))}. Pontuação por palavras-chave seria ${demNotaTxt(n.calcPalavras)}.</p></div>`;
 }
+function demQualidade(it, n){
+  const cs = demCampoTextos(it).filter(x => x.campo !== "Título");
+  const nn = x => demNorm(x).replace(/[.!;:\s]+$/, "");
+  const alertas = [], maturidade = [];
+  // respostas repetidas
+  const grupos = {};
+  cs.forEach(x => { const k = nn(x.texto); if (k.length && k.length < 200) (grupos[k] = grupos[k] || []).push(x.campo); });
+  const rep = Object.entries(grupos).filter(([k, v]) => v.length >= 3 && !/^(sim|nao)\b/.test(k)).sort((a, b) => b[1].length - a[1].length)[0];
+  if (rep) alertas.push(`A mesma resposta <b>“${esc(cs.find(x => nn(x.texto) === rep[0]).texto.trim())}”</b> foi repetida em ${rep[1].length} campos (${esc(rep[1].join(", "))}). A solicitação não descreve de fato a necessidade, o escopo nem como o ganho acontece.`);
+  // respostas curtas em campos descritivos
+  const curtos = cs.filter(x => DEM_CAMPO_CENTRAL.test(demNorm(x.campo)) && !/^(sim|nao)\b/.test(nn(x.texto)) && x.texto.trim().length < 40 && !(rep && rep[1].includes(x.campo)));
+  if (curtos.length) alertas.push(`Respostas curtas demais para avaliar: ${curtos.map(x => `${esc(x.campo)} (“${esc(x.texto.trim())}”)`).join("; ")}.`);
+  // valores
+  if (!n.valores.length) alertas.push("Nenhum valor citado (R$, %, horas): o ganho não está quantificado.");
+  // benefício marcado x texto
+  const ben = demLista(demValor(it, "benef"));
+  const decl = n.itensPalavras ? n.itensPalavras.filter(x => x.fonte === "campo") : [];
+  decl.filter(x => !x.nCampos).forEach(x => alertas.push(`O solicitante marcou <b>${esc(x.nome)}</b>, mas nada no texto descreve esse benefício.`));
+  const txt = (n.itensPalavras || []).filter(x => x.fonte === "texto").sort((a, b) => b.nCampos - a.nCampos)[0];
+  if (txt && ben.length && txt.nCampos >= 2) alertas.push(`O texto enfatiza <b>${esc(txt.nome)}</b> (${txt.nCampos} campos), diferente do benefício marcado (${esc(ben.join(", "))}).`);
+  // maturidade declarada
+  cs.forEach(x => {
+    const c = demNorm(x.campo), v = nn(x.texto);
+    if (/prototip/.test(c)) maturidade.push(/ja tenho|sim/.test(v) ? "Há protótipo desenvolvido." : `Protótipo: ${esc(x.texto.trim())}.`);
+    else if (/escopo.*documentad|business case/.test(c)) maturidade.push(/^sim/.test(v) ? "Declara ter o escopo completo documentado (Business Case)." : `Escopo documentado: ${esc(x.texto.trim())}.`);
+    else if (/processos.*(definid|documentad)/.test(c)) maturidade.push(/^sim/.test(v) ? "Declara que os processos estão definidos e documentados." : `Processos: ${esc(x.texto.trim())}.`);
+  });
+  if (rep && maturidade.some(x => /escopo completo/.test(x))) alertas.push("Declara escopo documentado, mas as respostas são genéricas: peça o documento (Business Case) antes de priorizar.");
+  const graves = (rep ? 2 : 0) + (curtos.length >= 2 ? 1 : 0) + (decl.some(x => !x.nCampos) ? 1 : 0) + (n.valores.length ? 0 : 1);
+  const conf = graves >= 3 ? "baixa" : graves >= 1 ? "média" : "alta";
+  // resumo interpretativo
+  const ip = (n.itensPalavras || []).slice().sort((a, b) => b.pts - a.pts);
+  let resumo = "";
+  if (ip.length) {
+    const p1 = ip.filter(x => x.fonte === "texto").map(x => `${esc(x.nome.toLowerCase())}${x.ev && x.ev.length ? " (“" + esc(x.ev[0]) + "”" + (x.nCampos > 1 ? ", em " + x.nCampos + " campos" : "") + ")" : ""}`);
+    const p2 = ip.filter(x => x.fonte === "campo").map(x => esc(x.nome.toLowerCase()));
+    resumo = [p1.length ? "O texto aponta " + p1.join(" e ") : "O texto não descreve benefícios", p2.length ? "o solicitante marcou " + p2.join(" e ") : ""].filter(Boolean).join("; ") + ".";
+    if (ip.some(x => /retorno financeiro/.test((x.ev || []).join(" ")))) resumo += " “Retorno financeiro” não diz se o ganho vem de receita nova ou de redução de custo, nem quanto.";
+  } else resumo = "A solicitação não descreve nenhum benefício ligado aos critérios.";
+  resumo += ` Confiabilidade da nota: <b>${conf}</b>.`;
+  return {alertas, maturidade, conf, resumo};
+}
 function demPorQueHtml(it){
   const n = demNota(it), f = demFaixaIt(it), L = demFaixaLim(), st = demStatus(it);
   const abertas = demItens.filter(x => !demFinal(x)).sort(demOrdenar), pos = abertas.findIndex(x => x.id === it.id) + 1;
@@ -5682,11 +5750,11 @@ function demPorQueHtml(it){
   const ip = n.itensPalavras || n.itens;
   const crit = demCritTodos(), achados = new Set(ip.map(x => x.nome)), sem = crit.filter(c => !achados.has(c.nome));
   const linhas = ip.map(x => {
-    const ev = x.fonte === "campo"
-      ? `<b>Marcado pelo solicitante</b> no campo Benefício estratégico: “${esc(x.campoVal || ben.join(", "))}”.<br><small>Peso inteiro: o solicitante afirmou esse benefício.</small>`
-      : `${x.trechos.map(t => `<span class="dpr-tr"><b>${esc(t.campo)}</b> · palavra “${esc(t.palavra)}”<br><i>${esc(t.trecho)}</i></span>`).join("")}<small>Só citado no texto: meio peso. ${x.nExt >= 2 ? x.nExt + " palavras-chave diferentes encontradas." : "Expressão específica encontrada, mas uma única evidência."}</small>`;
+    const tr = (x.trechos || []).map(t => `<span class="dpr-tr"><b>${esc(t.campo)}</b> · “${esc(t.palavra)}”<br><i>${esc(t.trecho)}</i></span>`).join("");
+    const ev = `${x.fonte === "campo" ? `<b>Marcado pelo solicitante</b> no Benefício estratégico (“${esc(x.campoVal || ben.join(", "))}”).<br>` : ""}${tr}<small>${esc(x.motivo || "")}${x.camposCit && x.camposCit.length ? " Campos: " + esc(x.camposCit.join(", ")) + "." : ""}</small>`;
     return `<tr><td><b>${esc(x.nome)}</b><br><small>peso ${x.peso}</small></td><td>${ev}</td><td class="dpr-pt">${demNotaTxt(x.pts)}</td></tr>`;
   }).join("");
+  const q = demQualidade(it, n);
   const faltaAlta = L.alta - n.pts, topo = n.itens[0];
   const lei = [];
   lei.push(`Posição <b>${pos || "–"}º de ${abertas.length}</b> demandas abertas, ordenadas pela nota.`);
@@ -5697,12 +5765,14 @@ function demPorQueHtml(it){
   else lei.push(`O critério mais forte é <b>${esc(topo.nome)}</b> (peso ${topo.peso}).`);
   lei.push(ben.length ? `Benefício estratégico informado pelo solicitante: ${esc(ben.join(", "))}.` : "O solicitante <b>não preencheu o benefício estratégico</b>: a nota depende só de palavras encontradas no texto.");
   if (n.itens.length && n.itens.every(x => x.fonte === "texto")) lei.push("Todos os critérios vêm só do texto: confirme com o solicitante antes de usar a nota.");
-  lei.push(n.valores.length ? "Valores citados na solicitação: " + n.valores.join(", ") + "." : "Nenhum valor em R$ citado: o ganho não está quantificado.");
+  if (n.valores.length) lei.push("Valores citados na solicitação: " + n.valores.join(", ") + ".");
   if (chars < 350) lei.push(`O texto da solicitação é curto (${chars} caracteres): há pouca base para avaliar.`);
   const d = demDias(it);
   if (d != null) lei.push(`${d} ${d === 1 ? "dia" : "dias"} em “${esc(st || "—")}”${demAtrasado(it) ? " (atrasada)" : ""}${demBloqueado(st) ? "; bloqueada aguardando o solicitante" : ""}.`);
-  const pal = `<div class="dpr-why"><h5>Por que esta nota</h5>
+  const pal = `<div class="dpr-why"><h5>Por que esta nota</h5>${q.resumo ? `<p class="dpr-res">${q.resumo}</p>` : ""}
     ${ip.length ? `<table class="dpr-tb"><thead><tr><th>Critério</th><th>Evidência na solicitação</th><th>Pts</th></tr></thead><tbody>${linhas}<tr class="tot"><td colspan="2">Total pelos critérios</td><td class="dpr-pt">${demNotaTxt(n.calcPalavras)}</td></tr></tbody></table>` : `<p class="note" style="margin:0">Nenhuma evidência encontrada para pontuar.</p>`}
+    ${q.alertas.length ? `<h5>Qualidade da solicitação <span class="flx-badge ${q.conf === "alta" ? "ok" : q.conf === "média" ? "and" : "bloq"}">confiabilidade da nota: ${q.conf}</span></h5><ul class="dpr-alert">${q.alertas.map(x => `<li>${x}</li>`).join("")}</ul>` : ""}
+    ${q.maturidade.length ? `<h5>Maturidade declarada</h5><ul>${q.maturidade.map(x => `<li>${x}</li>`).join("")}</ul>` : ""}
     ${sem.length ? `<h5>Critérios avaliados sem evidência</h5><div class="dkb-chips">${sem.map(c => `<span class="dkb-crit tx" title="Peso ${c.peso}: nenhuma palavra-chave no texto e não marcado no benefício">${esc(c.nome)} (${c.peso})</span>`).join("")}</div>` : ""}
     <h5>Leitura</h5><ul>${lei.map(x => `<li>${x}</li>`).join("")}</ul>
     <p class="note" style="margin:8px 0 0">A leitura é por palavras-chave e não entende o contexto. Se a nota não refletir a realidade, use <b>Reclassificar</b> abaixo ou <b>Exportar para o Claude</b> para uma análise do conteúdo.</p></div>`;
