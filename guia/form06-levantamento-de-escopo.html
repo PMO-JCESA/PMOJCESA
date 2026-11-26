@@ -1141,7 +1141,7 @@ buildStatic();$('#btnFinish').onclick=finish;$('#btnFinish2').onclick=finish;fil
   let CAD = null;
   const norm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
   const MAPA = {'id.gp': 'ger', 'org.gp.nome': 'ger', 'proj.gp': 'ger', 'pf.gerente': 'ger', 'id.analista': 'pes', 'id.po': 'sol', 'id.solic': 'solarea', 'f.solicitante': 'sol', 'id.area': 'dep', 'proj.area': 'dep'};
-  const ABA = {ger: 'Base › Gerentes de projetos', pes: 'Base › Gerentes, Solicitantes ou Pessoas', sol: 'Base › Solicitantes', solarea: 'Base › Solicitantes', dep: 'Base › Departamentos'};
+  const ABA = {ger: 'Base › Cadastro de pessoas, papel GP', pes: 'Base › Cadastro de pessoas', sol: 'Base › Cadastro de pessoas', solarea: 'Base › Cadastro de pessoas', dep: 'departamento de alguma pessoa em Base › Cadastro de pessoas'};
   const solTxt = s => s.dep ? s.nome + ' / ' + s.dep : s.nome;
   function opcoes(t){ if (!CAD) return []; return t === 'ger' ? CAD.gerentes : t === 'pes' ? CAD.pessoas : t === 'sol' ? CAD.solicitantes.map(s => s.nome) : t === 'solarea' ? CAD.solicitantes.map(solTxt) : CAD.departamentos; }
   function canon(t, v){
@@ -1159,11 +1159,19 @@ buildStatic();$('#btnFinish').onclick=finish;$('#btnFinish2').onclick=finish;fil
   const msgFora = (v, t) => '“' + v + '” não está cadastrado (' + ABA[t] + '). Escolha uma opção da lista ou peça ao PMO para cadastrar.';
   function listas(){
     if (!CAD) return;
-    const mk = (id, arr) => { let d = document.getElementById(id); if (!d) { d = document.createElement('datalist'); d.id = id; document.body.appendChild(d); } d.innerHTML = arr.map(x => '<option value="' + esc(x) + '">').join(''); };
-    ['ger', 'pes', 'sol', 'solarea', 'dep'].forEach(t => mk('gdl-' + t, opcoes(t)));
+    /* a lista só aparece conforme a pessoa digita (no máximo 8 sugestões) */
+    const mk = id => { let d = document.getElementById(id); if (!d) { d = document.createElement('datalist'); d.id = id; document.body.appendChild(d); } d.innerHTML = ''; };
+    ['ger', 'pes', 'sol', 'solarea', 'dep'].forEach(t => mk('gdl-' + t));
     Object.keys(MAPA).forEach(p => { const el = document.querySelector('[data-path="' + p + '"]'); if (el) { el.setAttribute('list', 'gdl-' + MAPA[p]); el.setAttribute('autocomplete', 'off'); } });
     const tn = document.getElementById('tNome'); if (tn) tn.setAttribute('list', 'gdl-pes');
   }
+  document.addEventListener('input', e => {
+    const el = e.target, l = el && el.getAttribute && el.getAttribute('list');
+    if (!l || l.indexOf('gdl-') !== 0 || !CAD) return;
+    const d = document.getElementById(l); if (!d) return;
+    const q = norm(el.value), toks = q.split(' ').filter(Boolean);
+    d.innerHTML = toks.length ? opcoes(l.slice(4)).filter(x => { const h = norm(x); return toks.every(t => h.indexOf(t) >= 0); }).slice(0, 8).map(x => '<option value="' + esc(x) + '">').join('') : '';
+  }, true);
   let autoN = 0;
   function marcarAuto(paths){
     if (!paths || !paths.length) return;
