@@ -1335,6 +1335,68 @@ details.sec-fecha>summary::after{content:"+";font-size:16px;color:var(--teal-l)}
 details.sec-fecha[open]>summary::after{content:"–"}
 details.sec-fecha>.sec-corpo{padding:2px 14px 12px}
 @media (max-width:620px){.dr-panel,#demDetalhe:not(:empty){border-radius:0}.dlg-b{padding-left:26px}}
+/* ===== v79 · correções de enquadramento e densidade em qualquer largura ===== */
+/* gaveta da tarefa: nada pode passar da largura (links longos, nomes de anexo, guia) */
+.dr-panel{overflow-x:hidden;width:min(640px,100%)}
+.dr-body{grid-template-columns:minmax(0,1fr)}
+.dr-body>*,.dr-sec,.dr-sec *{min-width:0;max-width:100%}
+.dr-sec{overflow-wrap:anywhere}
+.dr-sec textarea,.dr-sec input,.dr-sec select,.dr-sec iframe,.dr-sec table,.dr-sec img{max-width:100%}
+.dr-sec table{table-layout:fixed;width:100%}
+.dr-sec a{word-break:break-all}
+.fgrid{grid-template-columns:repeat(auto-fit,minmax(min(200px,100%),1fr))}
+#demDetalhe:not(:empty){overflow-x:hidden}
+#demDetalhe *{min-width:0}
+#demDetalhe a{word-break:break-all}
+.dep-add select{flex:1 1 220px;min-width:0}
+/* menu lateral mais estreito; recolhe sozinho abaixo de 1700 px */
+.shell{grid-template-columns:220px minmax(0,1fr)}
+.side{padding:20px 14px 18px;gap:20px}
+.brand img{width:142px}
+.brand .portal{font-size:19px}
+.tab{padding:10px 12px}
+/* conteúdo: menos espaço vazio, centralizado em telas largas */
+main{padding:16px 28px 44px;max-width:1680px;margin:0 auto}
+body{font-size:13.5px}
+.topbar{margin:0 0 6px}
+.top-ver{margin-right:auto;font-size:11px;color:var(--muted);opacity:.7;letter-spacing:.04em}
+.page-h{margin-bottom:14px}
+.page-h h1{font-size:24px}
+.hero{padding:20px 24px 18px;margin-bottom:14px}
+.hero h1{font-size:26px}
+.card{padding:15px 17px}
+.kpi{padding:13px 16px}
+.kpi .v{font-size:27px}
+/* página do projeto */
+.crumb{margin-bottom:8px}
+.ph{padding:16px 20px;gap:12px;align-items:center}
+.ph h2{font-size:21px;margin:4px 0 8px}
+.ph .acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.fase-card{padding:12px 14px;margin-bottom:10px}
+.fase-h{margin-bottom:10px;gap:10px}
+.fase-h h3{font-size:15px}
+.fase-card.fase-vazia{padding:9px 14px;background:var(--surface3);border-style:dashed}
+.fase-card.fase-vazia .fase-h{margin:0}
+.fase-card.fase-vazia .fase-h h3{color:var(--muted)}
+.fase-card.fase-vazia .fase-h h3::before{background:var(--muted)}
+.col{min-height:90px}
+.col:has(.col-b:empty){min-height:64px}
+
+/* kanban de demandas: colunas quebram em linhas em vez de rolar para o lado */
+.dkb{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));overflow:visible;gap:12px}
+.dkb-col{min-width:0;max-height:none}
+.dkb-card{min-width:0}
+.dkb-card>*{min-width:0}
+/* formulários de página inteira não esticam além do confortável */
+#v-editar,#v-perfil{max-width:1240px}
+#corpoLista>tr>td{white-space:normal !important}
+#corpoLista td.title{min-width:170px;max-width:none}
+table:has(#corpoLista),table:has(#corpoConc){width:100%}
+#corpoLista>tr>td:first-child,#corpoLista>tr>td:last-child{white-space:nowrap !important}
+/* Base: o título do projeto fica fixo à esquerda ao rolar a tabela */
+#cabBase th:nth-child(3),#corpoBase td:nth-child(3){position:sticky;left:0;z-index:3;background:var(--surface2);box-shadow:6px 0 10px -6px rgba(0,0,0,.45)}
+#cabBase th:nth-child(3){z-index:4}
+
 </style>
 </head>
 <body>
@@ -1389,7 +1451,7 @@ details.sec-fecha>.sec-corpo{padding:2px 14px 12px}
 </aside>
 
 <main>
-  <div class="topbar"><div class="top-portal"><b>Portal <i>PMO</i></b><span>JCE SA · Gestão de Projetos de TI</span></div><div id="spPill"></div><div class="topuser" id="topUser"></div></div>
+  <div class="topbar"><span class="top-ver" title="Versão publicada do portal">v79 · 27/11/2026</span><div class="top-portal"><b>Portal <i>PMO</i></b><span>JCE SA · Gestão de Projetos de TI</span></div><div id="spPill"></div><div class="topuser" id="topUser"></div></div>
   <!-- HOME -->
   <section id="v-home" class="view"></section>
 
@@ -1405,6 +1467,7 @@ details.sec-fecha>.sec-corpo{padding:2px 14px 12px}
         <option value="vencido">Prazo vencido</option>
         <option value="proximo">Vence em até 30 dias</option>
       </select>
+      <button class="btn" id="btnColsLista" title="Mostrar ou esconder as colunas secundárias">Mostrar todas as colunas</button>
       <button class="btn" id="btnExpLista" title="Exporta para Excel os projetos que estão na tela, com os filtros aplicados">Exportar Excel</button>
       <span class="count" id="contador"></span>
     </div>
@@ -2702,6 +2765,74 @@ const senhaGpOk = (email, s) => {
   return senhas.gpPadrao ? senhas.gpPadrao === hashSenha(s) : s === SENHA_PADRAO.gp;
 };
 function salvarSenhas(){ try { localStorage.setItem(SENHAS_KEY, JSON.stringify(senhas)); } catch (e) { toast("Não foi possível salvar a senha neste navegador."); } }
+/* Senhas compartilhadas no SharePoint (PMO-Projetos/portal_senhas.json): o GP troca a própria senha e vale em qualquer
+   computador; o administrador vê o histórico de trocas. Só o hash da senha é gravado, nunca a senha em texto. */
+const SENHAS_ARQ = "PMO-Projetos/portal_senhas.json";
+if (!senhas.hist) senhas.hist = (lerJSON(SENHAS_KEY) || {}).hist || [];
+if (!senhas.trocas) senhas.trocas = (lerJSON(SENHAS_KEY) || {}).trocas || {};
+let senhasLidasEm = 0;
+function senhasAplicar(j){
+  if (!j || typeof j !== "object") return;
+  if (j.gp && typeof j.gp === "object") senhas.gp = j.gp;
+  if ("gpPadrao" in j) senhas.gpPadrao = j.gpPadrao || "";
+  if ("respPadrao" in j) senhas.respPadrao = j.respPadrao || "";
+  if (Array.isArray(j.hist)) senhas.hist = j.hist;
+  if (j.trocas && typeof j.trocas === "object") senhas.trocas = j.trocas;
+  salvarSenhas();
+}
+async function senhasSpCarregar(){
+  if (!spLigado() || !spSt.siteId) return false;
+  try { senhasAplicar(await gx("GET", `/sites/${spSt.siteId}/drive/root:/${SENHAS_ARQ}:/content`)); senhasLidasEm = Date.now(); return true; }
+  catch (e) { if (e.status !== 404) console.warn("senhas:", e.message); return false; }
+}
+/* aplica a mudança em cima da versão mais nova do arquivo e grava; registra no histórico */
+async function senhasMudar(alterar, registro){
+  await senhasSpCarregar();
+  alterar();
+  if (registro) {
+    senhas.hist.unshift(Object.assign({em: new Date().toISOString(), por: sessao ? (sessao.perfil === "admin" ? "Administrador" : sessao.nome) : ""}, registro));
+    senhas.hist = senhas.hist.slice(0, 300);
+    if (registro.email) senhas.trocas[registro.email] = {em: senhas.hist[0].em, por: registro.porQuem || "admin"};
+  }
+  salvarSenhas();
+  if (!spLigado() || !spSt.siteId) { toast("Senha salva só neste navegador: conecte ao SharePoint para valer nos outros computadores."); return "local"; }
+  try {
+    await gx("PUT", `/sites/${spSt.siteId}/drive/root:/${SENHAS_ARQ}:/content?@microsoft.graph.conflictBehavior=replace`,
+      new Blob([JSON.stringify({atualizado_em: new Date().toISOString(), gp: senhas.gp, gpPadrao: senhas.gpPadrao, respPadrao: senhas.respPadrao, trocas: senhas.trocas, hist: senhas.hist}, null, 1)], {type: "application/json"}),
+      {bruto: true, headers: {"Content-Type": "application/json"}});
+    return "sp";
+  } catch (e) { toast("Senha salva neste navegador, mas não no SharePoint: " + (e.message || e)); return "local"; }
+}
+const dataHoraBR = iso => { try { return new Date(iso).toLocaleString("pt-BR", {day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit"}); } catch (e) { return iso || ""; } };
+/* janela que pede ao GP para trocar a senha padrão por uma só dele */
+function gpPedirTroca(){
+  if (perfil() !== "gp" || !sessao.email || senhas.gp[sessao.email]) return;
+  flxModal(`<h3>Crie a sua senha</h3>
+    <p>Olá, ${esc(String(sessao.nome || "").split(" ")[0])}. Você entrou com a <b>senha padrão dos gerentes</b>. Para sua segurança, crie agora uma senha só sua: ela passa a valer em qualquer computador.</p>
+    <form id="gpTrocaForm" class="fgrid" autocomplete="off" style="grid-template-columns:1fr;margin-top:12px">
+      <div class="fld"><label>Nova senha (mínimo 6 caracteres)</label><input type="password" name="nova" autocomplete="new-password"></div>
+      <div class="fld"><label>Confirmar nova senha</label><input type="password" name="conf" autocomplete="new-password"></div>
+      <p class="note" id="gpTrocaErro" style="margin:0;color:#FF7A9A"></p>
+      <div class="flx-acts"><button type="button" class="btn" data-gp-depois>Agora não</button><button type="submit" class="btn primary">Salvar minha senha</button></div>
+    </form>`);
+  setTimeout(() => { const i = document.querySelector('#gpTrocaForm [name="nova"]'); if (i) i.focus(); }, 60);
+}
+async function gpTrocarSenha(nova, conf, atual, erro){
+  if (atual != null && !senhaGpOk(sessao.email, atual)) return erro("A senha atual não confere.");
+  if (nova.length < 6) return erro("A nova senha precisa ter pelo menos 6 caracteres.");
+  if (nova !== conf) return erro("A confirmação não confere com a nova senha.");
+  const ondeSalvou = await senhasMudar(() => { senhas.gp[sessao.email] = hashSenha(nova); }, {email: sessao.email, nome: sessao.nome, acao: "Trocou a própria senha", porQuem: "gp"});
+  toast(ondeSalvou === "sp" ? "Senha alterada. Use a nova senha nos próximos acessos." : "Senha alterada neste navegador.");
+  return true;
+}
+document.addEventListener("submit", async e => {
+  if (e.target.id !== "gpTrocaForm") return;
+  e.preventDefault();
+  const f = e.target, er = $("gpTrocaErro");
+  const ok = await gpTrocarSenha(f.nova.value, f.conf.value, null, m => { er.textContent = m; return false; });
+  if (ok) flxFechar();
+});
+document.addEventListener("click", e => { if (e.target.closest("[data-gp-depois]")) { flxFechar(); toast("Você pode trocar a senha quando quiser em Perfil."); } });
 const perfil = () => sessao ? sessao.perfil : null;
 const podeEditar = () => (perfil() === "admin" || perfil() === "gp") && !spBloqueado();
 const senhaRespOk = s => senhas.respPadrao ? senhas.respPadrao === hashSenha(s) : s === SENHA_PADRAO.resp;
@@ -2771,9 +2902,10 @@ function sair(){
   mostrarLogin();
 }
 $("loginForm").addEventListener("change", e => { if (e.target.name === "perfil") ajustarLogin(); });
-$("loginForm").addEventListener("submit", e => {
+$("loginForm").addEventListener("submit", async e => {
   e.preventDefault();
   const f = e.target, p = f.perfil.value, senha = f.senha.value;
+  if ((p === "gp" || p === "resp") && spLigado() && Date.now() - senhasLidasEm > 15000) await senhasSpCarregar();
   const email = f.email.value.trim().toLowerCase();
   const erro = msg => { $("lgErro").textContent = msg; };
   if (!loginLiberado(p)) return erro("Entre com Microsoft primeiro (botão acima) para usar este perfil.");
@@ -2806,6 +2938,7 @@ function entrarNoApp(nova, inicio){
   atualizarBadgeEmails();
   if (inicio) { if (location.hash === viewInicial()) route(); else location.hash = viewInicial(); }
   else if (!location.hash) location.hash = viewInicial(); else route();
+  if (inicio && nova.perfil === "gp") setTimeout(gpPedirTroca, 350);
 }
 document.addEventListener("click", e => {
   if (e.target.closest("[data-sair]")) { sair(); return; }
@@ -2863,12 +2996,29 @@ function renderPerfil(){
       </div>
       <div class="card" style="grid-column:1/-1">
         <h3>Senhas individuais dos gerentes</h3>
-        <p class="note">Gerentes não alteram a própria senha; só o administrador. Cada gerente entra com o e-mail cadastrado em Gerentes de projetos.</p>
+        <p class="note">Cada gerente entra com o e-mail do Cadastro de pessoas. No primeiro acesso com a senha padrão, o portal pede para ele criar uma senha própria; depois ele troca quando quiser em Perfil. Você pode definir uma nova senha para qualquer gerente aqui.</p>
         ${gerentesEmail.length ? `<div class="wrap" style="max-height:none"><table><thead><tr><th></th><th>Gerente</th><th>E-mail</th><th>Senha em uso</th><th>Definir senha individual</th><th></th></tr></thead><tbody>
-          ${gerentesEmail.map(g => { const em = g.email.toLowerCase(); return `<tr><td class="av-td">${avatarHtml(g.nome, 28)}</td><td>${esc(g.nome)}</td><td>${esc(g.email)}</td><td>${senhas.gp[em] ? "individual" : "padrão dos gerentes"}</td>
-            <td><div class="addrow" style="min-width:260px"><input type="password" data-nova-gp="${esc(em)}" placeholder="Nova senha"><button class="btn sm" data-set-gp="${esc(em)}">Definir</button></div></td>
+          ${gerentesEmail.map(g => { const em = g.email.toLowerCase(); return `<tr><td class="av-td">${avatarHtml(g.nome, 28)}</td><td>${esc(g.nome)}</td><td>${esc(g.email)}</td><td>${senhas.gp[em] ? (senhas.trocas[em] ? `própria · ${senhas.trocas[em].por === "gp" ? "trocada pelo gerente" : "definida pelo administrador"} em ${esc(dataHoraBR(senhas.trocas[em].em))}` : "individual") : `<span style="color:#E7B24A">padrão dos gerentes (ainda não trocou)</span>`}</td>
+            <td><div class="addrow" style="min-width:240px"><input type="password" data-nova-gp="${esc(em)}" placeholder="Nova senha"><button class="btn sm" data-set-gp="${esc(em)}">Definir</button></div></td>
             <td>${senhas.gp[em] ? `<button class="btn sm" data-reset-gp="${esc(em)}">Usar a padrão</button>` : ""}</td></tr>`; }).join("")}
         </tbody></table></div>` : `<p class="note">Nenhum gerente com e-mail cadastrado ainda. Cadastre em Base, Gerentes de projetos.</p>`}
+      </div>
+      <div class="card" style="grid-column:1/-1">
+        <div class="card-h"><h3>Histórico de trocas de senha</h3><span class="note" style="margin:0">${(senhas.hist || []).length} registro(s) · gravado no SharePoint</span></div>
+        <p class="note">Toda troca feita pelos gerentes ou pelo administrador fica registrada aqui. A senha em si não é exibida: o portal guarda só a versão criptografada. Se um gerente esquecer, defina uma nova senha individual para ele na tabela acima.</p>
+        ${(senhas.hist || []).length ? `<div class="wrap" style="max-height:420px"><table><thead><tr><th>Quando</th><th>Gerente / senha</th><th>O que aconteceu</th><th>Feito por</th></tr></thead><tbody>
+          ${senhas.hist.map(h => `<tr><td>${esc(dataHoraBR(h.em))}</td><td>${esc(h.nome || h.email || h.alvo || "—")}${h.email && h.nome ? `<br><small class="note" style="margin:0">${esc(h.email)}</small>` : ""}</td><td>${esc(h.acao)}</td><td>${esc(h.por || "—")}</td></tr>`).join("")}
+        </tbody></table></div>` : `<p class="note" style="margin:0">Nenhuma troca registrada ainda.</p>`}
+      </div>` : p === "gp" ? `
+      <div class="card">
+        <h3>Alterar minha senha</h3>
+        <p class="note">${senhas.gp[sessao.email] ? `Você usa uma senha só sua${senhas.trocas[sessao.email] ? `, trocada em ${esc(dataHoraBR(senhas.trocas[sessao.email].em))}` : ""}.` : "Você ainda usa a <b>senha padrão dos gerentes</b>. Crie uma senha só sua."} Vale em qualquer computador.</p>
+        <form id="pfGp" class="fgrid" autocomplete="off" style="grid-template-columns:1fr">
+          <div class="fld"><label>Senha atual</label><input type="password" name="atual" autocomplete="current-password"></div>
+          <div class="fld"><label>Nova senha (mínimo 6 caracteres)</label><input type="password" name="nova" autocomplete="new-password"></div>
+          <div class="fld"><label>Confirmar nova senha</label><input type="password" name="conf" autocomplete="new-password"></div>
+          <div><button class="btn primary" type="submit">Salvar nova senha</button></div>
+        </form>
       </div>` : `
       <div class="card">
         <h3>Senha</h3>
@@ -2880,15 +3030,18 @@ $("v-perfil").addEventListener("submit", e => {
   const f = e.target.closest("form");
   if (!f) return;
   e.preventDefault();
+  if (f.id === "pfGp" && perfil() === "gp") {
+    gpTrocarSenha(f.nova.value, f.conf.value, f.atual.value, m => { toast(m); return false; }).then(ok => { if (ok) renderPerfil(); });
+    return;
+  }
   if (perfil() !== "admin") return toast("Somente o administrador altera senhas.");
   const nova = f.nova.value, conf = f.conf.value;
   if (f.id === "pfSenha" && !senhaAdminOk(f.atual.value)) return toast("A senha atual não confere.");
   if (nova.length < 6) return toast("A nova senha precisa ter pelo menos 6 caracteres.");
   if (nova !== conf) return toast("A confirmação não confere com a nova senha.");
-  if (f.id === "pfSenha") senhas.admin = hashSenha(nova);
-  else if (f.id === "pfPadrao") senhas.gpPadrao = hashSenha(nova);
-  else if (f.id === "pfResp") senhas.respPadrao = hashSenha(nova);
-  salvarSenhas();
+  if (f.id === "pfSenha") { senhas.admin = hashSenha(nova); salvarSenhas(); }
+  else if (f.id === "pfPadrao") senhasMudar(() => { senhas.gpPadrao = hashSenha(nova); }, {alvo: "Senha padrão dos gerentes", acao: "Senha padrão dos gerentes alterada"}).then(renderPerfil);
+  else if (f.id === "pfResp") senhasMudar(() => { senhas.respPadrao = hashSenha(nova); }, {alvo: "Senha dos responsáveis de tarefa", acao: "Senha dos responsáveis de tarefa alterada"}).then(renderPerfil);
   renderPerfil();
   toast(f.id === "pfSenha" ? "Senha do administrador alterada." : f.id === "pfResp" ? "Senha dos responsáveis de tarefa alterada." : "Senha padrão dos gerentes alterada.");
 });
@@ -2896,14 +3049,12 @@ $("v-perfil").addEventListener("click", e => {
   if (perfil() !== "admin") return;
   if (e.target.closest("[data-resp-inicial]")) {
     if (!confirm("Voltar a senha dos responsáveis de tarefa para a senha inicial do sistema?")) return;
-    senhas.respPadrao = "";
-    salvarSenhas(); renderPerfil(); toast("Senha dos responsáveis voltou à inicial.");
+    senhasMudar(() => { senhas.respPadrao = ""; }, {alvo: "Senha dos responsáveis de tarefa", acao: "Voltou para a senha inicial do sistema"}).then(renderPerfil); toast("Senha dos responsáveis voltou à inicial.");
     return;
   }
   if (e.target.closest("[data-padrao-inicial]")) {
     if (!confirm("Voltar a senha padrão dos gerentes para a senha inicial do sistema?")) return;
-    senhas.gpPadrao = "";
-    salvarSenhas(); renderPerfil(); toast("Senha padrão dos gerentes voltou à inicial.");
+    senhasMudar(() => { senhas.gpPadrao = ""; }, {alvo: "Senha padrão dos gerentes", acao: "Voltou para a senha inicial do sistema"}).then(renderPerfil); toast("Senha padrão dos gerentes voltou à inicial.");
     return;
   }
   const sg = e.target.closest("[data-set-gp]");
@@ -2911,16 +3062,16 @@ $("v-perfil").addEventListener("click", e => {
     const em = sg.dataset.setGp;
     const inp = $("v-perfil").querySelector(`[data-nova-gp="${em}"]`);
     if (!inp || inp.value.length < 6) return toast("A senha precisa ter pelo menos 6 caracteres.");
-    senhas.gp[em] = hashSenha(inp.value);
-    salvarSenhas(); renderPerfil(); toast(`Senha individual definida para ${em}.`);
+    const g = cadastros.gerentes.find(x => (x.email || "").toLowerCase() === em), v = inp.value;
+    senhasMudar(() => { senhas.gp[em] = hashSenha(v); }, {email: em, nome: g ? g.nome : em, acao: "Nova senha definida pelo administrador", porQuem: "admin"}).then(renderPerfil);
+    toast(`Senha individual definida para ${em}.`);
     return;
   }
   const b = e.target.closest("[data-reset-gp]");
   if (!b) return;
   if (!confirm(`${b.dataset.resetGp} passa a usar a senha padrão dos gerentes. Confirmar?`)) return;
-  delete senhas.gp[b.dataset.resetGp];
-  salvarSenhas();
-  renderPerfil();
+  const emR = b.dataset.resetGp, gR = cadastros.gerentes.find(x => (x.email || "").toLowerCase() === emR);
+  senhasMudar(() => { delete senhas.gp[emR]; delete senhas.trocas[emR]; }, {email: emR, nome: gR ? gR.nome : emR, acao: "Voltou para a senha padrão dos gerentes (o portal pedirá nova troca)", porQuem: "admin"}).then(renderPerfil);
   toast("Senha redefinida para o padrão.");
 });
 
@@ -3018,7 +3169,7 @@ $("v-emails").addEventListener("change", e => {
 });
 
 /* ================= ROTEADOR ================= */
-const fasesFechadas = new Set();
+const fasesFechadas = new Set(), fasesVaziasAbertas = new Set();
 let rotaMantemY = false;
 function route(){
   if (!sessao) { mostrarLogin(); return; }
@@ -3246,10 +3397,16 @@ function listaFiltrada(){
   }
   return list;
 }
+/* Lista: por padrão só as colunas principais (cabe na tela); o botão mostra todas */
+const COLS_LISTA_RESUMO = ["Status","ID","Título","Fase","Responsável TI","Departamento","Inicio","Fim"];
+let listaTodasCols = false;
+document.addEventListener("click", e => { if (e.target.closest("#btnColsLista")) { listaTodasCols = !listaTodasCols; renderLista(); } });
 function renderLista(){
   renderChips();
   const list = listaFiltrada();
-  $("cabLista").innerHTML = COLS_TABELA.map(c => {
+  const colsV = listaTodasCols ? COLS : COLS_LISTA_RESUMO;
+  const btC = $("btnColsLista"); if (btC) btC.textContent = listaTodasCols ? "Mostrar colunas principais" : "Mostrar todas as colunas";
+  $("cabLista").innerHTML = [...colsV, "Prazo", "Gestão"].map(c => {
     if (c === "Prazo" || c === "Gestão") return `<th>${c}</th>`;
     const seta = sortKey === c ? `<span class="arr">${sortDir>0?"▲":"▼"}</span>` : "";
     return `<th data-c="${esc(c)}">${esc(c)}${seta}</th>`;
@@ -3260,14 +3417,14 @@ function renderLista(){
     renderLista();
   }));
   $("corpoLista").innerHTML = list.length ? list.map(r =>
-    `<tr data-id="${esc(r.ID)}">${COLS.map(c => {
+    `<tr data-id="${esc(r.ID)}">${colsV.map(c => {
       if (c === "Status") return `<td>${badgeHtml(r[c])}</td>`;
       if (c === "Título") return `<td class="title">${esc(r[c])}</td>`;
       if (DATE_COLS.includes(c)) return `<td>${esc(dataBR(r[c]))}</td>`;
       if (isNum(c)) return `<td class="num">${esc(r[c])}</td>`;
       return `<td>${esc(r[c])}</td>`;
     }).join("")}<td>${tagPrazo(r)}</td><td><a class="go" href="#/gestao/${esc(r.ID)}">Gestão do projeto ↗</a></td></tr>`
-  ).join("") : `<tr><td colspan="${COLS_TABELA.length}" class="empty">Nenhum projeto encontrado.</td></tr>`;
+  ).join("") : `<tr><td colspan="${colsV.length + 2}" class="empty">Nenhum projeto encontrado.</td></tr>`;
   $("contador").textContent = `${list.length} de ${rows.length} itens`;
 }
 $("corpoLista").addEventListener("click", e => {
@@ -3613,7 +3770,8 @@ function faseHtml(r, f){
   if (!flxFaseLib(r, f.key)) return flxFaseBloqHtml(r, f);
   const ts = r.tarefas.filter(t => t.fase === f.key);
   const pf = progLista(ts);
-  const aberta = !fasesFechadas.has(f.key);
+  const vazia = !ts.length && !(novoForm && novoForm.fase === f.key);
+  const aberta = vazia ? fasesVaziasAbertas.has(f.key) : !fasesFechadas.has(f.key);
   const colunas = BUCKETS.map(b => {
     const cards = ts.filter(t => efetivo(t) === b.key);
     return `
@@ -3629,13 +3787,14 @@ function faseHtml(r, f){
       </div>`;
   }).join("");
   return `
-    <section class="fase-card">
+    <section class="fase-card${vazia && !aberta ? " fase-vazia" : ""}">
       <div class="fase-h">
         <h3>${esc(f.nome)}</h3>
         <span class="note" style="margin:0">${ts.length} tarefa(s)</span>
         <div class="fase-prog"><div class="prog"><i style="width:${pf ?? 0}%"></i></div><span>${pf == null ? "—" : pf + "%"}</span></div>
         ${flxGuiaLink(f)}
-        <button class="btn sm" data-toggle-fase="${f.key}">${aberta ? "Recolher" : "Expandir"}</button>
+        ${vazia && !aberta && podeEditar() ? `<button class="btn sm" data-add="${f.key}" data-add-b="backlog">+ Nova tarefa</button>` : ""}
+        <button class="btn sm" data-toggle-fase="${f.key}" data-vazia="${vazia ? 1 : 0}">${aberta ? "Recolher" : "Expandir"}</button>
       </div>
       ${flxGuiaFaseHtml(r, f.key)}
       ${novoForm && novoForm.fase === f.key ? novaTarefaFormHtml(f) : ""}
@@ -4179,7 +4338,8 @@ $("v-gestao-projeto").addEventListener("click", e => {
   const tog = e.target.closest("[data-toggle-fase]");
   if (tog) {
     const k = tog.dataset.toggleFase;
-    fasesFechadas.has(k) ? fasesFechadas.delete(k) : fasesFechadas.add(k);
+    const conj = tog.dataset.vazia === "1" ? fasesVaziasAbertas : fasesFechadas;
+    conj.has(k) ? conj.delete(k) : conj.add(k);
     renderGestaoProjeto(currentProjId());
     return;
   }
@@ -5247,7 +5407,11 @@ function demRender(){
   const acao = demItens.filter(it => DEM_ACAO_PMO.includes(demStatus(it))).length;
   const bloq = demItens.filter(it => demBloqueado(demStatus(it))).length;
   const atraso = demItens.filter(demAtrasado).length;
-  const encerr = demItens.filter(it => DEM_FINAIS.includes(demStatus(it))).length;
+  /* encerradas = com decisão final do PMO: aprovadas, reprovadas, canceladas ou convertidas */
+  const DEM_ENC_ROT = [["Aprovado", "aprovada", "aprovadas"], ["Reprovado", "reprovada", "reprovadas"], ["Cancelada", "cancelada", "canceladas"], ["Convertido em Projeto", "convertida em projeto", "convertidas em projeto"], ["Convertido em Melhoria", "convertida em melhoria", "convertidas em melhoria"]];
+  const encLista = demItens.filter(it => DEM_ENC_ROT.some(x => x[0] === demStatus(it)));
+  const encerr = encLista.length;
+  const encDet = DEM_ENC_ROT.map(([st, um, varios]) => { const n = encLista.filter(it => demStatus(it) === st).length; return n ? `${n} ${n === 1 ? um : varios}` : ""; }).filter(Boolean).join(" · ") || "aprovadas, reprovadas, canceladas ou convertidas";
   const pend = demItens.filter(demPendenteFluxo).length;
   const temPrio = demItens.some(it => demTxt(demValor(it, "prio")));
   resumo.innerHTML = `
@@ -5257,7 +5421,7 @@ function demRender(){
       ${kc("Aguardam o PMO", acao, "pré escopo, aguardando análise ou repriorizado", "var(--st1)")}
       ${kc("Bloqueadas", bloq, "aguardam o complemento do solicitante", "var(--st2)")}
       ${kc("Em atraso", atraso, "mais de 5 dias em análise ou 30 em backlog", "var(--st3)")}
-      ${kc("Encerradas", encerr, "reprovadas, canceladas ou convertidas", "var(--st4)")}
+      ${kc("Encerradas", encerr, encDet, "var(--st4)")}
     </div>
     `;
   $("demInd").innerHTML = `<details class="dem-ind"${demIndAberto ? " open" : ""}><summary>Indicadores (status, tipo, setor, mês e benefício)</summary><div class="dg-grid">
@@ -9304,7 +9468,7 @@ $("baseCad").addEventListener("click", e => {
 const SIDE_KEY = "portal_pmo_menu";
 function sideAplicar(){
   let pref = ""; try { pref = localStorage.getItem(SIDE_KEY) || ""; } catch (e) {}
-  document.body.classList.toggle("side-mini", pref ? pref === "mini" : window.innerWidth < 1500);
+  document.body.classList.toggle("side-mini", pref ? pref === "mini" : window.innerWidth < 1700);
 }
 sideAplicar();
 window.addEventListener("resize", sideAplicar);
@@ -10151,6 +10315,7 @@ async function spCarregar(){
   pessoas = equipe;
   cadUnificar();
   progSpCarregar();
+  senhasSpCarregar().then(() => { if (perfil() === "admin" && location.hash.startsWith("#/perfil")) renderPerfil(); });
 
   /* Projetos */
   const porSp = new Map();
