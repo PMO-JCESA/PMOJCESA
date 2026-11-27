@@ -153,7 +153,7 @@ iframe.pdfv{width:100%;height:70vh;border:1px solid var(--line2);border-radius:1
   <div class="modnav">
     <button class="mod on" data-mod="placar"><b>Placar semanal</b><small>Horas por pessoa e projeto · e-mail ao time</small></button>
     <button class="mod" data-mod="fte"><b>Alocação FTE</b><small>% mensal CAPEX/OPEX · PDF para a contabilidade</small></button>
-    <span class="modsrc">Time: pessoas com departamento <b>Tecnologia</b> no Cadastro de pessoas do portal</span>
+    <span class="modsrc">Time: pessoas com departamento <b>Tecnologia</b> no Cadastro de pessoas do portal<br><span id="visInfo"></span> <button class="btn sm" id="bVis" style="margin-top:6px">Pessoas exibidas</button></span>
   </div>
   <div id="mPlacar">
   <div class="top">
@@ -220,7 +220,13 @@ function selAtiv(k,d){
   return `${at.length?`<optgroup label="Atividades do time">${at.map(op).join("")}</optgroup>`:""}${pj.length?`<optgroup label="Projetos">${pj.map(op).join("")}</optgroup>`:""}`;
 }
 Object.entries(PL.projNomes).forEach(([k,n],i)=>{if(!PROJ[k])PROJ[k]={n:n+" (encerrado)",c:"#77777A",d:"Projeto que saiu da gestão"};});
-const PESSOAS=BOOT.time.map((p,i)=>({id:p.email,nome:p.nome,papel:p.papel||"Usuário",cap:+PL.cap[p.email]||40,cor:CORES[i%CORES.length]}));
+const PESSOAS_TODAS=BOOT.time.map((p,i)=>({id:p.email,nome:p.nome,papel:p.papel||"Usuário",cap:+PL.cap[p.email]||40,cor:CORES[i%CORES.length]}));
+PL.vis=PL.vis||{}; /* {email:{placar:false,email:false}}: quem fica de fora do placar, das estatísticas e do e-mail */
+const visPl=id=>!(PL.vis[id]&&PL.vis[id].placar===false);
+const visMail=id=>PL.vis[id]&&"email" in PL.vis[id]?PL.vis[id].email!==false:visPl(id);
+const PESSOAS=[];
+function aplicarVis(){PESSOAS.length=0;PESSOAS_TODAS.filter(p=>visPl(p.id)).forEach(p=>PESSOAS.push(p));}
+aplicarVis();
 const isoAdd=(iso,n)=>{const d=new Date(iso+"T12:00:00");d.setDate(d.getDate()+n);return d.toISOString().slice(0,10);};
 const SEMANAS=[];
 {const d=new Date(ANO,0,4,12);d.setDate(d.getDate()-((d.getDay()+6)%7));let ini=d.toISOString().slice(0,10);
@@ -233,7 +239,7 @@ const S={nivel:"semana",w:CUR,m:HOJE.getMonth(),aba:"placar",edit:null,draft:nul
 let plTimer=0;
 function plSalvar(){
   Object.values(PL.sem).forEach(pp=>Object.values(pp).forEach(a=>Object.keys(a).forEach(k=>{if(/^p/.test(k)&&PROJ[k])PL.projNomes[k]=PROJ[k].n.replace(/ \(encerrado\)$/,"");})));
-  PESSOAS.forEach(p=>{PL.cap[p.id]=p.cap;});
+  PESSOAS_TODAS.forEach(p=>{PL.cap[p.id]=p.cap;});
   clearTimeout(plTimer);plTimer=setTimeout(()=>{if(API)API.salvar("placar",PL).catch(e=>toast("Não salvou no SharePoint: "+(e.message||e)));},500);
 }
 /* ---------------- utilitários ---------------- */
@@ -401,7 +407,7 @@ function modalCfg(){
   <label class="f">Assunto do e-mail ({sem} vira o número da semana)</label><input type="text" id="cAss" value="${esc(CFG.assunto)}">
   <div class="row2"><div><label class="f">“Com folga” abaixo de (% da capacidade)</label><input type="number" id="cLiv" min="10" max="100" value="${CFG.livre}"></div>
   <div><label class="f">“Sobrecarga” acima de (% da capacidade)</label><input type="number" id="cSob" min="100" max="200" value="${CFG.sobre}"></div></div>
-  <label class="f">Destinatários (${PESSOAS.length})</label><div class="chips">${PESSOAS.map(p=>`<span>${esc(p.nome)}</span>`).join("")}</div>
+  <label class="f">Destinatários (${PESSOAS_TODAS.filter(p=>visMail(p.id)).length}) · ajuste em Pessoas exibidas</label><div class="chips">${PESSOAS_TODAS.filter(p=>visMail(p.id)).map(p=>`<span>${esc(p.nome)}</span>`).join("")}</div>
   <p class="hint" style="margin-top:10px">Quem sair do departamento Tecnologia no cadastro deixa de receber. Cada pessoa recebe o placar do time com a própria linha destacada, enviado pelo Outlook da conta Microsoft conectada no portal. O disparo automático acontece quando um administrador abre o portal a partir do dia e horário escolhidos.</p>
   <div class="mfoot"><button class="btn" data-fm>Cancelar</button><button class="btn primary" id="cSalvar">Salvar configuração</button></div>`);
 }
@@ -449,7 +455,7 @@ function modalMail(quem){
   const wm=S.nivel==="semana"?S.w:CUR;
   const ass=CFG.assunto.replace("{sem}",SEMANAS[wm].n);
   const html=htmlEmail(wm,quem);
-  abrirModal(`<h3>Prévia do e-mail semanal</h3><p class="hint"><b>Assunto:</b> ${esc(ass)} &nbsp;·&nbsp; <b>Para:</b> ${PESSOAS.length} pessoas do time de tecnologia &nbsp;·&nbsp; <b>${semLabel(wm)}</b> &nbsp;·&nbsp; o e-mail é sempre semanal e traz o acumulado do mês</p>
+  abrirModal(`<h3>Prévia do e-mail semanal</h3><p class="hint"><b>Assunto:</b> ${esc(ass)} &nbsp;·&nbsp; <b>Para:</b> ${PESSOAS_TODAS.filter(p=>visMail(p.id)).length} pessoa(s) do time de tecnologia &nbsp;·&nbsp; <b>${semLabel(wm)}</b> &nbsp;·&nbsp; o e-mail é sempre semanal e traz o acumulado do mês</p>
   <label class="f" style="margin-top:0">Visualizar como (a linha da pessoa vem destacada)</label>
   <select id="mQuem" style="margin-bottom:12px">${PESSOAS.map(p=>`<option value="${p.id}" ${p.id===quem?"selected":""}>${esc(p.nome)}</option>`).join("")}</select>
   <iframe class="mail" id="mIf"></iframe>
@@ -479,7 +485,7 @@ function modalSug(){
 async function plEnviar(w,apenasEu){
   if(!API){toast("Abra esta página pelo portal para enviar.");return {ok:0,erro:1};}
   const ass=CFG.assunto.replace("{sem}",SEMANAS[w].n);
-  const alvos=apenasEu?[{id:BOOT.email,nome:BOOT.usuario||"Você"}]:PESSOAS.filter(p=>p.id);
+  const alvos=apenasEu?[{id:BOOT.email,nome:BOOT.usuario||"Você"}]:PESSOAS_TODAS.filter(p=>p.id&&visMail(p.id));
   let ok=0,erros=[];
   for(const p of alvos){
     try{const r=await API.enviarEmail({para:[p.id],assunto:ass,html:htmlEmail(w,PESSOAS.some(x=>x.id===p.id)?p.id:null)});if(r&&r.ok)ok++;else erros.push(p.nome+": "+((r&&r.erro)||"falhou"));}
@@ -560,7 +566,7 @@ const MESES_F=["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Ag
 const F={m:Math.max(0,HOJE.getMonth()-(HOJE.getDate()<20?1:0)),busca:"",reg:"",pend:false};
 Object.defineProperty(F,"enviado",{get:()=>FTE.enviado});Object.defineProperty(F,"para",{get:()=>FTE.para,set:v=>{FTE.para=v;}});
 for(let m=0;m<12;m++) if(!FTE.meses[m]) FTE.meses[m]={};
-const fTime=()=>Object.keys(FTE.pessoas).filter(n=>TIME_NOMES.has(n)||Object.values(FTE.meses).some(mm=>(mm[n]||[]).length)).sort((a,b)=>a.localeCompare(b,"pt-BR"));
+const fTime=()=>Object.keys(FTE.pessoas).filter(n=>!(FTE.ocultos||[]).includes(n)).filter(n=>TIME_NOMES.has(n)||Object.values(FTE.meses).some(mm=>(mm[n]||[]).length)).sort((a,b)=>a.localeCompare(b,"pt-BR"));
 const fProdutos=()=>{const s=new Set(["Gestão de Equipe - PMO","Gestão de Equipe - Sustentação","Sustentação","Férias"]);Object.values(FTE.meses).forEach(mm=>Object.values(mm).forEach(l=>l.forEach(x=>s.add(x[0].trim()))));return [...s].filter(Boolean).sort((a,b)=>a.localeCompare(b,"pt-BR"));};
 const fCxPadrao=prod=>{if(/sustenta|f[eé]rias/i.test(prod))return "OPEX";for(let m=11;m>=0;m--)for(const l of Object.values(FTE.meses[m]))for(const x of l)if(x[0].trim()===prod.trim())return x[1];return "CAPEX";};
 const pc=v=>(Math.round(v*1000)/10).toLocaleString("pt-BR",{maximumFractionDigits:1})+"%";
@@ -767,6 +773,41 @@ async function fMandar(btn){
     fecharModal();renderFte();toast(`Enviado a ${para.join(", ")} com o PDF e a planilha.`);
   }catch(e){btn.disabled=false;btn.textContent="Enviar pelo Outlook";toast("Não foi possível enviar: "+(e.message||e));}
 }
+
+/* ---------- Pessoas exibidas: quem aparece no placar, nas estatísticas, no e-mail e no FTE ---------- */
+function visTodosFte(){return Object.keys(FTE.pessoas).filter(n=>TIME_NOMES.has(n)||Object.values(FTE.meses).some(mm=>(mm[n]||[]).length)).sort((a,b)=>a.localeCompare(b,"pt-BR"));}
+function visInfo(){
+  const oP=PESSOAS_TODAS.length-PESSOAS.length,oF=(FTE.ocultos||[]).length,el=$("visInfo");
+  if(el)el.textContent=oP||oF?`Ocultas: ${oP} no placar · ${oF} no FTE`:"";
+}
+function modalVis(){
+  const fteN=visTodosFte();
+  const ck=(a,v,dis)=>`<input type="checkbox" ${a} ${v?"checked":""} ${dis?"disabled":""}>`;
+  const linhasPl=PESSOAS_TODAS.map(p=>`<tr><td><b>${esc(p.nome)}</b><br><small style="color:var(--muted)">${esc(p.id)}</small></td><td style="text-align:center">${ck(`data-vpl="${esc(p.id)}"`,visPl(p.id))}</td><td style="text-align:center">${ck(`data-vml="${esc(p.id)}"`,visMail(p.id))}</td></tr>`).join("");
+  const linhasF=fteN.map(n=>`<tr><td><b>${esc(n)}</b>${TIME_NOMES.has(n)?"":` <small style="color:var(--muted)">(fora do time no cadastro)</small>`}</td><td style="text-align:center">${ck(`data-vft="${esc(n)}"`,!(FTE.ocultos||[]).includes(n))}</td></tr>`).join("");
+  abrirModal(`<h3>Pessoas exibidas</h3><p class="hint">Desmarque quem não deve aparecer. A pessoa continua no cadastro e os lançamentos dela são guardados; só deixa de aparecer nas telas, nas estatísticas, no e-mail e no PDF.</p>
+  <div class="row2" style="align-items:start">
+    <div><label class="f" style="margin-top:0">Placar semanal</label><div style="max-height:52vh;overflow:auto;border:1px solid var(--line);border-radius:12px"><table><thead><tr><th>Pessoa</th><th style="text-align:center">No placar e estatísticas</th><th style="text-align:center">Recebe o e-mail</th></tr></thead><tbody>${linhasPl||`<tr><td colspan="3">Ninguém com departamento Tecnologia no cadastro.</td></tr>`}</tbody></table></div></div>
+    <div><label class="f" style="margin-top:0">Alocação FTE (contabilidade)</label><div style="max-height:52vh;overflow:auto;border:1px solid var(--line);border-radius:12px"><table><thead><tr><th>Pessoa</th><th style="text-align:center">No FTE, estatísticas e PDF</th></tr></thead><tbody>${linhasF}</tbody></table></div></div>
+  </div>
+  <div class="mfoot"><button class="btn" data-fm>Cancelar</button><button class="btn primary" id="visSalvar">Salvar</button></div>`,true);
+  $("modal").querySelector(".box").style.width="min(1000px,100%)";
+}
+document.addEventListener("click",e=>{
+  const t=e.target;
+  if(t.closest("#bVis")){modalVis();return;}
+  if(t.id==="visSalvar"){
+    document.querySelectorAll("[data-vpl]").forEach(c=>{const id=c.dataset.vpl;PL.vis[id]=Object.assign(PL.vis[id]||{},{placar:c.checked});});
+    document.querySelectorAll("[data-vml]").forEach(c=>{const id=c.dataset.vml;PL.vis[id]=Object.assign(PL.vis[id]||{},{email:c.checked});});
+    Object.keys(PL.vis).forEach(id=>{if(PL.vis[id].placar!==false&&PL.vis[id].email!==false)delete PL.vis[id];});
+    FTE.ocultos=[...document.querySelectorAll("[data-vft]")].filter(c=>!c.checked).map(c=>c.dataset.vft);
+    aplicarVis();plSalvar();fSalvar();fecharModal();
+    if(!$("mFte").hidden)renderFte();else render();
+    visInfo();toast("Pessoas exibidas atualizadas.");
+  }
+});
+document.addEventListener("change",e=>{const c=e.target.closest&&e.target.closest("[data-vpl]");if(c){const m=document.querySelector(`[data-vml="${CSS.escape(c.dataset.vpl)}"]`);if(m&&!c.checked)m.checked=false;}});
+setTimeout(visInfo,0);
 function fModo(mod){
   document.querySelectorAll(".mod").forEach(b=>b.classList.toggle("on",b.dataset.mod===mod));
   $("mPlacar").hidden=mod!=="placar";$("mFte").hidden=mod!=="fte";
