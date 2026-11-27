@@ -1394,6 +1394,19 @@ body{font-size:13.5px}
 .eq-box .com-chips{min-height:34px}
 .com-chip.pend{border-style:dashed;opacity:.9}
 #toast{z-index:700}
+.flx-box:has(.eq-tb){width:min(860px,100%)}
+.eq-tb-wrap{border:1px solid var(--line);border-radius:12px;overflow:auto;max-height:46vh}
+.eq-tb{width:100%;border-collapse:collapse;font-size:13px}
+.eq-tb th{position:sticky;top:0;background:var(--surface2);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:9px 10px;text-align:left;z-index:1}
+.eq-tb td{padding:8px 10px;border-top:1px solid var(--line);white-space:normal;vertical-align:middle}
+.eq-who{display:flex;align-items:center;gap:9px;min-width:0}.eq-who b{display:block;color:var(--hi);font-size:13px}.eq-who small{color:var(--muted);font-size:11.5px;overflow-wrap:anywhere}
+.eq-papel{width:100%;min-width:150px;padding:6px 9px;font-size:12.5px}
+.eq-tag{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--surface2);color:var(--muted);margin:1px 0}
+.eq-tag.m{background:color-mix(in srgb,var(--teal) 25%,transparent);color:var(--teal-l)}
+.eq-pend{font-size:11.5px;color:#E7B24A;font-weight:700}
+.eq-rm{background:none;border:1px solid color-mix(in srgb,var(--cherry) 55%,transparent);color:#FF7A9A;border-radius:999px;padding:4px 11px;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+.eq-rm:hover{background:var(--cherry);color:#fff}
+
 .com-chip.pend small{color:#E7B24A;font-weight:600}
 /* formulários de página inteira não esticam além do confortável */
 #v-editar,#v-perfil{max-width:1240px}
@@ -2444,6 +2457,7 @@ function normalizar(d){
   if (d.faseAntesConclusao) r.faseAntesConclusao = String(d.faseAntesConclusao);
   if (d.fluxo && typeof d.fluxo === "object") r.fluxo = d.fluxo;
   r.membrosNomes = d.membrosNomes && typeof d.membrosNomes === "object" ? d.membrosNomes : {};
+  r.membrosPapel = d.membrosPapel && typeof d.membrosPapel === "object" ? d.membrosPapel : {};
   r.membros = Array.isArray(d.membros) ? [...new Set(d.membros.map(x => String(x || "").trim().toLowerCase()).filter(Boolean))] : [];
   if (typeof d.pastaSp === "string" && d.pastaSp) r.pastaSp = d.pastaSp;
   if (d._sp) r._sp = String(d._sp);
@@ -9890,10 +9904,37 @@ function projAcesso(r){
 }
 const projPodeEquipe = r => perfil() === "admin" || (perfil() === "gp" && projAcesso(r));
 const pessoaPorEmail = em => cadastros.solicitantes.find(x => (x.email || "").toLowerCase() === em) || cadastros.gerentes.find(x => (x.email || "").toLowerCase() === em);
-function eqChipsHtml(lista){
+const EQ_PAPEIS = ["Gerente do projeto", "Analista funcional", "Desenvolvedor", "Key user", "Sponsor", "Consultor externo", "Infraestrutura", "Apoio"];
+/* todas as pessoas com acesso ao projeto: membros da lista + quem tem acesso pelo cargo ou por tarefa */
+function eqPessoas(lista){
+  const r = eqSel && eqSel.pid ? achar(eqSel.pid) : null, map = new Map();
+  const add = (em, origem, nome) => { em = String(em || "").toLowerCase(); if (!em) return; const a = map.get(em) || {em, origens: [], nome: ""}; if (!a.origens.includes(origem)) a.origens.push(origem); if (nome && !a.nome) a.nome = nome; map.set(em, a); };
+  lista.forEach(em => add(em, "Membro"));
+  if (r) {
+    const porNome = n => cadastros.gerentes.find(x => semAcento(x.nome) === semAcento(n)) || cadastros.solicitantes.find(x => semAcento(x.nome) === semAcento(n));
+    separaNomes(r["Responsável TI"]).forEach(n => { const g = porNome(n); if (g && g.email) add(g.email, "Responsável TI", g.nome); });
+    separaNomes(r["Analista Funcional"]).forEach(n => { const g = porNome(n); if (g && g.email) add(g.email, "Analista Funcional", g.nome); });
+    r.tarefas.forEach(t => [t.responsavel, ...(t.apoio || [])].filter(Boolean).forEach(em => add(em, "Tem tarefa")));
+  }
   const nomes = (eqSel && eqSel.nomes) || {};
-  return lista.length ? lista.map(em => { const x = pessoaPorEmail(em); return `<span class="com-chip${x ? "" : " pend"}" title="${x ? esc(em) : "Aguardando cadastro pelo PMO"}">${esc(x ? x.nome : (nomes[em] || em))}${x ? "" : ` <small>· aguardando cadastro</small>`}<button type="button" data-eq-rm="${esc(em)}" aria-label="Remover">×</button></span>`; }).join("")
-    : `<span class="note" style="margin:0">Ninguém na lista: o projeto fica aberto a todos os gerentes.</span>`;
+  return [...map.values()].map(a => { const x = pessoaPorEmail(a.em); return Object.assign(a, {cad: x || null, nome: x ? x.nome : (a.nome || nomes[a.em] || a.em), dep: x ? (x.departamento || "") : ""}); })
+    .sort((a, b) => (b.origens.includes("Membro") - a.origens.includes("Membro")) || a.nome.localeCompare(b.nome, "pt-BR"));
+}
+function eqChipsHtml(lista){
+  const pes = eqPessoas(lista), pap = (eqSel && eqSel.papeis) || {};
+  if (!pes.length) return `<p class="note" style="margin:0">Ninguém na lista: o projeto fica aberto a todos os gerentes.</p>`;
+  const pode = !eqSel || eqSel.pode !== false;
+  return `<div class="eq-tb-wrap"><table class="eq-tb"><thead><tr><th>Pessoa</th><th>Departamento</th><th>Papel no projeto</th><th>Acesso</th><th></th></tr></thead><tbody>
+    ${pes.map(p => {
+      const membro = p.origens.includes("Membro"), outros = p.origens.filter(o => o !== "Membro");
+      return `<tr>
+        <td><div class="eq-who">${avatarHtml(p.nome, 28)}<div><b>${esc(p.nome)}</b><small>${esc(p.em)}</small></div></div></td>
+        <td>${p.cad ? esc(p.dep || "—") : `<span class="eq-pend">aguardando cadastro</span>`}</td>
+        <td>${pode ? `<input class="eq-papel" data-eq-papel="${esc(p.em)}" list="eqPapeis" value="${esc(pap[p.em] || "")}" placeholder="Escolha ou digite">` : esc(pap[p.em] || "—")}</td>
+        <td>${p.origens.map(o => `<span class="eq-tag ${o === "Membro" ? "m" : ""}">${esc(o)}</span>`).join(" ")}</td>
+        <td>${membro && pode ? `<button type="button" class="eq-rm" data-eq-rm="${esc(p.em)}" title="${outros.length ? "Retirar da lista (continua com acesso como " + outros.join(", ") + ")" : "Retirar do projeto"}">Retirar</button>` : outros.length && !membro ? `<small class="note" style="margin:0" title="${outros[0] === "Tem tarefa" ? "Tem acesso porque tem tarefa no projeto: para retirar, tire a pessoa das tarefas" : "Tem acesso pelo cargo no projeto: para retirar, mude o " + esc(outros[0]) + " na ficha"}">${outros[0] === "Tem tarefa" ? "acesso pela tarefa" : "acesso pelo cargo"}</small>` : ""}</td>
+      </tr>`; }).join("")}
+  </tbody></table></div><datalist id="eqPapeis">${EQ_PAPEIS.map(x => `<option value="${esc(x)}">`).join("")}</datalist>`;
 }
 function eqPickerHtml(lista){
   return `<div class="eq-box" data-eq-box>
@@ -9921,10 +9962,10 @@ document.addEventListener("click", e => {
   const ab = e.target.closest("[data-eq-abrir]");
   if (ab) {
     const r = achar(ab.dataset.eqAbrir); if (!r) return;
-    if (!projPodeEquipe(r)) { toast("Só o administrador ou um gerente da equipe altera a equipe."); return; }
-    eqSel = {lista: (r.membros || []).slice(), pid: r.ID, nomes: Object.assign({}, r.membrosNomes || {})};
-    flxModal(`<h3>Equipe do projeto</h3><p class="note" style="margin:0 0 10px">Só quem está na equipe abre a gestão e os cards de <b>${esc(r["Título"])}</b>.</p>${eqPickerHtml(eqSel.lista)}
-      <div class="flx-acts"><button type="button" class="btn" data-flx="fechar">Cancelar</button><button type="button" class="btn primary" data-eq-salvar>Salvar equipe</button></div>`);
+    const podeEq = projPodeEquipe(r);
+    eqSel = {pode: podeEq, antes: (r.membros || []).slice(), lista: (r.membros || []).slice(), pid: r.ID, nomes: Object.assign({}, r.membrosNomes || {}), papeis: Object.assign({}, r.membrosPapel || {})};
+    flxModal(`<h3>Equipe do projeto</h3><p class="note" style="margin:0 0 10px">Pessoas com acesso à gestão e aos cards de <b>${esc(r["Título"])}</b>.${podeEq ? " Inclua, retire e defina o papel de cada uma." : " Só o administrador ou um gerente da equipe altera a lista."}</p>${podeEq ? eqPickerHtml(eqSel.lista) : `<div data-eq-box><div data-eq-chips>${eqChipsHtml(eqSel.lista)}</div></div>`}
+      <div class="flx-acts">${podeEq ? `<button type="button" class="btn" data-flx="fechar">Cancelar</button><button type="button" class="btn primary" data-eq-salvar>Salvar equipe</button>` : `<button type="button" class="btn" data-flx="fechar">Fechar</button>`}</div>`);
     return;
   }
   if (e.target.closest("[data-eq-salvar]") && eqSel && eqSel.pid) {
@@ -9932,6 +9973,13 @@ document.addEventListener("click", e => {
     const antes = (r.membros || []).length;
     r.membros = eqSel.lista.slice();
     r.membrosNomes = Object.fromEntries(Object.entries(eqSel.nomes || {}).filter(([em]) => r.membros.includes(em)));
+    const comAcesso = new Set(eqPessoas(r.membros).map(x => x.em));
+    const papAnt = r.membrosPapel || {};
+    r.membrosPapel = Object.fromEntries(Object.entries(eqSel.papeis || {}).map(([em, v]) => [em, String(v || "").trim()]).filter(([em, v]) => v && comAcesso.has(em)));
+    const mudPap = Object.entries(r.membrosPapel).filter(([em, v]) => papAnt[em] !== v).map(([em, v]) => `${(pessoaPorEmail(em) || {}).nome || em}: ${v}`);
+    const tirados = (eqSel.antes || []).filter(em => !r.membros.includes(em)).map(em => (pessoaPorEmail(em) || {}).nome || em);
+    if (tirados.length) registrar(r, `Retirado(s) da equipe: ${tirados.join(", ")}`);
+    if (mudPap.length) registrar(r, `Papéis na equipe: ${mudPap.join("; ")}`);
     registrar(r, `Equipe do projeto atualizada: ${r.membros.map(em => { const x = pessoaPorEmail(em); return x ? x.nome : em; }).join(", ") || "sem restrição"}`);
     salvar(); flxFechar(); eqSel = null;
     toast(r.membros.length ? `Equipe salva: ${r.membros.length} pessoa(s).` : antes ? "Equipe removida: o projeto volta a ficar aberto a todos os gerentes." : "Equipe salva.");
@@ -9942,6 +9990,7 @@ document.addEventListener("keydown", e => {
   const inp = e.target.closest && e.target.closest("[data-eq-in]");
   if (inp && e.key === "Enter") { e.preventDefault(); eqAdicionar(inp.closest("[data-eq-box]")); }
 });
+document.addEventListener("input", e => { const pi = e.target.closest && e.target.closest("[data-eq-papel]"); if (pi && eqSel) { eqSel.papeis = eqSel.papeis || {}; eqSel.papeis[pi.dataset.eqPapel] = pi.value; } });
 document.addEventListener("change", e => { const inp = e.target.closest && e.target.closest("[data-eq-in]"); if (inp && /<[^>]+@[^>]+>/.test(inp.value)) eqAdicionar(inp.closest("[data-eq-box]")); });
 
 /* ===== Pessoa fora do cadastro: o GP pede ao PMO e o portal monta e envia o e-mail ===== */
@@ -10013,7 +10062,7 @@ document.addEventListener("keydown", e => {
 }, true);
 const NP_DATA = (iso, d) => { const x = new Date(iso + "T12:00:00"); x.setDate(x.getDate() + d); return x.toISOString().slice(0, 10); };
 function npDistintos(col){ return [...new Set(rows.map(r => String(r[col] || "").trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR")); }
-function npEquipeInicial(){ eqSel = {lista: (perfil() === "gp" && sessao.email) ? [sessao.email.toLowerCase()] : []}; return eqSel.lista; }
+function npEquipeInicial(){ const eu = (perfil() === "gp" && sessao.email) ? sessao.email.toLowerCase() : ""; eqSel = {lista: eu ? [eu] : [], papeis: eu ? {[eu]: "Gerente do projeto"} : {}}; return eqSel.lista; }
 function npModalHtml(){
   const maxId = Math.max(0, ...rows.map(r => parseInt(r.ID, 10) || 0)), hoje = hojeISO();
   const lista = (c, extra) => `<select name="${c}" data-np="${c}"><option value="">— selecione —</option>${[...new Set([...(LISTAS[c] || []), ...(extra || [])])].map(o => `<option>${esc(o)}</option>`).join("")}</select>`;
@@ -10056,6 +10105,7 @@ function criarProjetoNovo(v){
   novo["Título"] = v["Título"] || "Novo projeto";
   ["Frente", "Benefício estratégico", "Departamento", "Solicitante", "Responsável TI", "Analista Funcional", "Nome do Programa", "Inicio", "Fim", "Valor Orçado R$"].forEach(c => { if (v[c]) novo[c] = v[c]; });
   novo.membros = (eqSel && !eqSel.pid ? eqSel.lista : []).slice();
+  if (eqSel && !eqSel.pid && eqSel.papeis) novo.membrosPapel = Object.fromEntries(Object.entries(eqSel.papeis).filter(([em, v]) => v && novo.membros.includes(em)));
   if (eqSel && !eqSel.pid && eqSel.nomes) novo.membrosNomes = Object.fromEntries(Object.entries(eqSel.nomes).filter(([em]) => novo.membros.includes(em)));
   eqSel = null;
   novo["Modificado por"] = autor;
