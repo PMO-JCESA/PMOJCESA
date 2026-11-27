@@ -1387,6 +1387,14 @@ body{font-size:13.5px}
 .dkb-col{min-width:0;max-height:none}
 .dkb-card{min-width:0}
 .dkb-card>*{min-width:0}
+
+.com-rem{font-size:12px;color:var(--muted);margin:8px 0 0}
+.com-rem b{color:var(--text)}
+.com-rem.aviso{background:color-mix(in srgb,#C07F2A 20%,var(--surface2));border:1px solid color-mix(in srgb,#C07F2A 55%,transparent);border-radius:10px;padding:8px 10px;color:var(--text);display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.eq-box .com-chips{min-height:34px}
+.com-chip.pend{border-style:dashed;opacity:.9}
+#toast{z-index:700}
+.com-chip.pend small{color:#E7B24A;font-weight:600}
 /* formulários de página inteira não esticam além do confortável */
 #v-editar,#v-perfil{max-width:1240px}
 #corpoLista>tr>td{white-space:normal !important}
@@ -2435,6 +2443,8 @@ function normalizar(d){
   r.report = d.report && typeof d.report === "object" ? d.report : {};
   if (d.faseAntesConclusao) r.faseAntesConclusao = String(d.faseAntesConclusao);
   if (d.fluxo && typeof d.fluxo === "object") r.fluxo = d.fluxo;
+  r.membrosNomes = d.membrosNomes && typeof d.membrosNomes === "object" ? d.membrosNomes : {};
+  r.membros = Array.isArray(d.membros) ? [...new Set(d.membros.map(x => String(x || "").trim().toLowerCase()).filter(Boolean))] : [];
   if (typeof d.pastaSp === "string" && d.pastaSp) r.pastaSp = d.pastaSp;
   if (d._sp) r._sp = String(d._sp);
   return r;
@@ -3184,6 +3194,8 @@ function route(){
   { const pidAtual = view === "gestao-projeto" ? id : ""; if (pidAtual !== flxPidGuia) { flxGuiaAberto.clear(); flxPidGuia = pidAtual; } }
   if (view === "guia" && !(id === "form" && idExtra && achar(idExtra))) { location.hash = idExtra && achar(idExtra) ? "#/gestao/" + idExtra : viewInicial(); return; }
   if (["projeto","editar","gestao-projeto"].includes(view) && !achar(id)) view = view === "gestao-projeto" ? "gestao" : "home";
+  { const pidEq = view === "gestao-projeto" || view === "editar" ? id : view === "guia" ? idExtra : "";
+    if (pidEq && achar(pidEq) && !projAcesso(achar(pidEq))) { toast("Você não faz parte da equipe deste projeto. Peça ao gerente ou ao administrador para incluir você."); location.hash = "#/gestao"; return; } }
   if (!viewPermitida(view)) { toast("Seu perfil não tem acesso a esta área."); location.hash = viewInicial(); return; }
   document.querySelectorAll(".view").forEach(s => s.classList.remove("active"));
   const aba = (view === "base" && id === "diretoria") ? "base/diretoria" : (view === "gestao-projeto" || view === "concluidos" || view === "guia") ? "gestao" : (view === "projeto" || view === "editar") ? "lista" : view;
@@ -3601,6 +3613,7 @@ function filtrarGestao(){
   return rows.filter(r =>
     (!q || (r["Título"] + " " + r["Responsável TI"] + " " + r.Frente).toLowerCase().includes(q)) &&
     !isConcluido(r) &&
+    projAcesso(r) &&
     (perfil() !== "resp" || r.tarefas.some(minhaTarefa)) &&
     (m === "" || (m === "ativos" && emAndamento(r)) || (m === "paralisados" && isParalisado(r))));
 }
@@ -3884,7 +3897,7 @@ function normalizarMsg(m){
   return {
     id: m.id || uid(), autor: String(m.autor || "—"), ts: m.ts || new Date().toISOString(), texto: String(m.texto || ""),
     para: Array.isArray(m.para) ? m.para.filter(p => p && p.email).map(p => ({email: String(p.email).toLowerCase(), nome: String(p.nome || p.email)})) : [],
-    envio: {estado: ["enviado","pendente","falhou","local","rascunho"].includes(e.estado) ? e.estado : "local", ts: e.ts || "", erro: String(e.erro || ""), precisaAutorizar: !!e.precisaAutorizar}
+    envio: {estado: ["enviado","pendente","falhou","local","rascunho"].includes(e.estado) ? e.estado : "local", ts: e.ts || "", erro: String(e.erro || ""), precisaAutorizar: !!e.precisaAutorizar, trocarConta: !!e.trocarConta}
   };
 }
 let cmp = {pid: "", para: [], texto: ""};
@@ -3903,7 +3916,7 @@ function comMsgHtml(r, m){
     : `<span class="com-st">Só no histórico</span>`;
   const para = m.para.map(p => `<span class="com-chip">${esc(p.nome)}</span>`).join("");
   const acoes = (est === "falhou" || est === "pendente") && podeEditar()
-    ? `<div class="com-acts-msg">${m.envio.precisaAutorizar ? `<button class="btn sm" data-com-autorizar="1">Autorizar envio de e-mail</button>` : ""}<button class="btn sm" data-com-reenviar="${esc(m.id)}">Reenviar</button></div>` : "";
+    ? `<div class="com-acts-msg">${m.envio.precisaAutorizar ? `<button class="btn sm" data-com-autorizar="1">Autorizar envio de e-mail</button>` : ""}${m.envio.trocarConta ? `<button class="btn sm" data-ms-trocar>Entrar com a minha conta Microsoft</button>` : ""}<button class="btn sm" data-com-reenviar="${esc(m.id)}">Reenviar</button></div>` : "";
   return `<div class="com-msg">
     <div class="com-top"><b>${esc(m.autor)}</b><span class="note">${esc(comDH(m.ts))}</span>${badge}</div>
     <div class="com-para">Para: ${para || "—"}</div>
@@ -3928,6 +3941,7 @@ function comunicacaoHtml(r){
         <textarea data-com-texto rows="3" placeholder="Escreva a mensagem. Ex.: @Maria, pode confirmar o prazo deste projeto?">${esc(cmp.texto)}</textarea>
         <div class="com-pop" data-com-pop hidden></div>
       </div>
+      ${comRemetenteHtml()}
       <div class="com-acts"><button class="btn" data-com-enviar="1">Enviar via Outlook</button></div>
       <p class="note" style="margin:6px 0 0">O e-mail sai da sua conta Microsoft. O resultado (enviado ou não) fica registrado no histórico.</p>
     </div>`
@@ -3970,9 +3984,26 @@ async function comTokenEnvio(){
   if (!conta) throw new Error("sem conta Microsoft");
   return (await app.acquireTokenSilent({scopes: ["Mail.Send"], account: conta})).accessToken;
 }
+/* O e-mail sai da conta Microsoft conectada no portal. Para sair do e-mail de quem escreve, essa conta
+   precisa ser a mesma do login no portal (GP ou responsável). */
+const comContaMs = () => String(spSt.conta || "").toLowerCase();
+const comEuEmail = () => String((sessao && sessao.email) || "").toLowerCase();
+const comContaDiferente = () => !!(comEuEmail() && comContaMs() && comContaMs() !== comEuEmail());
+function comRemetenteHtml(){
+  if (!spLigado() || !comContaMs()) return "";
+  if (comContaDiferente()) return `<div class="com-rem aviso">O e-mail sairia de <b>${esc(spSt.conta)}</b>, não do seu (<b>${esc(comEuEmail())}</b>). <button type="button" class="btn sm" data-ms-trocar>Entrar com a minha conta Microsoft</button></div>`;
+  return `<div class="com-rem">Sai do seu e-mail: <b>${esc(spSt.conta)}</b></div>`;
+}
+document.addEventListener("click", e => {
+  if (!e.target.closest("[data-ms-trocar]")) return;
+  try { sessionStorage.setItem("spVoltar", location.hash || ""); } catch (er) {}
+  spMsal().then(app => app.loginRedirect({scopes: SP_ESCOPOS, prompt: "select_account", loginHint: comEuEmail() || undefined}))
+    .catch(er => toast("Não foi possível abrir o login da Microsoft: " + (er.message || er)));
+});
 async function comDisparo(m, assunto, corpoTxt){
   const falha = (erro, precisa) => { m.envio = {estado: "falhou", ts: new Date().toISOString(), erro, precisaAutorizar: !!precisa}; };
   if (!spLigado()) { falha("Sem conexão com o SharePoint. Clique no indicador do topo e entre com sua conta Microsoft para enviar."); return; }
+  if (comContaDiferente()) { falha(`Não enviado: a conta Microsoft conectada é ${spSt.conta}, diferente do seu e-mail (${comEuEmail()}). Entre com a sua conta Microsoft para a mensagem sair do seu endereço.`); m.envio.trocarConta = true; return; }
   let tk = null;
   try { tk = await comTokenEnvio(); }
   catch (e) {
@@ -4017,6 +4048,7 @@ function csComposerHtml(scope, est, botao){
       <textarea data-cs-texto="${scope}" rows="2" placeholder="Escreva uma mensagem. Use @ para escolher quem recebe.">${esc(est.texto)}</textarea>
       <div class="com-pop" data-cs-pop="${scope}" hidden></div>
     </div>
+    ${scope === "drw" ? comRemetenteHtml() : ""}
     <div class="com-acts">${botao}</div></div>`;
 }
 function csMsgHtml(m, pode){
@@ -4028,7 +4060,7 @@ function csMsgHtml(m, pode){
     : `<span class="com-st">Só no histórico</span>`;
   const para = m.para.length ? `<div class="com-para">Para: ${m.para.map(p => `<span class="com-chip">${esc(p.nome)}</span>`).join("")}</div>` : "";
   const acoes = pode && m.para.length && (est === "falhou" || est === "rascunho" || est === "pendente")
-    ? `<div class="com-acts-msg">${m.envio.precisaAutorizar ? `<button class="btn sm" data-com-autorizar="1">Autorizar envio de e-mail</button>` : ""}<button class="btn sm" data-cs-enviar-msg="${esc(m.id)}">${est === "falhou" ? "Reenviar" : "Enviar via Outlook"}</button></div>` : "";
+    ? `<div class="com-acts-msg">${m.envio.precisaAutorizar ? `<button class="btn sm" data-com-autorizar="1">Autorizar envio de e-mail</button>` : ""}${m.envio.trocarConta ? `<button class="btn sm" data-ms-trocar>Entrar com a minha conta Microsoft</button>` : ""}<button class="btn sm" data-cs-enviar-msg="${esc(m.id)}">${est === "falhou" ? "Reenviar" : "Enviar via Outlook"}</button></div>` : "";
   return `<div class="com-msg">
     <div class="com-top"><b>${esc(m.autor)}</b><span class="note">${esc(comDH(m.ts))}</span>${badge}</div>${para}
     <div class="com-txt">${esc(m.texto).replace(/\n/g, "<br>")}</div>
@@ -4214,6 +4246,7 @@ function renderGestaoProjeto(id){
       <div class="acts">
         <div class="seg">${[["kanban","Kanban"],["gantt","Gantt"],["report","STATUS REPORT"]].concat([["docs","Documentos"]]).map(([k,l]) => `<button data-pvisao="${k}" class="${k === pVisao ? "on" : ""}">${l}</button>`).join("")}</div>
         <label class="lbl">Fase ${faseSelectHtml(r.Fase, `data-proj-fase="${esc(r.ID)}" aria-label="Fase do projeto"`)}</label>
+        <button type="button" class="btn" data-eq-abrir="${esc(r.ID)}" title="Quem tem acesso à gestão e aos cards">Equipe${(r.membros || []).length ? ` (${r.membros.length})` : ""}</button>
         <a class="btn" href="#/projeto/${esc(r.ID)}">Ficha do projeto</a>
         ${isConcluido(r) ? `<button class="btn" data-proj-acao="reabrir">Reabrir projeto</button>` : `<button class="btn" data-proj-acao="concluir">Concluir projeto</button>`}
         <a class="btn" href="${isConcluido(r) ? "#/concluidos" : "#/gestao"}">Voltar</a>
@@ -7360,7 +7393,7 @@ async function flxSolicEscolher(buf, nome, tam, extra){
 
 /* ---------- Anexos dos cards: somente arquivos da pasta do projeto no SharePoint ---------- */
 const anexoBotaoHtml = ctx => spLigado()
-  ? `<div style="margin-bottom:10px"><button type="button" class="btn sm primary" data-pa-abrir="${ctx}">Anexar do SharePoint</button></div>`
+  ? `<div class="anx-bts" style="margin-bottom:10px;display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn sm primary" data-pa-abrir="${ctx}" title="Escolher um arquivo que já está na pasta do projeto">Anexar do SharePoint</button><button type="button" class="btn sm" data-pu-abrir="${ctx}" title="Enviar um arquivo do seu computador para a pasta do projeto e anexar ao card">Enviar do computador para o SharePoint</button><input type="file" multiple hidden data-pu-file="${ctx}"></div>`
   : `<p class="note" style="margin:0 0 10px">Conecte o portal ao SharePoint para anexar documentos da pasta do projeto.</p>`;
 let flxPa = null, flxPdfDest = null, flxPdfLocal = null, flxSemSp = null;
 document.addEventListener("click", async e => {
@@ -7455,6 +7488,11 @@ function flxPaHtml(){
       : flxPa.salvar ? "" : `<label class="flx-spi"><input type="checkbox" data-pa-sel="${i}" ${flxPa.sel[it.id] ? "checked" : ""}><span>📄</span><b>${esc(it.name)}</b><small>${Math.max(1, Math.round((it.size || 0) / 1024))} KB</small></label>`).join("")
       : `<p class="note" style="margin:6px 0">Pasta vazia.</p>`;
   const n = Object.keys(flxPa.sel).length;
+  if (flxPa.upload) return `<h3>Enviar para o SharePoint</h3>
+    <p class="note" style="margin:0 0 6px">Escolha a pasta onde os arquivos vão ficar e clique em <b>Enviar aqui</b>. Eles são gravados no SharePoint e anexados ao card.</p>
+    <div class="flx-spc">${crumb}</div><div class="flx-spl" style="max-height:240px">${flxPa.itens.some(x => x.folder) || flxPa.erro ? lista : `<p class="note" style="margin:6px 0">Esta pasta não tem subpastas.</p>`}</div>
+    <p class="note" style="margin:8px 0 0">${flxPa.upload.length} arquivo(s): <b>${flxPa.upload.map(f => esc(f.name)).join(", ")}</b></p>
+    <div class="flx-acts"><button type="button" class="btn" data-pa-fechar>Cancelar</button><button type="button" class="btn primary" data-pa-enviar ${flxPa.erro ? "disabled" : ""}>Enviar aqui</button></div>`;
   if (flxPa.salvar) return `<h3>Pasta de documentos do SharePoint</h3>
     <p class="note" style="margin:0 0 6px">Navegue até a pasta onde quer salvar o PDF e clique em Salvar aqui.</p>
     <div class="flx-spc">${crumb}</div><div class="flx-spl" style="max-height:260px">${flxPa.itens.some(x => x.folder) || flxPa.erro ? lista : `<p class="note" style="margin:6px 0">Esta pasta não tem subpastas.</p>`}</div>
@@ -7514,14 +7552,66 @@ document.addEventListener("click", async e => {
         salvar(); toast("Evidência de aprovação anexada ao card.");
       }
       flxFechar(); flxPa = null; route();
-    } else if (flxPa.ctx === "drawer") {
-      const t = drawerCtx && acharTarefa(achar(flxPa.pid), drawerCtx.tid); if (!t) return;
-      t.anexos.push(...novos); flxFechar(); flxPa = null; depoisAlterar();
-    } else if (novoForm) {
-      novoForm.anexos.push(...novos); flxFechar(); flxPa = null;
-      const form = document.querySelector("form[data-nt]"); if (form) ntRefresh(form);
-    }
+    } else flxPaAnexar(novos);
   }
+});
+function flxPaAnexar(novos){
+  if (!flxPa) return;
+  if (flxPa.ctx === "drawer") {
+    const t = drawerCtx && acharTarefa(achar(flxPa.pid), drawerCtx.tid); if (!t) return;
+    t.anexos.push(...novos); flxFechar(); flxPa = null; depoisAlterar();
+  } else if (novoForm) {
+    novoForm.anexos.push(...novos); flxFechar(); flxPa = null;
+    const form = document.querySelector("form[data-nt]"); if (form) ntRefresh(form);
+  }
+}
+/* envia um arquivo do computador para uma pasta do SharePoint (até 4 MB direto; acima disso, em partes) */
+async function spEnviarArquivo(pastaRel, arq){
+  if (!spSt.siteId) spSt.siteId = (await gx("GET", `/sites/${SP.host}:${SP.sitePath}?$select=id`)).id;
+  const caminho = pastaRel.split("/").map(encodeURIComponent).join("/") + "/" + encodeURIComponent(arq.name);
+  if (arq.size <= 4 * 1024 * 1024)
+    return gx("PUT", `/sites/${spSt.siteId}/drive/root:/${caminho}:/content?@microsoft.graph.conflictBehavior=rename`, arq, {bruto: true, headers: {"Content-Type": arq.type || "application/octet-stream"}});
+  const sess = await gx("POST", `/sites/${spSt.siteId}/drive/root:/${caminho}:/createUploadSession`, {item: {"@microsoft.graph.conflictBehavior": "rename"}});
+  const parte = 5 * 1024 * 1024; let fim = null;
+  for (let i = 0; i < arq.size; i += parte) {
+    const ch = arq.slice(i, Math.min(arq.size, i + parte));
+    const rs = await fetch(sess.uploadUrl, {method: "PUT", headers: {"Content-Range": `bytes ${i}-${i + ch.size - 1}/${arq.size}`}, body: ch});
+    if (!rs.ok && rs.status !== 202) throw new Error("falha no envio (" + rs.status + ")");
+    if (rs.status === 200 || rs.status === 201) fim = await rs.json();
+  }
+  return fim || {name: arq.name, size: arq.size};
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-pu-abrir]"); if (!b) return;
+  e.preventDefault();
+  if (!spLigado()) { toast("Conecte o portal ao SharePoint para enviar arquivos."); return; }
+  const inp = b.parentElement.querySelector(`[data-pu-file="${b.dataset.puAbrir}"]`); if (inp) { inp.value = ""; inp.click(); }
+});
+document.addEventListener("change", async e => {
+  const inp = e.target.closest("[data-pu-file]"); if (!inp || !inp.files.length) return;
+  const ctx = inp.dataset.puFile, files = [...inp.files];
+  await flxPaAbrir(ctx);
+  if (!flxPa) return;
+  flxPa.upload = files;
+  const r = achar(flxPa.pid);
+  try { if (r && r.pastaSp) flxPa.caminho = r.pastaSp.split("/"); else if (r) { const achou = await flxPaAcharPasta(r); flxPa.base = []; if (achou) flxPa.caminho = achou; } } catch (er) {}
+  await flxPaRender();
+});
+document.addEventListener("click", async e => {
+  if (!e.target.closest("[data-pa-enviar]") || !flxPa || !flxPa.upload) return;
+  e.preventDefault();
+  const pasta = flxPaRel(), files = flxPa.upload, novos = [], erros = [];
+  for (let i = 0; i < files.length; i++) {
+    flxModal(`<h3>Enviando para o SharePoint</h3><p class="note">Arquivo ${i + 1} de ${files.length}: <b>${esc(files[i].name)}</b>…</p>`);
+    try {
+      const j = await spEnviarArquivo(pasta, files[i]);
+      novos.push({id: uid(), nome: j.name || files[i].name, tam: j.size || files[i].size, tipo: files[i].type || "", url: j.webUrl || "", itemId: j.id || "", doPrj: true});
+    } catch (er) { erros.push(files[i].name + ": " + (er.message || er)); }
+  }
+  const r = achar(flxPa.pid);
+  if (r && novos.length) registrar(r, `${novos.length} arquivo(s) enviado(s) ao SharePoint (${pasta.split("/").slice(-2).join("/")}) e anexado(s): ${novos.map(x => x.nome).join(", ")}`);
+  if (novos.length) flxPaAnexar(novos); else { flxFechar(); flxPa = null; }
+  toast(erros.length ? `${novos.length} enviado(s); ${erros.length} com erro: ${erros[0]}` : `${novos.length} arquivo(s) enviado(s) ao SharePoint e anexado(s).`);
 });
 document.addEventListener("change", e => {
   const c = e.target.closest("[data-pa-sel]"); if (!c || !flxPa) return;
@@ -9545,7 +9635,7 @@ window.prompt = (msg, padrao) => {
   return null;
 };
 /* sugestões que aparecem só ao digitar (departamentos e e-mail do login) */
-const DL_FONTES = {dep: () => cadastros.departamentos.map(d => ({v: d.nome}))};
+const DL_FONTES = {dep: () => cadastros.departamentos.map(d => ({v: d.nome})), eq: () => cadastros.solicitantes.filter(x => x.email).map(x => ({v: `${x.nome} <${x.email.toLowerCase()}>`}))};
 document.addEventListener("input", e => {
   const el = e.target; if (!el.dataset || !el.dataset.sugere) return;
   const dl = document.getElementById(el.getAttribute("list")); if (!dl) return;
@@ -9776,8 +9866,154 @@ $("corpoBase").addEventListener("click", e => {
   salvar();
   renderBase();
 });
+
+/* ===== Equipe do projeto: quem pode abrir a gestão e os cards =====
+   Projeto sem equipe definida continua aberto como antes. Com equipe: administrador, membros da lista,
+   Responsável TI, Analista Funcional e quem tem tarefa no projeto. */
+function projEquipe(r){
+  const em = new Set((r.membros || []).map(x => x.toLowerCase()));
+  [...separaNomes(r["Responsável TI"]), ...separaNomes(r["Analista Funcional"])].forEach(n => {
+    const g = cadastros.gerentes.find(x => semAcento(x.nome) === semAcento(n)) || cadastros.solicitantes.find(x => semAcento(x.nome) === semAcento(n));
+    if (g && g.email) em.add(g.email.toLowerCase());
+  });
+  return em;
+}
+function projAcesso(r){
+  if (!r) return false;
+  const p = perfil();
+  if (p === "admin" || !(r.membros || []).length) return true;
+  const eu = String((sessao && sessao.email) || "").toLowerCase();
+  if (!eu) return false;
+  if (projEquipe(r).has(eu)) return true;
+  if (p === "gp" && [...separaNomes(r["Responsável TI"]), ...separaNomes(r["Analista Funcional"])].some(n => semAcento(n) === semAcento(sessao.nome))) return true;
+  return r.tarefas.some(t => String(t.responsavel || "").toLowerCase() === eu || (t.apoio || []).map(x => x.toLowerCase()).includes(eu));
+}
+const projPodeEquipe = r => perfil() === "admin" || (perfil() === "gp" && projAcesso(r));
+const pessoaPorEmail = em => cadastros.solicitantes.find(x => (x.email || "").toLowerCase() === em) || cadastros.gerentes.find(x => (x.email || "").toLowerCase() === em);
+function eqChipsHtml(lista){
+  const nomes = (eqSel && eqSel.nomes) || {};
+  return lista.length ? lista.map(em => { const x = pessoaPorEmail(em); return `<span class="com-chip${x ? "" : " pend"}" title="${x ? esc(em) : "Aguardando cadastro pelo PMO"}">${esc(x ? x.nome : (nomes[em] || em))}${x ? "" : ` <small>· aguardando cadastro</small>`}<button type="button" data-eq-rm="${esc(em)}" aria-label="Remover">×</button></span>`; }).join("")
+    : `<span class="note" style="margin:0">Ninguém na lista: o projeto fica aberto a todos os gerentes.</span>`;
+}
+function eqPickerHtml(lista){
+  return `<div class="eq-box" data-eq-box>
+    <div class="com-chips" data-eq-chips>${eqChipsHtml(lista)}</div>
+    <div class="addrow" style="margin-top:8px"><input type="text" data-eq-in list="eqLista" data-sugere="eq" placeholder="Digite o nome ou e-mail e tecle Enter" autocomplete="off"><button type="button" class="btn sm" data-eq-add>Adicionar</button><button type="button" class="btn sm" data-eq-novo title="A pessoa não está no cadastro">Não está no cadastro?</button></div>
+    <datalist id="eqLista"></datalist>
+    <small class="note">Responsável TI, Analista Funcional e quem tiver tarefa no projeto também têm acesso. O administrador vê todos os projetos.</small></div>`;
+}
+let eqSel = null; /* {lista:[], aoMudar:fn} */
+function eqAdicionar(box){
+  const inp = box.querySelector("[data-eq-in]"); const v = (inp.value || "").trim(); if (!v || !eqSel) return;
+  const m = v.match(/<([^>]+)>/); const q = (m ? m[1] : v).toLowerCase();
+  let x = cadastros.solicitantes.find(y => (y.email || "").toLowerCase() === q) || cadastros.solicitantes.find(y => semAcento(y.nome) === semAcento(v.replace(/<.*$/, "").trim()));
+  if (!x || !x.email) { eqSolicitarCadastro(v, box); return; }
+  const em = x.email.toLowerCase();
+  if (!eqSel.lista.includes(em)) eqSel.lista.push(em);
+  inp.value = ""; box.querySelector("[data-eq-chips]").innerHTML = eqChipsHtml(eqSel.lista);
+  if (eqSel.aoMudar) eqSel.aoMudar();
+}
+document.addEventListener("click", e => {
+  const a = e.target.closest("[data-eq-add]"); if (a) { eqAdicionar(a.closest("[data-eq-box]")); return; }
+  const nv = e.target.closest("[data-eq-novo]"); if (nv) { const bx = nv.closest("[data-eq-box]"); eqSolicitarCadastro(bx.querySelector("[data-eq-in]").value, bx); return; }
+  const rm = e.target.closest("[data-eq-rm]");
+  if (rm && eqSel) { eqSel.lista = eqSel.lista.filter(x => x !== rm.dataset.eqRm); rm.closest("[data-eq-box]").querySelector("[data-eq-chips]").innerHTML = eqChipsHtml(eqSel.lista); if (eqSel.aoMudar) eqSel.aoMudar(); return; }
+  const ab = e.target.closest("[data-eq-abrir]");
+  if (ab) {
+    const r = achar(ab.dataset.eqAbrir); if (!r) return;
+    if (!projPodeEquipe(r)) { toast("Só o administrador ou um gerente da equipe altera a equipe."); return; }
+    eqSel = {lista: (r.membros || []).slice(), pid: r.ID, nomes: Object.assign({}, r.membrosNomes || {})};
+    flxModal(`<h3>Equipe do projeto</h3><p class="note" style="margin:0 0 10px">Só quem está na equipe abre a gestão e os cards de <b>${esc(r["Título"])}</b>.</p>${eqPickerHtml(eqSel.lista)}
+      <div class="flx-acts"><button type="button" class="btn" data-flx="fechar">Cancelar</button><button type="button" class="btn primary" data-eq-salvar>Salvar equipe</button></div>`);
+    return;
+  }
+  if (e.target.closest("[data-eq-salvar]") && eqSel && eqSel.pid) {
+    const r = achar(eqSel.pid); if (!r) return;
+    const antes = (r.membros || []).length;
+    r.membros = eqSel.lista.slice();
+    r.membrosNomes = Object.fromEntries(Object.entries(eqSel.nomes || {}).filter(([em]) => r.membros.includes(em)));
+    registrar(r, `Equipe do projeto atualizada: ${r.membros.map(em => { const x = pessoaPorEmail(em); return x ? x.nome : em; }).join(", ") || "sem restrição"}`);
+    salvar(); flxFechar(); eqSel = null;
+    toast(r.membros.length ? `Equipe salva: ${r.membros.length} pessoa(s).` : antes ? "Equipe removida: o projeto volta a ficar aberto a todos os gerentes." : "Equipe salva.");
+    route();
+  }
+});
+document.addEventListener("keydown", e => {
+  const inp = e.target.closest && e.target.closest("[data-eq-in]");
+  if (inp && e.key === "Enter") { e.preventDefault(); eqAdicionar(inp.closest("[data-eq-box]")); }
+});
+document.addEventListener("change", e => { const inp = e.target.closest && e.target.closest("[data-eq-in]"); if (inp && /<[^>]+@[^>]+>/.test(inp.value)) eqAdicionar(inp.closest("[data-eq-box]")); });
+
+/* ===== Pessoa fora do cadastro: o GP pede ao PMO e o portal monta e envia o e-mail ===== */
+const PMO_ADM_EMAIL = "alisson.santos@jcesa.com.br";
+function eqSolicitarCadastro(texto, box){
+  const t = String(texto || "").trim(), em = (t.match(/[^\s<>]+@[^\s<>]+\.[^\s<>]+/) || [""])[0].toLowerCase();
+  const nome = t.replace(/<[^>]*>/g, "").replace(em, "").trim();
+  const r = eqSel && eqSel.pid ? achar(eqSel.pid) : null;
+  const tituloNovo = !r && $("npForm") ? ($("npForm")["Título"].value || "").trim() : "";
+  const ov = document.createElement("div"); ov.className = "dlg-ov"; ov.id = "eqSolOv";
+  ov.innerHTML = `<div class="dlg" role="dialog" aria-modal="true" aria-label="Pessoa não cadastrada" style="width:min(520px,100%)">
+    <div class="dlg-h"><span class="dlg-ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/><path d="M19 3v6M16 6h6"/></svg></span><h3 class="dlg-t">Pessoa não cadastrada</h3></div>
+    <div class="dlg-b" style="white-space:normal">Essa pessoa ainda não está no Cadastro de pessoas. Informe os dados e o portal envia a solicitação de cadastro ao PMO (<b>${esc(PMO_ADM_EMAIL)}</b>). Ela já entra na equipe como <i>aguardando cadastro</i>.
+      <form id="eqSolForm" class="fgrid" autocomplete="off" style="grid-template-columns:1fr 1fr;margin-top:12px">
+        <div class="fld" style="grid-column:1/-1"><label>Nome completo *</label><input name="nome" value="${esc(nome)}" placeholder="Nome e sobrenome"></div>
+        <div class="fld" style="grid-column:1/-1"><label>E-mail *</label><input name="email" value="${esc(em)}" placeholder="nome.sobrenome@jcesa.com.br"></div>
+        <div class="fld"><label>Departamento</label><input name="dep" list="listaDepsEq" data-sugere="dep" placeholder="Opcional"><datalist id="listaDepsEq"></datalist></div>
+        <div class="fld"><label>Papel</label><select name="papel"><option>Usuário</option><option>GP</option></select></div>
+        <div class="fld" style="grid-column:1/-1"><label>Observação para o PMO</label><input name="obs" placeholder="Opcional"></div>
+        <p class="note" id="eqSolErro" style="grid-column:1/-1;margin:0;color:#FF7A9A"></p>
+      </form></div>
+    <div class="dlg-f"><button type="button" class="btn" data-eqsol="0">Cancelar</button><button type="button" class="btn primary" data-eqsol="1">Enviar solicitação ao PMO</button></div></div>`;
+  document.body.appendChild(ov);
+  const f = ov.querySelector("form"); (nome ? f.email : f.nome).focus();
+  ov.eqCtx = {box, r, tituloNovo};
+}
+async function eqSolEnviar(ov){
+  const f = ov.querySelector("form"), er = ov.querySelector("#eqSolErro"), {box, r, tituloNovo} = ov.eqCtx;
+  const nome = f.nome.value.trim(), email = f.email.value.trim().toLowerCase(), dep = f.dep.value.trim(), papel = f.papel.value, obs = f.obs.value.trim();
+  if (nome.length < 3) { er.textContent = "Informe o nome completo."; f.nome.focus(); return; }
+  if (!email || !emailOk(email)) { er.textContent = "Informe um e-mail válido."; f.email.focus(); return; }
+  if (pessoaPorEmail(email)) { ov.remove(); if (eqSel && !eqSel.lista.includes(email)) eqSel.lista.push(email); box.querySelector("[data-eq-chips]").innerHTML = eqChipsHtml(eqSel.lista); toast("Essa pessoa já está cadastrada: incluída na equipe."); return; }
+  const quem = sessao ? `${sessao.nome}${sessao.email ? " <" + sessao.email + ">" : ""}` : autor;
+  const proj = r ? `${r["Título"]} (#${r.ID})` : (tituloNovo ? `${tituloNovo} (projeto em criação)` : "novo projeto");
+  const assunto = `[Portal PMO] Solicitação de cadastro: ${nome}`;
+  const texto = `Olá, PMO.\n\nPor favor, cadastre a pessoa abaixo no Cadastro de pessoas do Portal PMO para que ela tenha acesso ao projeto.\n\nNome: ${nome}\nE-mail: ${email}\nDepartamento: ${dep || "não informado"}\nPapel: ${papel}\nProjeto: ${proj}\n${obs ? "Observação: " + obs + "\n" : ""}\nSolicitado por: ${quem}\nAbrir o cadastro: ${urlSistema()}#/base/cadastro` + ASSINATURA;
+  const btn = ov.querySelector('[data-eqsol="1"]'); btn.disabled = true; btn.textContent = "Enviando…";
+  let enviado = false, motivo = "";
+  if (spLigado()) {
+    try {
+      const tk = await comTokenEnvio();
+      const payload = {message: {subject: assunto, body: {contentType: "HTML", content: corpoHtml(texto)}, toRecipients: [{emailAddress: {address: PMO_ADM_EMAIL, name: "PMO"}}],
+        replyTo: sessao && sessao.email ? [{emailAddress: {address: sessao.email, name: sessao.nome}}] : []}, saveToSentItems: true};
+      const resp = await fetch(GRAPH + "/me/sendMail", {method: "POST", headers: {Authorization: "Bearer " + tk, "Content-Type": "application/json"}, body: JSON.stringify(payload)});
+      enviado = resp.ok; if (!resp.ok) motivo = "o Outlook recusou (" + resp.status + ")";
+    } catch (e) { motivo = e.message || String(e); }
+  } else motivo = "sem conexão com a conta Microsoft";
+  if (!enviado) {
+    /* plano B: abre o e-mail pronto no Outlook do computador */
+    const a = document.createElement("a");
+    a.href = `mailto:${PMO_ADM_EMAIL}?subject=${encodeURIComponent(assunto)}&body=${encodeURIComponent(texto)}`;
+    document.body.appendChild(a); a.click(); a.remove();
+  }
+  ov.remove();
+  if (eqSel) { eqSel.nomes = eqSel.nomes || {}; eqSel.nomes[email] = nome; if (!eqSel.lista.includes(email)) eqSel.lista.push(email); if (box && box.isConnected) { box.querySelector("[data-eq-chips]").innerHTML = eqChipsHtml(eqSel.lista); const i = box.querySelector("[data-eq-in]"); if (i) i.value = ""; } }
+  if (r) { registrar(r, `Solicitado ao PMO o cadastro de ${nome} (${email}) para a equipe${enviado ? "" : " (e-mail aberto no Outlook)"}`); salvar(); }
+  toast(enviado ? `Solicitação enviada ao PMO. ${nome} já está na equipe aguardando cadastro: lembre de salvar a equipe.` : `Não consegui enviar direto (${motivo}). Abri o e-mail pronto no seu Outlook: é só clicar em Enviar.`);
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-eqsol]"); if (!b) return;
+  const ov = b.closest(".dlg-ov");
+  if (b.dataset.eqsol === "0") { ov.remove(); return; }
+  eqSolEnviar(ov);
+});
+document.addEventListener("keydown", e => {
+  const ov = $("eqSolOv"); if (!ov) return;
+  if (e.key === "Escape") { e.stopPropagation(); ov.remove(); }
+  else if (e.key === "Enter" && e.target.closest("#eqSolForm")) { e.preventDefault(); e.stopPropagation(); eqSolEnviar(ov); }
+}, true);
 const NP_DATA = (iso, d) => { const x = new Date(iso + "T12:00:00"); x.setDate(x.getDate() + d); return x.toISOString().slice(0, 10); };
 function npDistintos(col){ return [...new Set(rows.map(r => String(r[col] || "").trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR")); }
+function npEquipeInicial(){ eqSel = {lista: (perfil() === "gp" && sessao.email) ? [sessao.email.toLowerCase()] : []}; return eqSel.lista; }
 function npModalHtml(){
   const maxId = Math.max(0, ...rows.map(r => parseInt(r.ID, 10) || 0)), hoje = hojeISO();
   const lista = (c, extra) => `<select name="${c}" data-np="${c}"><option value="">— selecione —</option>${[...new Set([...(LISTAS[c] || []), ...(extra || [])])].map(o => `<option>${esc(o)}</option>`).join("")}</select>`;
@@ -9796,6 +10032,7 @@ function npModalHtml(){
       ${f("Responsável TI", gerSel("Responsável TI", eu && eu.nome))}
       ${f("Analista Funcional", gerSel("Analista Funcional"))}
       ${f("Nome do Programa", cadSelectHtml("programas", "", `name="Nome do Programa" data-np="Nome do Programa"`), "", "Cadastrados em Base › Programas")}
+      ${f("Equipe do projeto", eqPickerHtml(npEquipeInicial()), "full")}
       ${f("Valor orçado (R$)", `<input type="text" name="Valor Orçado R$" data-np="Valor Orçado R$" inputmode="decimal" placeholder="0,00">`)}
       ${f("Início", `<input type="date" name="Inicio" data-np="Inicio" value="${hoje}">`)}
       ${f("Fim previsto", `<input type="date" name="Fim" data-np="Fim" value="${NP_DATA(hoje, 90)}">`, "", `<span class="np-dur"></span> <span class="np-q">${[30, 60, 90, 180, 365].map(d => `<button type="button" class="btn sm" data-np-dias="${d}">+${d} dias</button>`).join(" ")}</span>`)}
@@ -9818,8 +10055,11 @@ function criarProjetoNovo(v){
   novo.Categoria = v.Categoria || "Projeto";
   novo["Título"] = v["Título"] || "Novo projeto";
   ["Frente", "Benefício estratégico", "Departamento", "Solicitante", "Responsável TI", "Analista Funcional", "Nome do Programa", "Inicio", "Fim", "Valor Orçado R$"].forEach(c => { if (v[c]) novo[c] = v[c]; });
+  novo.membros = (eqSel && !eqSel.pid ? eqSel.lista : []).slice();
+  if (eqSel && !eqSel.pid && eqSel.nomes) novo.membrosNomes = Object.fromEntries(Object.entries(eqSel.nomes).filter(([em]) => novo.membros.includes(em)));
+  eqSel = null;
   novo["Modificado por"] = autor;
-  registrar(novo, "Projeto criado");
+  registrar(novo, "Projeto criado" + (novo.membros.length ? ` · equipe: ${novo.membros.map(em => { const x = pessoaPorEmail(em); return x ? x.nome : em; }).join(", ")}` : ""));
   fluxoIniciar(novo);
   rows.push(novo);
   salvar();
