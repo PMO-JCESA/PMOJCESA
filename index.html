@@ -3111,7 +3111,7 @@ $("v-perfil").addEventListener("click", e => {
    PMO-Projetos/portal_alocacao_placar.json e PMO-Projetos/portal_alocacao_fte.json. */
 const ALOC_ARQ = {placar: "PMO-Projetos/portal_alocacao_placar.json", fte: "PMO-Projetos/portal_alocacao_fte.json"};
 const ALOC_KEY = "portal_pmo_alocacao";
-const ALOC_VER = "1795813386"; /* muda a cada publicação: obriga o navegador a buscar o alocacao.html novo */
+const ALOC_VER = "1795814019"; /* muda a cada publicação: obriga o navegador a buscar o alocacao.html novo */
 let alocDados = (() => { const j = lerJSON(ALOC_KEY); return j && typeof j === "object" ? j : {}; })();
 let alocLido = false, alocAutoFeito = false;
 const alocEhTI = dep => { const d = semAcento(String(dep || "").trim()); return /tecnolog/.test(d) || d === "ti"; };

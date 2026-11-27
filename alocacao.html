@@ -163,6 +163,7 @@ iframe.pdfv{width:100%;height:70vh;border:1px solid var(--line2);border-radius:1
       <p class="sub">Horas por pessoa e projeto na semana, contra a capacidade de cada um. O PMO ajusta; o portal sugere a partir das tarefas dos projetos.</p>
     </div>
     <div class="acts">
+      <button class="btn" id="bCopSem" title="Preenche esta semana com as horas da semana anterior">Igual à semana anterior</button>
       <button class="btn" id="bSug">Sugerir pelas tarefas</button>
       <button class="btn" id="bCfg">Disparo semanal</button>
       <button class="btn primary" id="bMail">Prévia do e-mail</button>
@@ -173,6 +174,7 @@ iframe.pdfv{width:100%;height:70vh;border:1px solid var(--line2);border-radius:1
     <div class="seg"><button class="btn sm on" data-nivel="semana">Semana</button><button class="btn sm" data-nivel="mes">Mês</button><button class="btn sm" data-nivel="ano">Ano</button></div>
     <button class="arrow" id="wPrev" aria-label="Semana anterior">‹</button>
     <b id="wLabel"></b>
+    <button class="btn sm" id="wPer" title="Escolher as datas do placar (ex.: 30/11 a 04/12)">Editar período</button>
     <button class="arrow" id="wNext" aria-label="Próxima semana">›</button>
     <span class="sp"></span>
     <span class="next" id="nextRun"></span>
@@ -248,7 +250,10 @@ const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"
 const ini=n=>n.split(" ").map(x=>x[0]).slice(0,2).join("");
 const fmtD=d=>d.toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"});
 const addDias=(iso,n)=>{const d=new Date(iso+"T12:00:00");d.setDate(d.getDate()+n);return d;};
-const semLabel=w=>`Semana ${SEMANAS[w].n} · ${fmtD(addDias(SEMANAS[w].ini,0))} a ${fmtD(addDias(SEMANAS[w].ini,6))}`;
+/* período exibido da semana: padrão segunda a sexta; o PMO pode editar (ex.: 30/11 a 04/12) */
+PL.periodos=PL.periodos||{};
+const periodo=w=>PL.periodos[semChave(w)]||{ini:SEMANAS[w].ini,fim:isoAdd(SEMANAS[w].ini,4)};
+const semLabel=w=>{const p=periodo(w);return `Semana ${SEMANAS[w].n} · ${fmtD(addDias(p.ini,0))} a ${fmtD(addDias(p.fim,0))}`;};
 const MESES=["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 const W=x=>Array.isArray(x)?x:[x];
 const TODAS=SEMANAS.map((_,i)=>i);
@@ -298,6 +303,7 @@ function render(){
   if(!PESSOAS.length){$("kpis").innerHTML="";$("alerts").innerHTML=`<h3>Nenhuma pessoa no time de Tecnologia</h3><span class="sub">O placar usa as pessoas com departamento <b>Tecnologia</b> no Cadastro de pessoas (Base › Cadastro de pessoas). Ajuste o departamento de quem faz parte do time e abra esta página de novo.</span>`;$("view").innerHTML="";$("wLabel").textContent=rotulo();return;}
   const ws=wsAtual(),nv=S.nivel,N=NOME[nv];
   $("wLabel").textContent=rotulo();
+  if($("wPer"))$("wPer").hidden=S.nivel!=="semana";
   $("wPrev").disabled=!wsVizinho(-1);$("wNext").disabled=!wsVizinho(1);
   document.querySelectorAll("[data-nivel]").forEach(b=>b.classList.toggle("on",b.dataset.nivel===nv));
   $("nextRun").textContent=CFG.ativo?`Próximo e-mail: ${proxDisparo()}`:"Disparo semanal desativado";
@@ -351,8 +357,8 @@ function viewPlacar(ws){
 function viewHeat(){
   const nv=S.nivel;
   let cols;
-  if(nv==="semana"){const l=[];for(let i=0;i<4&&S.w+i<SEMANAS.length;i++)l.push(S.w+i);cols=l.map(w=>({ws:[w],h:`Sem. ${SEMANAS[w].n}<br><span style="text-transform:none;letter-spacing:0">${fmtD(addDias(SEMANAS[w].ini,0))}</span>`,go:`semana:${w}`}));}
-  else if(nv==="mes")cols=mesSems(S.m).map(w=>({ws:[w],h:`Sem. ${SEMANAS[w].n}<br><span style="text-transform:none;letter-spacing:0">${fmtD(addDias(SEMANAS[w].ini,0))}</span>`,go:`semana:${w}`}));
+  if(nv==="semana"){const l=[];for(let i=0;i<4&&S.w+i<SEMANAS.length;i++)l.push(S.w+i);cols=l.map(w=>({ws:[w],h:`Sem. ${SEMANAS[w].n}<br><span style="text-transform:none;letter-spacing:0">${fmtD(addDias(periodo(w).ini,0))}</span>`,go:`semana:${w}`}));}
+  else if(nv==="mes")cols=mesSems(S.m).map(w=>({ws:[w],h:`Sem. ${SEMANAS[w].n}<br><span style="text-transform:none;letter-spacing:0">${fmtD(addDias(periodo(w).ini,0))}</span>`,go:`semana:${w}`}));
   else cols=MESES.map((n,m)=>({ws:mesSems(m),h:n.slice(0,3),go:`mes:${m}`}));
   const head=cols.map(c=>`<th style="text-align:center">${c.h}</th>`).join("");
   const rows=PESSOAS.map(p=>`<tr><td><div class="who"><span class="av" style="background:${p.cor}">${ini(p.nome)}</span><b>${esc(p.nome)}</b></div></td>${cols.map(c=>{const v=pct(c.ws,p);return `<td class="c ${stOf(v)}" data-goto="${c.go}">${v}%<small>${tot(c.ws,p.id)}h</small></td>`;}).join("")}</tr>`).join("");
@@ -387,6 +393,7 @@ function drawEdit(){
     <label class="f">Capacidade semanal (horas)</label><input type="number" min="1" max="60" id="eCap" value="${p.cap}">
     <label class="f">Alocação por atividade e projeto</label>
     ${Object.entries(d).map(([k,h])=>`<div class="al"><select data-pj="${k}">${selAtiv(k,d)}</select><input type="number" min="0" max="80" step="1" value="${h}" data-h="${k}"><button class="rm" data-rm="${k}" title="Remover">✕</button></div>`).join("")||`<p class="sub">Nenhum projeto alocado.</p>`}
+    ${S.w>0&&Object.keys(sem[S.w-1][p.id]||{}).length?`<button class="btn sm" id="eCopAnt" style="margin:0 0 8px">Igual à semana anterior (${SEMANAS[S.w-1].n})</button>`:""}
     <div class="quick">${ATIV_TIME.filter(x=>!(x in d)).map(x=>`<button class="btn sm" data-quick="${x}">+ ${esc(PROJ[x].n)}</button>`).join("")}</div>
     ${livres.some(x=>!ATIV_TIME.includes(x))?`<button class="btn sm" id="eAdd">+ Adicionar projeto</button>`:""}
     <div class="live"><div class="pct">${v}% <small style="display:inline">${t}h de ${p.cap}h</small></div><div style="margin:8px 0"><div class="bar" style="min-width:0">${Object.entries(d).filter(([,h])=>h>0).map(([k,h])=>`<i style="width:${h/Math.max(t,p.cap,1)*100}%;background:${PROJ[k].c}"></i>`).join("")}</div></div><span class="pill ${s}">${ST[s]}</span>${t>p.cap?` <span class="sub">excede ${t-p.cap}h</span>`:t<p.cap?` <span class="sub">${p.cap-t}h livres</span>`:""}</div>
@@ -774,6 +781,61 @@ async function fMandar(btn){
   }catch(e){btn.disabled=false;btn.textContent="Enviar pelo Outlook";toast("Não foi possível enviar: "+(e.message||e));}
 }
 
+
+
+/* ---------- Igual à semana anterior ---------- */
+const NAO_COPIA=["ferias","aus"]; /* férias e ausências são da semana em que aconteceram */
+const copiaDe=a=>Object.fromEntries(Object.entries(a||{}).filter(([k,h])=>!NAO_COPIA.includes(k)&&+h>0));
+function copiarSemanaAnterior(){
+  if(S.nivel!=="semana"){toast("Use na visão semanal.");return;}
+  if(S.w===0){toast("Não há semana anterior neste ano.");return;}
+  const w=S.w,ant=sem[w-1];
+  const comAnt=PESSOAS.filter(p=>Object.keys(copiaDe(ant[p.id])).length);
+  if(!comAnt.length){toast(`A semana ${SEMANAS[w-1].n} não tem horas lançadas para copiar.`);return;}
+  const vazias=comAnt.filter(p=>!Object.keys(sem[w][p.id]||{}).length),cheias=comAnt.filter(p=>Object.keys(sem[w][p.id]||{}).length);
+  let alvo=vazias;
+  if(cheias.length&&confirm(`${cheias.length} pessoa(s) já têm horas na semana ${SEMANAS[w].n} (${cheias.map(p=>p.nome.split(" ")[0]).join(", ")}).\n\nOK: substituir também essas pessoas pelas horas da semana ${SEMANAS[w-1].n}.\nCancelar: copiar só para quem está vazio.`))alvo=comAnt;
+  if(!alvo.length){toast("Todas as pessoas já têm horas nesta semana: nada foi alterado.");return;}
+  alvo.forEach(p=>{const a=sem[w][p.id]||{},manter=Object.fromEntries(Object.entries(a).filter(([k])=>NAO_COPIA.includes(k)));sem[w][p.id]=Object.assign(copiaDe(ant[p.id]),manter);});
+  plSalvar();render();toast(`Semana ${SEMANAS[w].n} preenchida igual à semana ${SEMANAS[w-1].n} para ${alvo.length} pessoa(s). Férias e ausências não são copiadas.`);
+}
+document.addEventListener("click",e=>{
+  const t=e.target;
+  if(t.closest("#bCopSem")){copiarSemanaAnterior();return;}
+  if(t.id==="eCopAnt"&&S.draft){const p=PESSOAS.find(x=>x.id===S.edit);const manter=Object.fromEntries(Object.entries(S.draft).filter(([k])=>NAO_COPIA.includes(k)));S.draft=Object.assign(copiaDe(sem[S.w-1][p.id]),manter);drawEdit();toast("Copiado da semana anterior. Revise e clique em Salvar alocação.");}
+});
+/* ---------- Editar período: escolhe as datas e vai para a semana correspondente ---------- */
+function semanaDe(iso){return SEMANAS.findIndex(s=>iso>=s.ini&&iso<=isoAdd(s.ini,6));}
+function modalPeriodo(){
+  const w=S.nivel==="semana"?S.w:CUR,p=periodo(w);
+  abrirModal(`<h3>Período do placar</h3><p class="hint">Escolha o início e o fim. O placar vai para a semana do dia de início e passa a mostrar essas datas na tela, no e-mail e no assunto. Padrão: segunda a sexta.</p>
+  <div class="row2"><div><label class="f">Início</label><input type="date" id="pIni" value="${p.ini}"></div><div><label class="f">Fim</label><input type="date" id="pFim" value="${p.fim}"></div></div>
+  <p class="hint" id="pInfo" style="margin-top:10px"></p>
+  <div class="mfoot">${PL.periodos[semChave(w)]?`<button class="btn" id="pPadrao" data-w="${w}">Voltar ao padrão (seg a sex)</button>`:""}<button class="btn" data-fm>Cancelar</button><button class="btn primary" id="pSalvar">Aplicar período</button></div>`);
+  pInfo();
+}
+function pInfo(){
+  const a=$("pIni").value,b=$("pFim").value,el=$("pInfo");if(!el)return;
+  const w=a?semanaDe(a):-1;
+  if(!a||!b){el.textContent="Informe as duas datas.";return;}
+  if(b<a){el.textContent="O fim precisa ser depois do início.";return;}
+  if(w<0){el.textContent=`A data de início precisa ser de ${ANO}.`;return;}
+  const dias=Math.round((new Date(b)-new Date(a))/864e5)+1;
+  el.innerHTML=`Fica na <b>semana ${SEMANAS[w].n}</b> · ${dias} dia(s)${dias>7?" · <b>atenção</b>: o placar mede uma semana de capacidade":""}.`;
+}
+document.addEventListener("input",e=>{if(e.target.id==="pIni"||e.target.id==="pFim")pInfo();});
+document.addEventListener("click",e=>{
+  const t=e.target;
+  if(t.closest("#wPer")){modalPeriodo();return;}
+  if(t.id==="pPadrao"){delete PL.periodos[semChave(+t.dataset.w)];plSalvar();fecharModal();render();toast("Período voltou ao padrão (segunda a sexta).");return;}
+  if(t.id==="pSalvar"){
+    const a=$("pIni").value,b=$("pFim").value,w=a?semanaDe(a):-1;
+    if(!a||!b||b<a||w<0){pInfo();return;}
+    const pad={ini:SEMANAS[w].ini,fim:isoAdd(SEMANAS[w].ini,4)};
+    if(a===pad.ini&&b===pad.fim)delete PL.periodos[semChave(w)];else PL.periodos[semChave(w)]={ini:a,fim:b};
+    S.nivel="semana";S.w=w;S.aba="placar";plSalvar();fecharModal();render();toast(`Placar da semana ${SEMANAS[w].n}: ${fmtD(addDias(a,0))} a ${fmtD(addDias(b,0))}.`);
+  }
+});
 /* ---------- Pessoas exibidas: quem aparece no placar, nas estatísticas, no e-mail e no FTE ---------- */
 function visTodosFte(){return Object.keys(FTE.pessoas).filter(n=>TIME_NOMES.has(n)||Object.values(FTE.meses).some(mm=>(mm[n]||[]).length)).sort((a,b)=>a.localeCompare(b,"pt-BR"));}
 function visInfo(){
