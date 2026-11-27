@@ -3111,6 +3111,7 @@ $("v-perfil").addEventListener("click", e => {
    PMO-Projetos/portal_alocacao_placar.json e PMO-Projetos/portal_alocacao_fte.json. */
 const ALOC_ARQ = {placar: "PMO-Projetos/portal_alocacao_placar.json", fte: "PMO-Projetos/portal_alocacao_fte.json"};
 const ALOC_KEY = "portal_pmo_alocacao";
+const ALOC_VER = "1795812376"; /* muda a cada publicação: obriga o navegador a buscar o alocacao.html novo */
 let alocDados = (() => { const j = lerJSON(ALOC_KEY); return j && typeof j === "object" ? j : {}; })();
 let alocLido = false, alocAutoFeito = false;
 const alocEhTI = dep => { const d = semAcento(String(dep || "").trim()); return /tecnolog/.test(d) || d === "ti"; };
@@ -3191,7 +3192,7 @@ async function renderAlocacao(){
   if (!alocLido && spLigado()) { v.innerHTML = `<div class="card empty">Carregando a alocação do SharePoint…</div>`; await alocCarregar(); }
   if (location.hash.replace(/^#\/?/, "").split("/")[0] !== "alocacao") return;
   v.innerHTML = `${spLigado() ? "" : `<div class="dem-aviso" style="margin-bottom:10px">Sem conexão com o SharePoint: o que você lançar fica só neste navegador e os e-mails não saem. Entre com a conta Microsoft pelo indicador do topo.</div>`}
-    <iframe class="aloc-fr" src="alocacao.html?v=${encodeURIComponent($("v-alocacao").dataset.v || "79")}" title="Alocação do time de Tecnologia"></iframe>`;
+    <iframe class="aloc-fr" src="alocacao.html?v=${ALOC_VER}" title="Alocação do time de Tecnologia"></iframe>`;
 }
 /* disparo automático do placar semanal: roda quando um administrador abre o portal depois do dia/horário configurado */
 async function alocRotina(){
@@ -3200,7 +3201,7 @@ async function alocRotina(){
   if (!alocLido) await alocCarregar();
   const c = alocDados.placar && alocDados.placar.cfg;
   if (!c || !c.ativo) return;
-  const f = document.createElement("iframe"); f.id = "alocAuto"; f.src = "alocacao.html?auto=1"; f.style.cssText = "position:fixed;left:-30000px;top:0;width:1200px;height:800px;border:0";
+  const f = document.createElement("iframe"); f.id = "alocAuto"; f.src = "alocacao.html?auto=1&v=" + ALOC_VER; f.style.cssText = "position:fixed;left:-30000px;top:0;width:1200px;height:800px;border:0";
   document.body.appendChild(f);
 }
 /* ================= ABA E-MAILS ================= */

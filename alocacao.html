@@ -143,6 +143,8 @@ iframe.mail{width:100%;height:560px;border:1px solid var(--line2);border-radius:
 .anx{display:inline-flex;gap:6px;align-items:center;background:var(--surface3);border:1px solid var(--line2);border-radius:10px;padding:6px 10px;font-size:12.5px;margin:0 6px 6px 0}
 iframe.pdfv{width:100%;height:70vh;border:1px solid var(--line2);border-radius:12px;background:#e9edf3}
 [hidden]{display:none!important}
+.quick{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 10px}.quick .btn{border-style:dashed}
+.fq{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.fq .btn{border-style:dashed;font-size:11.5px;padding:4px 10px}
 </style>
 </head>
 <body>
@@ -208,7 +210,15 @@ BOOT.projetos.forEach((p,i)=>{PROJ["p"+p.id]={n:p.nome,c:CORES[i%CORES.length],d
 PROJ.gpmo={n:"Gestão de Equipe - PMO",c:"#ED6A8C",d:"Gestão do time pelo PMO"};
 PROJ.gsust={n:"Gestão de Equipe - Sustentação",c:"#7FA6D9",d:"Gestão do time de sustentação"};
 PROJ.sust={n:"Sustentação",c:"#5B7BB8",d:"Suporte e incidentes"};
-PROJ.aus={n:"Ausência (férias, folga)",c:"#6E7A91",d:"Não disponível"};
+PROJ.ferias={n:"Férias",c:"#2FA39A",d:"Férias programadas"};
+PROJ.aus={n:"Ausência (folga, atestado)",c:"#6E7A91",d:"Não disponível"};
+const ATIV_TIME=["gpmo","gsust","sust","ferias","aus"];
+function selAtiv(k,d){
+  const op=x=>`<option value="${x}" ${x===k?"selected":""}>${esc(PROJ[x].n)}</option>`;
+  const livre=x=>x===k||!(x in d);
+  const at=ATIV_TIME.filter(livre),pj=Object.keys(PROJ).filter(x=>!ATIV_TIME.includes(x)&&livre(x));
+  return `${at.length?`<optgroup label="Atividades do time">${at.map(op).join("")}</optgroup>`:""}${pj.length?`<optgroup label="Projetos">${pj.map(op).join("")}</optgroup>`:""}`;
+}
 Object.entries(PL.projNomes).forEach(([k,n],i)=>{if(!PROJ[k])PROJ[k]={n:n+" (encerrado)",c:"#77777A",d:"Projeto que saiu da gestão"};});
 const PESSOAS=BOOT.time.map((p,i)=>({id:p.email,nome:p.nome,papel:p.papel||"Usuário",cap:+PL.cap[p.email]||40,cor:CORES[i%CORES.length]}));
 const isoAdd=(iso,n)=>{const d=new Date(iso+"T12:00:00");d.setDate(d.getDate()+n);return d.toISOString().slice(0,10);};
@@ -369,9 +379,10 @@ function drawEdit(){
   $("drawer").innerHTML=`<header><div class="who"><span class="av" style="background:${p.cor}">${ini(p.nome)}</span><div><b>${esc(p.nome)}</b><small style="color:var(--muted)">${semLabel(S.w)}</small></div></div><button class="x" data-fechar>×</button></header>
   <div class="body">
     <label class="f">Capacidade semanal (horas)</label><input type="number" min="1" max="60" id="eCap" value="${p.cap}">
-    <label class="f">Alocação por projeto</label>
-    ${Object.entries(d).map(([k,h])=>`<div class="al"><select data-pj="${k}">${Object.keys(PROJ).filter(x=>x===k||!(x in d)).map(x=>`<option value="${x}" ${x===k?"selected":""}>${esc(PROJ[x].n)}</option>`).join("")}</select><input type="number" min="0" max="80" step="1" value="${h}" data-h="${k}"><button class="rm" data-rm="${k}" title="Remover">✕</button></div>`).join("")||`<p class="sub">Nenhum projeto alocado.</p>`}
-    ${livres.length?`<button class="btn sm" id="eAdd">+ Adicionar projeto</button>`:""}
+    <label class="f">Alocação por atividade e projeto</label>
+    ${Object.entries(d).map(([k,h])=>`<div class="al"><select data-pj="${k}">${selAtiv(k,d)}</select><input type="number" min="0" max="80" step="1" value="${h}" data-h="${k}"><button class="rm" data-rm="${k}" title="Remover">✕</button></div>`).join("")||`<p class="sub">Nenhum projeto alocado.</p>`}
+    <div class="quick">${ATIV_TIME.filter(x=>!(x in d)).map(x=>`<button class="btn sm" data-quick="${x}">+ ${esc(PROJ[x].n)}</button>`).join("")}</div>
+    ${livres.some(x=>!ATIV_TIME.includes(x))?`<button class="btn sm" id="eAdd">+ Adicionar projeto</button>`:""}
     <div class="live"><div class="pct">${v}% <small style="display:inline">${t}h de ${p.cap}h</small></div><div style="margin:8px 0"><div class="bar" style="min-width:0">${Object.entries(d).filter(([,h])=>h>0).map(([k,h])=>`<i style="width:${h/Math.max(t,p.cap,1)*100}%;background:${PROJ[k].c}"></i>`).join("")}</div></div><span class="pill ${s}">${ST[s]}</span>${t>p.cap?` <span class="sub">excede ${t-p.cap}h</span>`:t<p.cap?` <span class="sub">${p.cap-t}h livres</span>`:""}</div>
   </div>
   <footer><button class="btn" data-fechar>Cancelar</button><button class="btn primary" id="eSalvar">Salvar alocação</button></footer>`;
@@ -452,8 +463,8 @@ function modalSug(){
     const ts=(BOOT.tarefas||[]).filter(t=>t.email===p.id&&(!t.ini||t.ini<=fim)&&(!t.fim||t.fim>=ini));
     base[p.id]=ts.length;
     const porP={};ts.forEach(t=>{const k="p"+t.pid;porP[k]=(porP[k]||0)+1;});
-    const aus=(sem[w][p.id]||{}).aus||0,livre=Math.max(0,p.cap-aus),n=ts.length;
-    sug[p.id]={};if(aus)sug[p.id].aus=aus;
+    const at=sem[w][p.id]||{},aus=(at.aus||0)+(at.ferias||0),livre=Math.max(0,p.cap-aus),n=ts.length;
+    sug[p.id]={};if(at.aus)sug[p.id].aus=at.aus;if(at.ferias)sug[p.id].ferias=at.ferias;
     if(n)Object.entries(porP).forEach(([k,c])=>{if(PROJ[k])sug[p.id][k]=Math.round(livre*c/n);});
     else Object.assign(sug[p.id],sem[w][p.id]||{});
   });
@@ -504,7 +515,8 @@ document.addEventListener("click",e=>{
   if(t.id==="mTeste"){if(!BOOT.email){toast("Conecte a conta Microsoft no portal para enviar o teste.");return;}t.disabled=true;t.textContent="Enviando…";const wm=S.nivel==="semana"?S.w:CUR;plEnviar(wm,true).then(r=>{t.disabled=false;t.textContent="Enviar teste para mim";toast(r.ok?`Teste enviado para ${BOOT.email}.`:"Não enviou: "+((r.erros||[])[0]||""));});return;}
   if(t.id==="mEnviar"){const wm=S.nivel==="semana"?S.w:CUR;t.disabled=true;t.textContent="Enviando…";plEnviar(wm,false).then(r=>{fecharModal();render();toast(r.erro?`Enviado a ${r.ok} pessoa(s); ${r.erro} com erro: ${r.erros[0]}`:`Placar da semana ${SEMANAS[wm].n} enviado a ${r.ok} pessoa(s).`);});return;}
   if(t.id==="sAplicar"){PESSOAS.forEach(p=>{const a=sem[S.w];Object.keys(a[p.id]||{}).forEach(k=>delete a[p.id][k]);a[p.id]=Object.assign(a[p.id]||{},S.sug[p.id]);});plSalvar();fecharModal();render();toast("Sugestão aplicada à semana.");return;}
-  if(t.id==="eAdd"){const livres=Object.keys(PROJ).filter(k=>!(k in S.draft));if(livres.length){S.draft[livres[0]]=4;drawEdit();}return;}
+  if(t.id==="eAdd"){const livres=Object.keys(PROJ).filter(k=>!(k in S.draft)&&!ATIV_TIME.includes(k));if(livres.length){S.draft[livres[0]]=4;drawEdit();}return;}
+  const qk=t.closest("[data-quick]");if(qk&&S.draft){const pq=PESSOAS.find(x=>x.id===S.edit);S.draft[qk.dataset.quick]=qk.dataset.quick==="ferias"?Math.max(0,pq.cap-Object.entries(S.draft).reduce((a,[k,v])=>a+(+v||0),0))||pq.cap:4;drawEdit();const n=document.querySelector(`[data-h="${qk.dataset.quick}"]`);if(n){n.focus();n.select();}return;}
   const rm=t.closest("[data-rm]");if(rm){delete S.draft[rm.dataset.rm];drawEdit();return;}
   if(t.id==="eSalvar"){
     const p=PESSOAS.find(x=>x.id===S.edit);const c=+$("eCap").value;if(c>0)p.cap=c;
@@ -549,8 +561,8 @@ const F={m:Math.max(0,HOJE.getMonth()-(HOJE.getDate()<20?1:0)),busca:"",reg:"",p
 Object.defineProperty(F,"enviado",{get:()=>FTE.enviado});Object.defineProperty(F,"para",{get:()=>FTE.para,set:v=>{FTE.para=v;}});
 for(let m=0;m<12;m++) if(!FTE.meses[m]) FTE.meses[m]={};
 const fTime=()=>Object.keys(FTE.pessoas).filter(n=>TIME_NOMES.has(n)||Object.values(FTE.meses).some(mm=>(mm[n]||[]).length)).sort((a,b)=>a.localeCompare(b,"pt-BR"));
-const fProdutos=()=>{const s=new Set(["Gestão de Equipe - PMO","Gestão de Equipe - Sustentação","Sustentação"]);Object.values(FTE.meses).forEach(mm=>Object.values(mm).forEach(l=>l.forEach(x=>s.add(x[0].trim()))));return [...s].filter(Boolean).sort((a,b)=>a.localeCompare(b,"pt-BR"));};
-const fCxPadrao=prod=>{if(/sustenta/i.test(prod))return "OPEX";for(let m=11;m>=0;m--)for(const l of Object.values(FTE.meses[m]))for(const x of l)if(x[0].trim()===prod.trim())return x[1];return "CAPEX";};
+const fProdutos=()=>{const s=new Set(["Gestão de Equipe - PMO","Gestão de Equipe - Sustentação","Sustentação","Férias"]);Object.values(FTE.meses).forEach(mm=>Object.values(mm).forEach(l=>l.forEach(x=>s.add(x[0].trim()))));return [...s].filter(Boolean).sort((a,b)=>a.localeCompare(b,"pt-BR"));};
+const fCxPadrao=prod=>{if(/sustenta|f[eé]rias/i.test(prod))return "OPEX";for(let m=11;m>=0;m--)for(const l of Object.values(FTE.meses[m]))for(const x of l)if(x[0].trim()===prod.trim())return x[1];return "CAPEX";};
 const pc=v=>(Math.round(v*1000)/10).toLocaleString("pt-BR",{maximumFractionDigits:1})+"%";
 const fte=v=>(Math.round(v*100)/100).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
 const fLinhas=(m,n)=>FTE.meses[m][n]||[];
@@ -603,7 +615,7 @@ function fCardHtml(m,n){
       <span class="tot ${cls}">${l.length?pc(t):"0%"}</span></div>
     <input class="fp-forn" data-fforn="${esc(n)}" value="${esc(p.forn||"")}" placeholder="${p.reg==="CLT"?"Razão social (CLT): nome completo do colaborador":"Razão social do fornecedor (PJ)"}" title="${p.reg==="CLT"?"Razão social (CLT)":"Razão social (PJ)"}">
     ${l.map((x,i)=>`<div class="fl"><input list="fProds" data-fprod="${i}" value="${esc(x[0])}" placeholder="Produto ou projeto"><select data-fcx="${i}"><option ${x[1]==="CAPEX"?"selected":""}>CAPEX</option><option ${x[1]==="OPEX"?"selected":""}>OPEX</option></select><input type="number" min="0" max="100" step="5" data-fpct="${i}" value="${Math.round(x[2]*1000)/10}" title="% de dedicação"><button class="rm" data-frm="${i}" title="Remover">✕</button></div>`).join("")}
-    <button class="btn sm add" data-fadd>+ Produto</button>
+    <div class="fq"><button class="btn sm add" data-fadd>+ Produto</button>${["Gestão de Equipe - PMO","Gestão de Equipe - Sustentação","Férias"].filter(g=>!l.some(x=>x[0]===g)).map(g=>`<button class="btn sm" data-fgest="${esc(g)}">+ ${esc(g)}</button>`).join("")}</div>
   </div>`;
 }
 /* ---------- PDF (mesma estrutura da planilha) ---------- */
@@ -779,6 +791,7 @@ document.addEventListener("click",e=>{
   }
   const card=t.closest("[data-fp]");if(!card)return;
   const n=card.dataset.fp,l=(FTE.meses[F.m][n]=FTE.meses[F.m][n]||[]);
+  const fg=t.closest("[data-fgest]");if(fg){l.push([fg.dataset.fgest,fCxPadrao(fg.dataset.fgest),0]);fSalvar();renderFte();const c=document.querySelector(`[data-fp="${CSS.escape(n)}"] [data-fpct="${l.length-1}"]`);if(c){c.focus();c.select();}return;}
   if(t.closest("[data-fadd]")){l.push(["","CAPEX",0]);fSalvar();renderFte();const c=document.querySelector(`[data-fp="${CSS.escape(n)}"] [data-fprod="${l.length-1}"]`);if(c)c.focus();return;}
   const rm=t.closest("[data-frm]");if(rm){l.splice(+rm.dataset.frm,1);fSalvar();renderFte();}
 });
