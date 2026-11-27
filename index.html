@@ -1469,7 +1469,7 @@ table:has(#corpoLista),table:has(#corpoConc){width:100%}
     <button class="tab" data-tab="demandas" data-nome="Demandas" title="Demandas"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1M9 13l2 2 4-4"/></svg>Demandas<span class="tab-badge" id="demBadge" hidden></span></button>
     <button class="tab" data-tab="base/diretoria" data-nome="Report Diretoria" title="Report Diretoria"><svg viewBox="0 0 24 24"><path d="M4 20V11M10 20V5M16 20v-6M22 20H2"/></svg>Report Diretoria</button>
     <button class="tab" data-tab="perfil" data-nome="Perfil" title="Perfil"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>Perfil</button>
-    <button class="tab" data-tab="alocacao" data-nome="Alocação" title="Alocação do time (somente PMO)"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4M7 13h4M7 17h7"/></svg>Alocação</button>
+    <button class="tab" data-tab="alocacao" data-nome="Alocação" title="Alocação do time de Tecnologia"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4M7 13h4M7 17h7"/></svg>Alocação</button>
     <button class="tab" data-tab="base" data-nome="Base" title="Base"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>Base</button>
   </nav>
   <div class="side-foot" id="userBox"><b>Portal PMO</b>Juntos, somos um!</div>
@@ -2871,7 +2871,7 @@ function bloqueado(){ if (podeEditar()) return false; if (spBloqueado()) { toast
 function viewPermitida(v){
   const p = perfil();
   if (p === "admin") return true;
-  if (p === "gp") return v !== "base" && v !== "demandas" && v !== "alocacao";
+  if (p === "gp") return v !== "base" && v !== "demandas";
   if (p === "resp") return ["gestao","gestao-projeto","guia"].includes(v);
   return ["gestao","gestao-projeto","concluidos","guia"].includes(v);
 }
@@ -2881,7 +2881,7 @@ function aplicarPerfil(){
   document.body.classList.toggle("ro", !podeEditar());
   document.querySelectorAll(".tab").forEach(tb => {
     const k = tb.dataset.tab;
-    tb.hidden = (p === "viewer" || p === "resp") ? k !== "gestao" : ((k === "base" || k.startsWith("base/") || k === "demandas" || k === "alocacao") && p !== "admin");
+    tb.hidden = (p === "viewer" || p === "resp") ? k !== "gestao" : ((k === "base" || k.startsWith("base/") || k === "demandas") && p !== "admin") || (k === "alocacao" && p !== "admin" && p !== "gp");
   });
   document.body.classList.toggle("resp", p === "resp");
   if (p !== "viewer") autor = sessao.nome;
@@ -3111,7 +3111,7 @@ $("v-perfil").addEventListener("click", e => {
    PMO-Projetos/portal_alocacao_placar.json e PMO-Projetos/portal_alocacao_fte.json. */
 const ALOC_ARQ = {placar: "PMO-Projetos/portal_alocacao_placar.json", fte: "PMO-Projetos/portal_alocacao_fte.json"};
 const ALOC_KEY = "portal_pmo_alocacao";
-const ALOC_VER = "1795814019"; /* muda a cada publicação: obriga o navegador a buscar o alocacao.html novo */
+const ALOC_VER = "1795814788"; /* muda a cada publicação: obriga o navegador a buscar o alocacao.html novo */
 let alocDados = (() => { const j = lerJSON(ALOC_KEY); return j && typeof j === "object" ? j : {}; })();
 let alocLido = false, alocAutoFeito = false;
 const alocEhTI = dep => { const d = semAcento(String(dep || "").trim()); return /tecnolog/.test(d) || d === "ti"; };
@@ -3131,6 +3131,7 @@ async function alocCarregar(){
   alocLido = true;
 }
 async function alocSalvar(chave, obj){
+  if (perfil() !== "admin") throw new Error("somente o PMO altera a alocação");
   alocDados[chave] = obj;
   try { localStorage.setItem(ALOC_KEY, JSON.stringify(alocDados)); } catch (e) {}
   if (!spLigado() || !spSt.siteId) throw new Error("salvo só neste navegador: conecte ao SharePoint");
@@ -3138,6 +3139,7 @@ async function alocSalvar(chave, obj){
     new Blob([JSON.stringify(Object.assign({atualizado_em: new Date().toISOString(), por: sessao ? sessao.nome : ""}, obj), null, 1)], {type: "application/json"}), {bruto: true, headers: {"Content-Type": "application/json"}});
 }
 async function alocEmail(m){
+  if (perfil() !== "admin") return {ok: false, erro: "somente o PMO envia"};
   if (!spLigado()) return {ok: false, erro: "sem conexão com a conta Microsoft"};
   let tk;
   try { tk = await comTokenEnvio(); } catch (e) { return {ok: false, erro: "falta autorizar o envio de e-mail pela conta Microsoft"}; }
@@ -3162,6 +3164,7 @@ async function alocWorkbook(abas){
   });
   return wb;
 }
+async function alocBaixar(abas, nome){ const wb = await alocWorkbook(abas); window.XLSX.writeFile(wb, nome + ".xlsx"); }
 window.ALOC_API = {
   dados: () => {
     const proj = rows.filter(r => !isConcluido(r)).map(r => ({id: r.ID, nome: r["Título"], sub: r["Responsável TI"] || ""}));
@@ -3171,15 +3174,17 @@ window.ALOC_API = {
       [t.responsavel, ...(t.apoio || [])].filter(Boolean).forEach(em => tarefas.push({email: String(em).toLowerCase(), pid: r.ID, ini: t.inicio || "", fim: t.fimPrevisto || ""}));
     }));
     const logo = (document.querySelector(".brand img") || {}).src || "";
-    return {hoje: hojeISO(), url: urlSistema(), usuario: sessao ? sessao.nome : "", email: String(spSt.conta || "").toLowerCase(), logo,
-      time: alocTime(), projetos: proj, tarefas, placar: alocDados.placar ? JSON.parse(JSON.stringify(alocDados.placar)) : null, fte: alocDados.fte ? JSON.parse(JSON.stringify(alocDados.fte)) : null};
+    const adm = perfil() === "admin";
+    return {perfil: adm ? "admin" : "consulta", hoje: hojeISO(), url: urlSistema(), usuario: sessao ? sessao.nome : "", email: String(spSt.conta || "").toLowerCase(), logo,
+      time: alocTime(), projetos: proj, tarefas, placar: alocDados.placar ? JSON.parse(JSON.stringify(alocDados.placar)) : null, fte: adm && alocDados.fte ? JSON.parse(JSON.stringify(alocDados.fte)) : null};
   },
   agora: () => new Date(),
   salvar: alocSalvar,
   enviarEmail: alocEmail,
   pmoEmail: () => (typeof PMO_ADM_EMAIL !== "undefined" ? PMO_ADM_EMAIL : "alisson.santos@jcesa.com.br"),
   libs: () => ({h2c: $("flxLibH2c").textContent, jspdf: $("flxLibJspdf").textContent}),
-  baixarXlsx: async (abas, nome) => { const wb = await alocWorkbook(abas); window.XLSX.writeFile(wb, nome + ".xlsx"); },
+  baixarXlsx: async (abas, nome) => { if (perfil() !== "admin") return; return alocBaixar(abas, nome); },
+  _x: async (abas, nome) => { const wb = await alocWorkbook(abas); window.XLSX.writeFile(wb, nome + ".xlsx"); },
   xlsxBase64: async abas => { const wb = await alocWorkbook(abas); return window.XLSX.write(wb, {type: "base64", bookType: "xlsx"}); },
   autoFim: r => {
     const f = $("alocAuto"); if (f) setTimeout(() => f.remove(), 500);
@@ -3188,7 +3193,7 @@ window.ALOC_API = {
 };
 async function renderAlocacao(){
   const v = $("v-alocacao");
-  if (perfil() !== "admin") { v.innerHTML = `<div class="card empty">Área exclusiva do PMO (administrador).</div>`; return; }
+  if (perfil() !== "admin" && perfil() !== "gp") { v.innerHTML = `<div class="card empty">Área exclusiva do PMO e dos gerentes de projeto.</div>`; return; }
   if (!alocLido && spLigado()) { v.innerHTML = `<div class="card empty">Carregando a alocação do SharePoint…</div>`; await alocCarregar(); }
   if (location.hash.replace(/^#\/?/, "").split("/")[0] !== "alocacao") return;
   v.innerHTML = `${spLigado() ? "" : `<div class="dem-aviso" style="margin-bottom:10px">Sem conexão com o SharePoint: o que você lançar fica só neste navegador e os e-mails não saem. Entre com a conta Microsoft pelo indicador do topo.</div>`}

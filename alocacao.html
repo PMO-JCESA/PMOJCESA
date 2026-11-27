@@ -145,6 +145,9 @@ iframe.pdfv{width:100%;height:70vh;border:1px solid var(--line2);border-radius:1
 [hidden]{display:none!important}
 .quick{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 10px}.quick .btn{border-style:dashed}
 .fq{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.fq .btn{border-style:dashed;font-size:11.5px;padding:4px 10px}
+html.ro .mod[data-mod="fte"],html.ro #bVis,html.ro #bCopSem,html.ro #bSug,html.ro #bCfg,html.ro #bMail,html.ro #wPer,html.ro button[data-edit],html.ro #mFte{display:none!important}
+html.ro tbody tr.row{cursor:default}
+.ro-tag{display:none}html.ro .ro-tag{display:inline-flex;align-items:center;gap:6px;background:rgba(70,151,168,.18);color:var(--teal-l);border-radius:999px;padding:4px 12px;font-size:12px;font-weight:700;margin-left:10px}
 </style>
 </head>
 <body>
@@ -158,8 +161,8 @@ iframe.pdfv{width:100%;height:70vh;border:1px solid var(--line2);border-radius:1
   <div id="mPlacar">
   <div class="top">
     <div>
-      <div class="eyebrow">Administração · Time de Tecnologia</div>
-      <h1>Placar de alocação</h1>
+      <div class="eyebrow">Time de Tecnologia</div>
+      <h1>Placar de alocação<span class="ro-tag">Somente consulta</span></h1>
       <p class="sub">Horas por pessoa e projeto na semana, contra a capacidade de cada um. O PMO ajusta; o portal sugere a partir das tarefas dos projetos.</p>
     </div>
     <div class="acts">
@@ -204,6 +207,8 @@ const API=(()=>{try{return parent&&parent!==window&&parent.ALOC_API?parent.ALOC_
 const QS=new URLSearchParams(location.search);
 const BOOT=API?API.dados():{hoje:new Date().toISOString().slice(0,10),time:[],projetos:[],tarefas:[],placar:null,fte:null,logo:"",url:"",usuario:"",email:""};
 const HOJE=new Date(BOOT.hoje+"T12:00:00"),ANO=HOJE.getFullYear();
+const SO_LEITURA=BOOT.perfil!=="admin"; /* gerentes de projeto: só consultam o placar; o FTE fica só para o PMO */
+if(SO_LEITURA)document.documentElement.classList.add("ro");
 const CORES=["#4697A8","#ED174F","#C39366","#8a6fd1","#4FA36B","#E7B24A","#5B7BB8","#c0507a","#3E8E9A","#A87436","#2B8DA3","#7D879C"];
 const PL=BOOT.placar&&typeof BOOT.placar==="object"?BOOT.placar:{};
 PL.sem=PL.sem||{};PL.cap=PL.cap||{};PL.projNomes=PL.projNomes||{};PL.enviados=PL.enviados||{};
@@ -240,6 +245,7 @@ const CUR=Math.max(0,SEMANAS.findIndex(s=>BOOT.hoje>=s.ini&&BOOT.hoje<=isoAdd(s.
 const S={nivel:"semana",w:CUR,m:HOJE.getMonth(),aba:"placar",edit:null,draft:null};
 let plTimer=0;
 function plSalvar(){
+  if(SO_LEITURA)return;
   Object.values(PL.sem).forEach(pp=>Object.values(pp).forEach(a=>Object.keys(a).forEach(k=>{if(/^p/.test(k)&&PROJ[k])PL.projNomes[k]=PROJ[k].n.replace(/ \(encerrado\)$/,"");})));
   PESSOAS_TODAS.forEach(p=>{PL.cap[p.id]=p.cap;});
   clearTimeout(plTimer);plTimer=setTimeout(()=>{if(API)API.salvar("placar",PL).catch(e=>toast("Não salvou no SharePoint: "+(e.message||e)));},500);
@@ -381,6 +387,7 @@ function viewProj(ws){
 
 /* ---------------- gaveta de edição ---------------- */
 function abrirEdicao(id){
+  if(SO_LEITURA)return;
   S.edit=id;S.draft=JSON.parse(JSON.stringify(sem[S.w][id]||{}));
   drawEdit();$("ov").classList.add("on");$("drawer").classList.add("on");
 }
@@ -568,7 +575,7 @@ FTE.enviado=FTE.enviado||{};FTE.para=FTE.para||"contabilidade@jcesa.com.br";FTE.
 BOOT.time.forEach(p=>{if(!FTE.pessoas[p.nome])FTE.pessoas[p.nome]={forn:"",reg:""};});
 const TIME_NOMES=new Set(BOOT.time.map(p=>p.nome));
 let fTimer=0;
-function fSalvar(){clearTimeout(fTimer);fTimer=setTimeout(()=>{if(API)API.salvar("fte",FTE).catch(e=>toast("Não salvou no SharePoint: "+(e.message||e)));},700);}
+function fSalvar(){if(SO_LEITURA)return;clearTimeout(fTimer);fTimer=setTimeout(()=>{if(API)API.salvar("fte",FTE).catch(e=>toast("Não salvou no SharePoint: "+(e.message||e)));},700);}
 const MESES_F=["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 const F={m:Math.max(0,HOJE.getMonth()-(HOJE.getDate()<20?1:0)),busca:"",reg:"",pend:false};
 Object.defineProperty(F,"enviado",{get:()=>FTE.enviado});Object.defineProperty(F,"para",{get:()=>FTE.para,set:v=>{FTE.para=v;}});
@@ -915,7 +922,7 @@ document.addEventListener("change",e=>{
 document.addEventListener("input",e=>{if(e.target.id==="fBusca"){F.busca=e.target.value;const pos=e.target.selectionStart;renderFte();const b=$("fBusca");b.focus();b.setSelectionRange(pos,pos);}});
 
 /* disparo automático: o portal abre esta página escondida (?auto=1) quando um administrador entra */
-if(QS.has("auto")){
+if(QS.has("auto")&&!SO_LEITURA){
   (async()=>{
     const due=CFG.ativo&&PESSOAS.length&&!PL.enviados[semChave(CUR)]&&agora()>=disparoDaSemana(CUR);
     if(!due){API&&API.autoFim&&API.autoFim(null);return;}
