@@ -93,7 +93,7 @@ tbody tr.row:hover td{background:rgba(255,255,255,.03)}
 .drawer footer{padding:14px 20px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end}
 .x{background:none;border:0;font-size:22px;cursor:pointer;color:var(--muted)}
 label.f{display:block;font-size:12px;font-weight:700;color:var(--muted);margin:12px 0 6px}
-input[type=text],input[type=number],input[type=time],input[type=search],input:not([type]),select{width:100%;background:var(--surface3);border:1px solid var(--line2);border-radius:9px;padding:8px 10px}
+input[type=text],input[type=number],input[type=time],input[type=date],input[type=email],input[type=search],input:not([type]),select,textarea{width:100%;background:var(--surface3);border:1px solid var(--line2);border-radius:9px;padding:8px 10px}
 .al{display:grid;grid-template-columns:1fr 86px 30px;gap:8px;align-items:center;margin-bottom:8px}
 .al .rm{background:none;border:0;color:var(--cherry);cursor:pointer;font-size:16px}
 .live{background:var(--surface3);border-radius:12px;padding:12px 14px;margin-top:14px}
@@ -148,6 +148,9 @@ iframe.pdfv{width:100%;height:70vh;border:1px solid var(--line2);border-radius:1
 html.ro .mod[data-mod="fte"],html.ro #bVis,html.ro #bCopSem,html.ro #bSug,html.ro #bCfg,html.ro #bMail,html.ro #wPer,html.ro button[data-edit],html.ro #mFte{display:none!important}
 html.ro tbody tr.row{cursor:default}
 .ro-tag{display:none}html.ro .ro-tag{display:inline-flex;align-items:center;gap:6px;background:rgba(70,151,168,.18);color:var(--teal-l);border-radius:999px;padding:4px 12px;font-size:12px;font-weight:700;margin-left:10px}
+html{color-scheme:dark}
+input[type=date]::-webkit-calendar-picker-indicator,input[type=time]::-webkit-calendar-picker-indicator{cursor:pointer;opacity:.9}
+input[type=date]{min-height:38px}
 </style>
 </head>
 <body>
