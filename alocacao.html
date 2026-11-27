@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Alocação do time de Tecnologia · Portal PMO</title>
+<style>
+:root{
+  --bg:#0C1B38;--side:#08142B;--surface:#11244A;--surface2:#183060;--surface3:#0E1F42;
+  --line:rgba(224,224,224,.10);--line2:rgba(224,224,224,.22);
+  --text:#E9EDF5;--muted:#A3AEC4;--hi:#fff;
+  --cherry:#ED174F;--teal:#4697A8;--teal-l:#74BFCD;--green:#4FA36B;--amber:#E7B24A;--gray:#8A93A6;
+  --livre:#4697A8;--ideal:#4FA36B;--sobre:#ED174F;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 Inter,"Segoe UI",system-ui,sans-serif}
+button,input,select{font:inherit;color:inherit}
+.wrap{max-width:1500px;margin:0 auto;padding:18px 22px 50px}
+.proto{display:inline-flex;gap:8px;align-items:center;background:rgba(231,178,74,.12);border:1px solid rgba(231,178,74,.4);color:#f3cf94;border-radius:999px;padding:4px 12px;font-size:12px;font-weight:600;margin-bottom:14px}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.eyebrow{color:var(--cherry);font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:700}
+h1{margin:2px 0 4px;font-size:27px;color:var(--hi)}
+.sub{color:var(--muted);margin:0}
+.acts{display:flex;gap:8px;flex-wrap:wrap}
+.btn{background:var(--surface2);border:1px solid var(--line2);border-radius:999px;padding:8px 16px;cursor:pointer;font-weight:600;font-size:13px;transition:.15s}
+.btn:hover{border-color:var(--teal-l)}
+.btn.primary{background:var(--cherry);border-color:var(--cherry);color:#fff}
+.btn.primary:hover{background:#c90f40}
+.btn.sm{padding:5px 12px;font-size:12px}
+.btn.on{background:var(--teal);border-color:var(--teal);color:#fff}
+.weeknav{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:8px 12px;margin-bottom:14px;flex-wrap:wrap}
+.weeknav b{font-size:15px;color:var(--hi)}
+.weeknav .sp{flex:1}
+.weeknav .next{color:var(--muted);font-size:12.5px}
+.arrow{width:32px;height:32px;border-radius:50%;border:1px solid var(--line2);background:var(--surface2);cursor:pointer;display:grid;place-items:center}
+.arrow:disabled{opacity:.35;cursor:default}
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:14px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.kpi small{display:block;color:var(--muted);font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-weight:700}
+.kpi b{display:block;font-size:26px;color:var(--hi);margin-top:2px}
+.kpi span{color:var(--muted);font-size:12px}
+.kpi.warn b{color:var(--cherry)}.kpi.ok b{color:var(--green)}.kpi.info b{color:var(--teal-l)}
+.alerts{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:14px}
+.alerts h3{margin:0 0 8px;font-size:14px;color:var(--hi)}
+.alerts ul{margin:0;padding:0;list-style:none;display:grid;gap:6px}
+.alerts li{display:flex;gap:10px;align-items:flex-start;font-size:13px}
+.dot{flex:0 0 auto;width:9px;height:9px;border-radius:50%;margin-top:6px}
+.tabs{display:flex;gap:6px;margin-bottom:12px;border-bottom:1px solid var(--line)}
+.tab{background:none;border:0;border-bottom:2px solid transparent;padding:10px 14px;cursor:pointer;color:var(--muted);font-weight:700}
+.tab.on{color:var(--hi);border-color:var(--cherry)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:6px 0;overflow:hidden}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:12px 14px;border-bottom:1px solid var(--line)}
+td{padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+tbody tr.row{cursor:pointer}
+tbody tr.row:hover td{background:rgba(255,255,255,.03)}
+.who{display:flex;align-items:center;gap:10px}
+.av{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:12px;color:#fff;flex:0 0 auto}
+.who b{display:block;color:var(--hi)}.who small{color:var(--muted);font-size:12px}
+.papel{font-size:10.5px;font-weight:800;letter-spacing:.06em;padding:2px 7px;border-radius:6px;background:rgba(70,151,168,.2);color:var(--teal-l);margin-left:6px}
+.bar{position:relative;display:flex;height:26px;border-radius:7px;overflow:hidden;background:var(--surface3);min-width:260px}
+.bar i{display:grid;place-items:center;font-style:normal;font-size:11px;font-weight:700;color:#fff;border-right:1px solid rgba(12,27,56,.55);min-width:0;overflow:hidden;white-space:nowrap}
+.bar .cap{position:absolute;top:-3px;bottom:-3px;width:2px;background:#fff;opacity:.85}
+.pct{font-weight:800;font-size:16px;color:var(--hi)}
+.pct small{display:block;font-weight:600;font-size:11.5px;color:var(--muted)}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;font-size:12px;font-weight:800}
+.pill.livre{background:rgba(70,151,168,.2);color:var(--teal-l)}
+.pill.ideal{background:rgba(79,163,107,.2);color:#8fe0ab}
+.pill.sobre{background:rgba(237,23,79,.2);color:#ff7d9c}
+.delta{font-size:12.5px;font-weight:700}.delta.up{color:#ff9db3}.delta.dn{color:var(--teal-l)}.delta.eq{color:var(--muted)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;padding:12px 14px;color:var(--muted);font-size:12px;border-top:1px solid var(--line)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:11px;height:11px;border-radius:3px;display:inline-block}
+.heat td.c{text-align:center;font-weight:800;border-left:1px solid var(--line);cursor:pointer}
+.heat td.c.livre{background:rgba(70,151,168,.22)}.heat td.c.ideal{background:rgba(79,163,107,.22)}.heat td.c.sobre{background:rgba(237,23,79,.28)}
+.heat td.c small{display:block;font-weight:600;font-size:11px;color:var(--muted)}
+.heat tr.tot td{font-weight:800;background:var(--surface3)}
+.projs{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:12px;padding:12px}
+.pj{background:var(--surface3);border:1px solid var(--line);border-radius:14px;padding:14px}
+.pj h4{margin:0 0 2px;color:var(--hi);display:flex;gap:8px;align-items:center}
+.pj .sw{width:12px;height:12px;border-radius:4px}
+.pj p{margin:0 0 10px;color:var(--muted);font-size:12.5px}
+.pj .ln{display:grid;grid-template-columns:130px 1fr 58px;gap:8px;align-items:center;font-size:12.5px;margin:4px 0}
+.pj .tr{height:8px;border-radius:6px;background:var(--surface);overflow:hidden}.pj .tr i{display:block;height:100%}
+/* gaveta e modais */
+.ov{position:fixed;inset:0;background:rgba(5,10,22,.65);z-index:50;display:none}
+.ov.on{display:block}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(470px,100%);background:var(--surface);border-left:1px solid var(--line2);z-index:60;transform:translateX(105%);transition:.22s;display:flex;flex-direction:column}
+.drawer.on{transform:none}
+.drawer header{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.drawer .body{padding:18px 20px;overflow:auto;flex:1}
+.drawer footer{padding:14px 20px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end}
+.x{background:none;border:0;font-size:22px;cursor:pointer;color:var(--muted)}
+label.f{display:block;font-size:12px;font-weight:700;color:var(--muted);margin:12px 0 6px}
+input[type=text],input[type=number],input[type=time],input[type=search],input:not([type]),select{width:100%;background:var(--surface3);border:1px solid var(--line2);border-radius:9px;padding:8px 10px}
+.al{display:grid;grid-template-columns:1fr 86px 30px;gap:8px;align-items:center;margin-bottom:8px}
+.al .rm{background:none;border:0;color:var(--cherry);cursor:pointer;font-size:16px}
+.live{background:var(--surface3);border-radius:12px;padding:12px 14px;margin-top:14px}
+.modal{position:fixed;inset:0;z-index:70;display:none;place-items:center;padding:20px}
+.modal.on{display:grid}
+.modal .box{background:var(--surface);border:1px solid var(--line2);border-radius:16px;width:min(760px,100%);max-height:92vh;overflow:auto;padding:22px 24px;box-shadow:0 24px 70px rgba(0,0,0,.5)}
+.modal .box.wide{width:min(900px,100%)}
+.modal h3{margin:0 0 6px;font-size:19px;color:var(--hi)}
+.modal .hint{color:var(--muted);font-size:13px;margin:0 0 12px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.chk{display:flex;gap:10px;align-items:center;padding:10px 12px;background:var(--surface3);border-radius:10px;margin-bottom:6px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips span{background:var(--surface3);border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:12px}
+.mfoot{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap}
+iframe.mail{width:100%;height:560px;border:1px solid var(--line2);border-radius:12px;background:#fff}
+#toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:var(--surface2);border:1px solid var(--line2);border-left:4px solid var(--cherry);padding:12px 18px;border-radius:12px;opacity:0;pointer-events:none;transition:.25s;z-index:90;max-width:90vw}
+#toast.on{opacity:1;transform:translateX(-50%)}
+.diff td.up{color:#ff9db3;font-weight:700}.diff td.dn{color:var(--teal-l);font-weight:700}
+@media(max-width:980px){.kpis{grid-template-columns:repeat(2,1fr)}.row2{grid-template-columns:1fr}.bar{min-width:160px}}
+.seg{display:inline-flex;background:var(--surface3);border:1px solid var(--line2);border-radius:999px;padding:3px;gap:2px}.seg .btn{border:0;background:none;padding:5px 14px}.seg .btn.on{background:var(--teal);color:#fff}
+
+.modnav{display:flex;gap:10px;align-items:stretch;flex-wrap:wrap;margin:0 0 18px}
+.mod{display:flex;flex-direction:column;align-items:flex-start;gap:2px;background:var(--surface);border:1px solid var(--line2);border-radius:14px;padding:10px 16px;cursor:pointer;text-align:left;min-width:250px}
+.mod b{font-size:14px;color:var(--hi)}.mod small{font-size:12px;color:var(--muted)}
+.mod.on{border-color:var(--cherry);background:color-mix(in srgb,var(--cherry) 12%,var(--surface));box-shadow:inset 0 -3px 0 var(--cherry)}
+.modsrc{margin-left:auto;align-self:center;font-size:12px;color:var(--muted);max-width:330px}.modsrc b{color:var(--teal-l)}
+.fbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin-bottom:14px}
+.fbar select,.fbar input[type=search]{width:auto;min-width:170px}
+.fst{font-size:12px;font-weight:800;padding:4px 11px;border-radius:999px}
+.fst.rasc{background:rgba(231,178,74,.18);color:#f3cf94}.fst.env{background:rgba(79,163,107,.2);color:#8fe0ab}
+.fgrid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(460px,1fr));gap:12px}
+.fp{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.fp.erro{border-color:rgba(237,23,79,.6)}
+.fp-h{display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap}
+.fp-h .nm{flex:1;min-width:120px}.fp-h .nm b{display:block;color:var(--hi)}.fp-h .nm small{color:var(--muted);font-size:11.5px}
+.fp-h select{width:auto;padding:5px 8px;font-size:12px}
+.fp-forn{width:100%;margin:0 0 8px;font-size:12.5px;padding:6px 9px}
+.fl{display:grid;grid-template-columns:minmax(0,1fr) 92px 78px 26px;gap:6px;align-items:center;margin-bottom:6px}
+.fl input,.fl select{padding:6px 8px;font-size:12.5px}
+.fl .rm{background:none;border:0;color:var(--cherry);cursor:pointer;font-size:15px}
+.tot{font-weight:800;font-size:12px;padding:3px 10px;border-radius:999px}
+.tot.ok{background:rgba(79,163,107,.2);color:#8fe0ab}.tot.no{background:rgba(237,23,79,.22);color:#ff8fa8}.tot.zero{background:var(--surface3);color:var(--muted)}
+.cx{font-size:10.5px;font-weight:800;padding:1px 7px;border-radius:6px}.cx.c{background:rgba(70,151,168,.25);color:var(--teal-l)}.cx.o{background:rgba(195,147,102,.25);color:#e6bf96}
+.fp .add{margin-top:2px}
+.fres{width:100%;border-collapse:collapse;font-size:13px}.fres th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}.fres td{padding:7px 10px;border-bottom:1px solid var(--line)}.fres td.n{text-align:right;font-variant-numeric:tabular-nums}
+.mail-f{display:grid;grid-template-columns:90px 1fr;gap:8px 10px;align-items:center;margin-bottom:10px}
+.anx{display:inline-flex;gap:6px;align-items:center;background:var(--surface3);border:1px solid var(--line2);border-radius:10px;padding:6px 10px;font-size:12.5px;margin:0 6px 6px 0}
+iframe.pdfv{width:100%;height:70vh;border:1px solid var(--line2);border-radius:12px;background:#e9edf3}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="proto" id="protoAviso" hidden></div>
+  <div class="modnav">
+    <button class="mod on" data-mod="placar"><b>Placar semanal</b><small>Horas por pessoa e projeto · e-mail ao time</small></button>
+    <button class="mod" data-mod="fte"><b>Alocação FTE</b><small>% mensal CAPEX/OPEX · PDF para a contabilidade</small></button>
+    <span class="modsrc">Time: pessoas com departamento <b>Tecnologia</b> no Cadastro de pessoas do portal</span>
+  </div>
+  <div id="mPlacar">
+  <div class="top">
+    <div>
+      <div class="eyebrow">Administração · Time de Tecnologia</div>
+      <h1>Placar de alocação</h1>
+      <p class="sub">Horas por pessoa e projeto na semana, contra a capacidade de cada um. O PMO ajusta; o portal sugere a partir das tarefas dos projetos.</p>
+    </div>
+    <div class="acts">
+      <button class="btn" id="bSug">Sugerir pelas tarefas</button>
+      <button class="btn" id="bCfg">Disparo semanal</button>
+      <button class="btn primary" id="bMail">Prévia do e-mail</button>
+    </div>
+  </div>
+
+  <div class="weeknav">
+    <div class="seg"><button class="btn sm on" data-nivel="semana">Semana</button><button class="btn sm" data-nivel="mes">Mês</button><button class="btn sm" data-nivel="ano">Ano</button></div>
+    <button class="arrow" id="wPrev" aria-label="Semana anterior">‹</button>
+    <b id="wLabel"></b>
+    <button class="arrow" id="wNext" aria-label="Próxima semana">›</button>
+    <span class="sp"></span>
+    <span class="next" id="nextRun"></span>
+  </div>
+
+  <div class="kpis" id="kpis"></div>
+  <div class="alerts" id="alerts"></div>
+
+  <div class="tabs" id="tabs">
+    <button class="tab on" data-t="placar">Placar da semana</button>
+    <button class="tab" data-t="heat">Próximas 4 semanas</button>
+    <button class="tab" data-t="proj">Por projeto</button>
+  </div>
+  <div id="view"></div>
+  </div>
+  <div id="mFte" hidden></div>
+</div>
+
+<div class="ov" id="ov"></div>
+<aside class="drawer" id="drawer"></aside>
+<div class="modal" id="modal"></div>
+<div id="toast"></div>
+
+<script>
+/* ---------------- dados do portal (passados pela página principal) ---------------- */
+const API=(()=>{try{return parent&&parent!==window&&parent.ALOC_API?parent.ALOC_API:null;}catch(e){return null;}})();
+const QS=new URLSearchParams(location.search);
+const BOOT=API?API.dados():{hoje:new Date().toISOString().slice(0,10),time:[],projetos:[],tarefas:[],placar:null,fte:null,logo:"",url:"",usuario:"",email:""};
+const HOJE=new Date(BOOT.hoje+"T12:00:00"),ANO=HOJE.getFullYear();
+const CORES=["#4697A8","#ED174F","#C39366","#8a6fd1","#4FA36B","#E7B24A","#5B7BB8","#c0507a","#3E8E9A","#A87436","#2B8DA3","#7D879C"];
+const PL=BOOT.placar&&typeof BOOT.placar==="object"?BOOT.placar:{};
+PL.sem=PL.sem||{};PL.cap=PL.cap||{};PL.projNomes=PL.projNomes||{};PL.enviados=PL.enviados||{};
+const PROJ={};
+BOOT.projetos.forEach((p,i)=>{PROJ["p"+p.id]={n:p.nome,c:CORES[i%CORES.length],d:p.sub||""};});
+PROJ.sust={n:"Sustentação",c:"#5B7BB8",d:"Suporte e incidentes"};
+PROJ.aus={n:"Ausência (férias, folga)",c:"#6E7A91",d:"Não disponível"};
+Object.entries(PL.projNomes).forEach(([k,n],i)=>{if(!PROJ[k])PROJ[k]={n:n+" (encerrado)",c:"#77777A",d:"Projeto que saiu da gestão"};});
+const PESSOAS=BOOT.time.map((p,i)=>({id:p.email,nome:p.nome,papel:p.papel||"Usuário",cap:+PL.cap[p.email]||40,cor:CORES[i%CORES.length]}));
+const isoAdd=(iso,n)=>{const d=new Date(iso+"T12:00:00");d.setDate(d.getDate()+n);return d.toISOString().slice(0,10);};
+const SEMANAS=[];
+{const d=new Date(ANO,0,4,12);d.setDate(d.getDate()-((d.getDay()+6)%7));let ini=d.toISOString().slice(0,10);
+ for(let n=1;n<=53;n++){const qui=new Date(isoAdd(ini,3)+"T12:00:00");if(qui.getFullYear()!==ANO)break;SEMANAS.push({n,ini,m:qui.getMonth()});ini=isoAdd(ini,7);}}
+const semChave=w=>`${ANO}-${SEMANAS[w].n}`;
+const sem={};SEMANAS.forEach((s,w)=>{sem[w]=PL.sem[semChave(w)]=PL.sem[semChave(w)]||{};});
+const CFG=Object.assign({ativo:true,dia:1,hora:"08:00",assunto:"Placar de alocação · Semana {sem}",livre:60,sobre:100},PL.cfg||{});PL.cfg=CFG;
+const CUR=Math.max(0,SEMANAS.findIndex(s=>BOOT.hoje>=s.ini&&BOOT.hoje<=isoAdd(s.ini,6)));
+const S={nivel:"semana",w:CUR,m:HOJE.getMonth(),aba:"placar",edit:null,draft:null};
+let plTimer=0;
+function plSalvar(){
+  Object.values(PL.sem).forEach(pp=>Object.values(pp).forEach(a=>Object.keys(a).forEach(k=>{if(/^p/.test(k)&&PROJ[k])PL.projNomes[k]=PROJ[k].n.replace(/ \(encerrado\)$/,"");})));
+  PESSOAS.forEach(p=>{PL.cap[p.id]=p.cap;});
+  clearTimeout(plTimer);plTimer=setTimeout(()=>{if(API)API.salvar("placar",PL).catch(e=>toast("Não salvou no SharePoint: "+(e.message||e)));},500);
+}
+/* ---------------- utilitários ---------------- */
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const ini=n=>n.split(" ").map(x=>x[0]).slice(0,2).join("");
+const fmtD=d=>d.toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"});
+const addDias=(iso,n)=>{const d=new Date(iso+"T12:00:00");d.setDate(d.getDate()+n);return d;};
+const semLabel=w=>`Semana ${SEMANAS[w].n} · ${fmtD(addDias(SEMANAS[w].ini,0))} a ${fmtD(addDias(SEMANAS[w].ini,6))}`;
+const MESES=["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+const W=x=>Array.isArray(x)?x:[x];
+const TODAS=SEMANAS.map((_,i)=>i);
+const mesSems=m=>TODAS.filter(i=>SEMANAS[i].m===m);
+const tot=(ws,id)=>W(ws).reduce((a,w)=>a+Object.values(sem[w][id]||{}).reduce((x,y)=>x+(+y||0),0),0);
+const capW=(ws,p)=>p.cap*W(ws).length;
+const pct=(ws,p)=>Math.round(tot(ws,p.id)/capW(ws,p)*100);
+const projsOf=(ws,id)=>{const o={};W(ws).forEach(w=>Object.entries(sem[w][id]||{}).forEach(([k,h])=>{o[k]=(o[k]||0)+h;}));return o;};
+const NOME={semana:"semana",mes:"mês",ano:"ano"};
+function wsAtual(){return S.nivel==="semana"?[S.w]:S.nivel==="mes"?mesSems(S.m):TODAS;}
+function wsVizinho(d){
+  if(S.nivel==="semana"){const x=S.w+d;return x>=0&&x<SEMANAS.length?[x]:null;}
+  if(S.nivel==="mes"){const x=S.m+d;return x>=0&&x<12?mesSems(x):null;}
+  return null;
+}
+function rotulo(){
+  if(S.nivel==="semana")return semLabel(S.w)+(S.w===CUR?"  (semana do próximo disparo)":"");
+  if(S.nivel==="mes"){const l=mesSems(S.m);return `${MESES[S.m]} de ${ANO} · ${l.length} semanas (${SEMANAS[l[0]].n} a ${SEMANAS[l[l.length-1]].n})`;}
+  return `Ano de ${ANO} · ${SEMANAS.length} semanas`;
+}
+const stOf=v=>v>CFG.sobre?"sobre":v<CFG.livre?"livre":"ideal";
+const ST={livre:"Com folga",ideal:"Ideal",sobre:"Sobrecarga"};
+const stCor={livre:"var(--livre)",ideal:"var(--ideal)",sobre:"var(--sobre)"};
+function toast(t){const e=$("toast");e.textContent=t;e.classList.add("on");clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove("on"),3200);}
+const DIAS=["domingo","segunda-feira","terça-feira","quarta-feira","quinta-feira","sexta-feira","sábado"];
+const agora=()=>API&&API.agora?API.agora():new Date();
+/* data/hora do disparo desta semana e do próximo */
+function disparoDaSemana(w){const d=new Date(SEMANAS[w].ini+"T00:00:00");d.setDate(d.getDate()+((CFG.dia+6)%7));const [h,mi]=(CFG.hora||"08:00").split(":");d.setHours(+h||0,+mi||0,0,0);return d;}
+function proxDisparo(){
+  const n=agora();let w=CUR;if(PL.enviados[semChave(CUR)]||disparoDaSemana(CUR)<n)w=Math.min(SEMANAS.length-1,CUR+1);
+  const d=disparoDaSemana(w);return `${DIAS[d.getDay()]}, ${fmtD(d)} às ${CFG.hora}`+(PL.enviados[semChave(CUR)]?` · semana ${SEMANAS[CUR].n} enviada em ${PL.enviados[semChave(CUR)]}`:"");
+}
+
+/* ---------------- barra empilhada ---------------- */
+function barra(ws,p){
+  const a=projsOf(ws,p.id),t=tot(ws,p.id),cp=capW(ws,p),escala=Math.max(t,cp,1);
+  const segs=Object.entries(a).filter(([,h])=>h>0).sort((x,y)=>y[1]-x[1]).map(([pj,h])=>{
+    const wd=h/escala*100;
+    return `<i style="width:${wd}%;background:${PROJ[pj].c}" title="${esc(PROJ[pj].n)}: ${h}h">${wd>9?h+"h":""}</i>`;
+  }).join("");
+  const marca=t>cp?`<span class="cap" style="left:${cp/escala*100}%" title="Capacidade ${cp}h"></span>`:"";
+  return `<div class="bar">${segs}${marca}</div>`;
+}
+
+/* ---------------- render ---------------- */
+function render(){
+  if(!PESSOAS.length){$("kpis").innerHTML="";$("alerts").innerHTML=`<h3>Nenhuma pessoa no time de Tecnologia</h3><span class="sub">O placar usa as pessoas com departamento <b>Tecnologia</b> no Cadastro de pessoas (Base › Cadastro de pessoas). Ajuste o departamento de quem faz parte do time e abra esta página de novo.</span>`;$("view").innerHTML="";$("wLabel").textContent=rotulo();return;}
+  const ws=wsAtual(),nv=S.nivel,N=NOME[nv];
+  $("wLabel").textContent=rotulo();
+  $("wPrev").disabled=!wsVizinho(-1);$("wNext").disabled=!wsVizinho(1);
+  document.querySelectorAll("[data-nivel]").forEach(b=>b.classList.toggle("on",b.dataset.nivel===nv));
+  $("nextRun").textContent=CFG.ativo?`Próximo e-mail: ${proxDisparo()}`:"Disparo semanal desativado";
+  const cap=PESSOAS.reduce((a,p)=>a+capW(ws,p),0),al=PESSOAS.reduce((a,p)=>a+tot(ws,p.id),0);
+  const sob=PESSOAS.filter(p=>stOf(pct(ws,p))==="sobre"),liv=PESSOAS.filter(p=>stOf(pct(ws,p))==="livre");
+  const livH=liv.reduce((a,p)=>a+(capW(ws,p)-tot(ws,p.id)),0);
+  const oc=Math.round(al/cap*100);
+  $("kpis").innerHTML=`
+    <div class="kpi"><small>Capacidade do time</small><b>${cap}h</b><span>${PESSOAS.length} pessoas${ws.length>1?" · "+ws.length+" semanas":""}</span></div>
+    <div class="kpi info"><small>Alocado</small><b>${al}h</b><span>${oc}% de ocupação</span></div>
+    <div class="kpi ${sob.length?"warn":"ok"}"><small>Em sobrecarga</small><b>${sob.length}</b><span>acima de ${CFG.sobre}% da capacidade</span></div>
+    <div class="kpi info"><small>Com folga</small><b>${liv.length}</b><span>${livH}h livres (abaixo de ${CFG.livre}%)</span></div>
+    <div class="kpi ${oc>100?"warn":"ok"}"><small>Equilíbrio do time</small><b>${PESSOAS.length-sob.length-liv.length}/${PESSOAS.length}</b><span>na faixa ideal</span></div>`;
+  const al2=[],prox=wsVizinho(1);
+  PESSOAS.forEach(p=>{
+    const v=pct(ws,p),t=tot(ws,p.id),cp=capW(ws,p),s=stOf(v);
+    const nSob=ws.length>1?ws.filter(w=>stOf(pct(w,p))==="sobre").length:0;
+    const rec=s==="sobre"&&prox&&stOf(pct(prox,p))==="sobre";
+    if(s==="sobre")al2.push(`<li><i class="dot" style="background:var(--sobre)"></i><span><b>${esc(p.nome)}</b> está com ${t}h de ${cp}h (${v}%): excede ${t-cp}h.${nSob?` Ficou acima do limite em ${nSob} de ${ws.length} semanas.`:""}${rec?` <b>Sobrecarga também no próximo ${N}.</b>`:""}</span></li>`);
+    else if(s==="livre")al2.push(`<li><i class="dot" style="background:var(--livre)"></i><span><b>${esc(p.nome)}</b> tem ${cp-t}h livres (${v}% ocupado): pode absorver demanda.</span></li>`);
+    else if(nSob>=Math.max(3,Math.ceil(ws.length*.25)))al2.push(`<li><i class="dot" style="background:var(--amber)"></i><span><b>${esc(p.nome)}</b> está na faixa ideal na média, mas teve ${nSob} semanas acima do limite.</span></li>`);
+  });
+  const semNinguem=Object.keys(PROJ).filter(k=>/^p\d/.test(k)&&BOOT.projetos.some(x=>"p"+x.id===k)&&!PESSOAS.some(p=>(projsOf(ws,p.id))[k]>0));
+  if(semNinguem.length)al2.push(`<li><i class="dot" style="background:var(--amber)"></i><span><b>${semNinguem.length} projeto(s) em andamento</b> sem ninguém alocado neste ${N}: ${semNinguem.slice(0,6).map(k=>esc(PROJ[k].n)).join(", ")}${semNinguem.length>6?` e mais ${semNinguem.length-6}`:""}.</span></li>`);
+  $("alerts").innerHTML=`<h3>Pontos de atenção</h3>${al2.length?`<ul>${al2.join("")}</ul>`:`<span class="sub">Nada fora da faixa neste ${N}.</span>`}`;
+  const nomes={semana:["Placar da semana","Próximas 4 semanas"],mes:["Placar do mês","Semana a semana"],ano:["Placar do ano","Mês a mês"]}[nv];
+  const tb=document.querySelectorAll(".tab");tb[0].textContent=nomes[0];tb[1].textContent=nomes[1];
+  tb.forEach(t=>t.classList.toggle("on",t.dataset.t===S.aba));
+  $("view").innerHTML=S.aba==="placar"?viewPlacar(ws):S.aba==="heat"?viewHeat():viewProj(ws);
+}
+function viewPlacar(ws){
+  const nv=S.nivel,prev=wsVizinho(-1),agg=nv!=="semana";
+  const linhas=PESSOAS.slice().sort((a,b)=>pct(ws,b)-pct(ws,a)).map(p=>{
+    const v=pct(ws,p),s=stOf(v);
+    let d='<span class="delta eq">—</span>';
+    if(prev){const dd=v-pct(prev,p);d=dd===0?'<span class="delta eq">= igual</span>':`<span class="delta ${dd>0?"up":"dn"}">${dd>0?"▲":"▼"} ${Math.abs(dd)} p.p.</span>`;}
+    const nSob=ws.filter(w=>stOf(pct(w,p))==="sobre").length;
+    return `<tr class="row" ${agg?`data-detalhe="1"`:`data-edit="${p.id}"`}>
+      <td><div class="who"><span class="av" style="background:${p.cor}">${ini(p.nome)}</span><div><b>${esc(p.nome)}<span class="papel">${esc(p.papel)}</span></b><small>capacidade ${p.cap}h/semana${agg?` · ${capW(ws,p)}h no período`:""}</small></div></div></td>
+      <td>${barra(ws,p)}</td>
+      <td><div class="pct">${v}%<small>${tot(ws,p.id)}h de ${capW(ws,p)}h</small></div></td>
+      <td><span class="pill ${s}">${ST[s]}</span></td>
+      <td>${d}</td>
+      ${agg?`<td><span class="delta ${nSob?"up":"eq"}">${nSob} de ${ws.length}</span></td><td><button class="btn sm" data-detalhe="1">Ver detalhe</button></td>`:`<td><button class="btn sm" data-edit="${p.id}">Editar</button></td>`}</tr>`;
+  }).join("");
+  const usados=Object.keys(PROJ).filter(k=>PESSOAS.some(p=>(projsOf(ws,p.id))[k]>0));
+  const cmp={semana:"semana anterior",mes:"mês anterior",ano:"período anterior"}[nv];
+  return `<div class="card"><table><thead><tr><th>Pessoa</th><th>Alocação por projeto (horas)</th><th>Ocupação</th><th>Situação</th><th>vs. ${cmp}</th>${agg?"<th>Semanas em sobrecarga</th>":""}<th></th></tr></thead><tbody>${linhas}</tbody></table>
+  <div class="legend">${usados.map(k=>`<span><i style="background:${PROJ[k].c}"></i>${esc(PROJ[k].n)}</span>`).join("")}<span><i style="background:#fff;width:3px"></i>limite da capacidade</span>${agg?`<span>Ocupação = horas alocadas ÷ capacidade de todas as semanas do ${NOME[nv]}.</span>`:""}</div></div>`;
+}
+function viewHeat(){
+  const nv=S.nivel;
+  let cols;
+  if(nv==="semana"){const l=[];for(let i=0;i<4&&S.w+i<SEMANAS.length;i++)l.push(S.w+i);cols=l.map(w=>({ws:[w],h:`Sem. ${SEMANAS[w].n}<br><span style="text-transform:none;letter-spacing:0">${fmtD(addDias(SEMANAS[w].ini,0))}</span>`,go:`semana:${w}`}));}
+  else if(nv==="mes")cols=mesSems(S.m).map(w=>({ws:[w],h:`Sem. ${SEMANAS[w].n}<br><span style="text-transform:none;letter-spacing:0">${fmtD(addDias(SEMANAS[w].ini,0))}</span>`,go:`semana:${w}`}));
+  else cols=MESES.map((n,m)=>({ws:mesSems(m),h:n.slice(0,3),go:`mes:${m}`}));
+  const head=cols.map(c=>`<th style="text-align:center">${c.h}</th>`).join("");
+  const rows=PESSOAS.map(p=>`<tr><td><div class="who"><span class="av" style="background:${p.cor}">${ini(p.nome)}</span><b>${esc(p.nome)}</b></div></td>${cols.map(c=>{const v=pct(c.ws,p);return `<td class="c ${stOf(v)}" data-goto="${c.go}">${v}%<small>${tot(c.ws,p.id)}h</small></td>`;}).join("")}</tr>`).join("");
+  const med=cols.map(c=>{const cp=PESSOAS.reduce((a,p)=>a+capW(c.ws,p),0),a=PESSOAS.reduce((x,p)=>x+tot(c.ws,p.id),0);return `<td class="c" style="text-align:center">${Math.round(a/cp*100)}%<small>${a}h</small></td>`;}).join("");
+  const dica=nv==="ano"?"Clique num mês para abrir.":"Clique numa célula para abrir a semana.";
+  return `<div class="card heat"><table><thead><tr><th>Pessoa</th>${head}</tr></thead><tbody>${rows}<tr class="tot"><td>Time</td>${med}</tr></tbody></table>
+  <div class="legend"><span><i style="background:rgba(70,151,168,.6)"></i>Com folga (&lt; ${CFG.livre}%)</span><span><i style="background:rgba(79,163,107,.6)"></i>Ideal</span><span><i style="background:rgba(237,23,79,.7)"></i>Sobrecarga (&gt; ${CFG.sobre}%)</span><span>${dica}</span></div></div>`;
+}
+function viewProj(ws){
+  const cards=Object.keys(PROJ).map(k=>{
+    const ps=PESSOAS.map(p=>({p,h:projsOf(ws,p.id)[k]||0})).filter(x=>x.h>0).sort((a,b)=>b.h-a.h);
+    const t=ps.reduce((a,x)=>a+x.h,0);
+    if(!t)return "";
+    const mx=Math.max(...ps.map(x=>x.h));
+    return `<div class="pj"><h4><i class="sw" style="background:${PROJ[k].c}"></i>${esc(PROJ[k].n)}</h4><p>${t}h · ${ps.length} pessoa(s) · ${PROJ[k].d}${ws.length>1?` · média de ${Math.round(t/ws.length)}h por semana`:""}</p>
+      ${ps.map(x=>`<div class="ln"><span>${esc(x.p.nome)}</span><div class="tr"><i style="width:${x.h/mx*100}%;background:${PROJ[k].c}"></i></div><b>${x.h}h</b></div>`).join("")}</div>`;
+  }).join("");
+  return `<div class="card"><div class="projs">${cards}</div></div>`;
+}
+
+/* ---------------- gaveta de edição ---------------- */
+function abrirEdicao(id){
+  S.edit=id;S.draft=JSON.parse(JSON.stringify(sem[S.w][id]||{}));
+  drawEdit();$("ov").classList.add("on");$("drawer").classList.add("on");
+}
+function drawEdit(){
+  const p=PESSOAS.find(x=>x.id===S.edit),d=S.draft;
+  const t=Object.values(d).reduce((a,b)=>a+(+b||0),0),v=Math.round(t/p.cap*100),s=stOf(v);
+  const livres=Object.keys(PROJ).filter(k=>!(k in d));
+  $("drawer").innerHTML=`<header><div class="who"><span class="av" style="background:${p.cor}">${ini(p.nome)}</span><div><b>${esc(p.nome)}</b><small style="color:var(--muted)">${semLabel(S.w)}</small></div></div><button class="x" data-fechar>×</button></header>
+  <div class="body">
+    <label class="f">Capacidade semanal (horas)</label><input type="number" min="1" max="60" id="eCap" value="${p.cap}">
+    <label class="f">Alocação por projeto</label>
+    ${Object.entries(d).map(([k,h])=>`<div class="al"><select data-pj="${k}">${Object.keys(PROJ).filter(x=>x===k||!(x in d)).map(x=>`<option value="${x}" ${x===k?"selected":""}>${esc(PROJ[x].n)}</option>`).join("")}</select><input type="number" min="0" max="80" step="1" value="${h}" data-h="${k}"><button class="rm" data-rm="${k}" title="Remover">✕</button></div>`).join("")||`<p class="sub">Nenhum projeto alocado.</p>`}
+    ${livres.length?`<button class="btn sm" id="eAdd">+ Adicionar projeto</button>`:""}
+    <div class="live"><div class="pct">${v}% <small style="display:inline">${t}h de ${p.cap}h</small></div><div style="margin:8px 0"><div class="bar" style="min-width:0">${Object.entries(d).filter(([,h])=>h>0).map(([k,h])=>`<i style="width:${h/Math.max(t,p.cap,1)*100}%;background:${PROJ[k].c}"></i>`).join("")}</div></div><span class="pill ${s}">${ST[s]}</span>${t>p.cap?` <span class="sub">excede ${t-p.cap}h</span>`:t<p.cap?` <span class="sub">${p.cap-t}h livres</span>`:""}</div>
+  </div>
+  <footer><button class="btn" data-fechar>Cancelar</button><button class="btn primary" id="eSalvar">Salvar alocação</button></footer>`;
+}
+function fecharEdicao(){S.edit=null;$("ov").classList.remove("on");$("drawer").classList.remove("on");}
+
+/* ---------------- modais ---------------- */
+function abrirModal(html,wide){$("modal").innerHTML=`<div class="box ${wide?"wide":""}">${html}</div>`;$("modal").classList.add("on");}
+function fecharModal(){$("modal").classList.remove("on");$("modal").innerHTML="";}
+
+function modalCfg(){
+  abrirModal(`<h3>Disparo semanal do placar</h3><p class="hint">O e-mail vai para todo o time de tecnologia: as pessoas com departamento Tecnologia no Cadastro de pessoas.</p>
+  <div class="chk"><input type="checkbox" id="cAtivo" ${CFG.ativo?"checked":""}><label for="cAtivo"><b>Disparo automático ligado</b></label></div>
+  <div class="row2"><div><label class="f">Dia da semana</label><select id="cDia">${[1,2,3,4,5].map(d=>`<option value="${d}" ${CFG.dia===d?"selected":""}>${DIAS[d]}</option>`).join("")}</select></div>
+  <div><label class="f">Horário</label><input type="time" id="cHora" value="${CFG.hora}"></div></div>
+  <label class="f">Assunto do e-mail ({sem} vira o número da semana)</label><input type="text" id="cAss" value="${esc(CFG.assunto)}">
+  <div class="row2"><div><label class="f">“Com folga” abaixo de (% da capacidade)</label><input type="number" id="cLiv" min="10" max="100" value="${CFG.livre}"></div>
+  <div><label class="f">“Sobrecarga” acima de (% da capacidade)</label><input type="number" id="cSob" min="100" max="200" value="${CFG.sobre}"></div></div>
+  <label class="f">Destinatários (${PESSOAS.length})</label><div class="chips">${PESSOAS.map(p=>`<span>${esc(p.nome)}</span>`).join("")}</div>
+  <p class="hint" style="margin-top:10px">Quem sair do departamento Tecnologia no cadastro deixa de receber. Cada pessoa recebe o placar do time com a própria linha destacada, enviado pelo Outlook da conta Microsoft conectada no portal. O disparo automático acontece quando um administrador abre o portal a partir do dia e horário escolhidos.</p>
+  <div class="mfoot"><button class="btn" data-fm>Cancelar</button><button class="btn primary" id="cSalvar">Salvar configuração</button></div>`);
+}
+
+function htmlEmail(w,quem){
+  const P=PESSOAS,cap=P.reduce((a,p)=>a+p.cap,0),al=P.reduce((a,p)=>a+tot(w,p.id),0);
+  const sob=P.filter(p=>stOf(pct(w,p))==="sobre"),liv=P.filter(p=>stOf(pct(w,p))==="livre");
+  const eu=P.find(p=>p.id===quem);
+  const cel=(a,b,c)=>`<td width="33%" style="padding:14px 10px;text-align:center;border-right:1px solid #E3E8F1"><div style="font-size:24px;font-weight:800;color:${c}">${a}</div><div style="font-size:11px;color:#5B6780;text-transform:uppercase;letter-spacing:.06em">${b}</div></td>`;
+  const cor={livre:"#2C7A8B",ideal:"#2E7D4F",sobre:"#C90F40"},bg={livre:"#D3ECF2",ideal:"#D5EEDD",sobre:"#FBD9E2"};
+  const linhas=P.slice().sort((a,b)=>pct(w,b)-pct(w,a)).map(p=>{
+    const v=pct(w,p),s=stOf(v),t=tot(w,p.id),esc2=Math.max(t,p.cap,1);
+    const segs=Object.entries(sem[w][p.id]||{}).filter(([,h])=>h>0).sort((x,y)=>y[1]-x[1]).map(([k,h])=>`<td width="${(h/esc2*100).toFixed(1)}%" bgcolor="${PROJ[k].c}" title="${esc(PROJ[k].n)} ${h}h" style="height:14px;font-size:1px;line-height:1px">&nbsp;</td>`).join("");
+    const resto=t<esc2?`<td bgcolor="#E3E8F1" style="font-size:1px">&nbsp;</td>`:"";
+    const meu=eu&&p.id===eu.id;
+    const projs=Object.entries(sem[w][p.id]||{}).filter(([,h])=>h>0).sort((x,y)=>y[1]-x[1]).map(([k,h])=>`${esc(PROJ[k].n)} ${h}h`).join(" · ");
+    return `<tr style="${meu?"background:#FFF6DB":""}"><td style="padding:10px 12px;border-bottom:1px solid #E3E8F1;font-size:13px;color:#1B2740"><b>${esc(p.nome)}</b>${meu?` <span style="background:#ED174F;color:#fff;border-radius:6px;padding:1px 7px;font-size:10px;font-weight:700">VOCÊ</span>`:""}<br><span style="color:#5B6780;font-size:11px">${projs||"sem alocação"}</span></td>
+      <td style="padding:10px 12px;border-bottom:1px solid #E3E8F1" width="190"><table width="100%" cellpadding="0" cellspacing="0" style="border-radius:4px;overflow:hidden"><tr>${segs}${resto}</tr></table></td>
+      <td style="padding:10px 8px;border-bottom:1px solid #E3E8F1;font-size:13px;font-weight:800;color:#1B2740;white-space:nowrap" align="right">${t}h/${p.cap}h</td>
+      <td style="padding:10px 12px;border-bottom:1px solid #E3E8F1" align="center"><span style="background:${bg[s]};color:${cor[s]};border-radius:999px;padding:3px 10px;font-size:11px;font-weight:800;white-space:nowrap">${v}% · ${ST[s]}</span></td></tr>`;
+  }).join("");
+  let meuBloco="";
+  if(eu){
+    const v=pct(w,eu),s=stOf(v),t=tot(w,eu.id),acm=mesSems(SEMANAS[w].m).filter(x=>x<=w),vm=pct(acm,eu);
+    meuBloco=`<div style="margin:0 24px 16px;padding:14px 16px;background:#FFF6DB;border:1px solid #F0D58A;border-radius:10px;font-size:13px;color:#1B2740"><b>Sua semana, ${esc(eu.nome.split(" ")[0])}:</b> ${t}h alocadas de ${eu.cap}h (${v}%) — <b style="color:${cor[s]}">${ST[s]}</b>.${s==="sobre"?` Você excede ${t-eu.cap}h; fale com seu gestor para reequilibrar.`:s==="livre"?` Você tem ${eu.cap-t}h livres e pode absorver novas demandas.`:" Dentro da faixa ideal."} No acumulado de ${MESES[SEMANAS[w].m].toLowerCase()}: ${vm}% (${tot(acm,eu.id)}h de ${capW(acm,eu)}h).</div>`;
+  }
+  const att=[...sob.map(p=>`<li><b>${esc(p.nome)}</b> excede ${tot(w,p.id)-p.cap}h (${pct(w,p)}%)</li>`),...liv.map(p=>`<li><b>${esc(p.nome)}</b> tem ${p.cap-tot(w,p.id)}h livres</li>`)].join("");
+  return `<!DOCTYPE html><html><body style="margin:0;background:#EEF2F8;font-family:Segoe UI,Arial,sans-serif"><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:20px 8px">
+  <table width="640" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;max-width:640px">
+  <tr><td style="background:#0C1B38;padding:22px 24px"><div style="color:#ED174F;font-size:11px;letter-spacing:.14em;font-weight:700">JCE SA · PMO / TECNOLOGIA DA INFORMAÇÃO</div><div style="color:#fff;font-size:22px;font-weight:800;margin-top:4px">Placar de alocação do time</div><div style="color:#A3AEC4;font-size:13px;margin-top:2px">${semLabel(w)}</div></td></tr>
+  <tr><td style="height:4px;background:#ED174F;font-size:1px">&nbsp;</td></tr>
+  <tr><td style="padding:18px 24px 6px;font-size:13px;color:#1B2740">Bom dia, time! Esta é a distribuição de horas por pessoa e projeto para a semana.</td></tr>
+  <tr><td style="padding:8px 24px 16px"><table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #E3E8F1;border-radius:10px"><tr>${cel(Math.round(al/cap*100)+"%","Ocupação do time","#0C1B38")}${cel(sob.length,"Em sobrecarga",sob.length?"#C90F40":"#2E7D4F")}<td width="33%" style="padding:14px 10px;text-align:center"><div style="font-size:24px;font-weight:800;color:#2C7A8B">${liv.reduce((a,p)=>a+p.cap-tot(w,p.id),0)}h</div><div style="font-size:11px;color:#5B6780;text-transform:uppercase;letter-spacing:.06em">Horas livres</div></td></tr></table></td></tr>
+  ${meuBloco?`<tr><td>${meuBloco}</td></tr>`:""}
+  ${att?`<tr><td style="padding:0 24px 12px;font-size:13px;color:#1B2740"><b>Pontos de atenção</b><ul style="margin:6px 0 0;padding-left:18px;line-height:1.7">${att}</ul></td></tr>`:""}
+  <tr><td style="padding:6px 12px 12px"><table width="100%" cellpadding="0" cellspacing="0">${linhas}</table></td></tr>
+  <tr><td style="padding:0 24px 8px;font-size:12px;color:#1B2740">Acumulado de <b>${MESES[SEMANAS[w].m].toLowerCase()}</b>: ocupação do time em <b>${Math.round(P.reduce((a,p)=>a+tot(mesSems(SEMANAS[w].m).filter(x=>x<=w),p.id),0)/P.reduce((a,p)=>a+capW(mesSems(SEMANAS[w].m).filter(x=>x<=w),p),0)*100)}%</b>.</td></tr>
+  <tr><td style="padding:4px 24px 20px;font-size:11px;color:#5B6780">Faixas: com folga abaixo de ${CFG.livre}% · ideal até ${CFG.sobre}% · sobrecarga acima de ${CFG.sobre}% da capacidade semanal.</td></tr>
+  <tr><td align="center" style="padding:0 24px 22px"><a href="${esc(BOOT.url||"#")}" style="background:#ED174F;color:#fff;text-decoration:none;font-weight:700;font-size:13px;border-radius:999px;padding:10px 22px;display:inline-block">Abrir no Portal PMO</a></td></tr>
+  <tr><td style="background:#F3F5F9;padding:14px 24px;font-size:11px;color:#5B6780">Enviado automaticamente toda ${DIAS[CFG.dia]} às ${CFG.hora} pelo Portal PMO. Dúvidas sobre sua alocação? Fale com o PMO.</td></tr>
+  </table></td></tr></table></body></html>`;
+}
+function modalMail(quem){
+  quem=quem||(PESSOAS[0]&&PESSOAS[0].id);
+  const wm=S.nivel==="semana"?S.w:CUR;
+  const ass=CFG.assunto.replace("{sem}",SEMANAS[wm].n);
+  const html=htmlEmail(wm,quem);
+  abrirModal(`<h3>Prévia do e-mail semanal</h3><p class="hint"><b>Assunto:</b> ${esc(ass)} &nbsp;·&nbsp; <b>Para:</b> ${PESSOAS.length} pessoas do time de tecnologia &nbsp;·&nbsp; <b>${semLabel(wm)}</b> &nbsp;·&nbsp; o e-mail é sempre semanal e traz o acumulado do mês</p>
+  <label class="f" style="margin-top:0">Visualizar como (a linha da pessoa vem destacada)</label>
+  <select id="mQuem" style="margin-bottom:12px">${PESSOAS.map(p=>`<option value="${p.id}" ${p.id===quem?"selected":""}>${esc(p.nome)}</option>`).join("")}</select>
+  <iframe class="mail" id="mIf"></iframe>
+  <div class="mfoot"><button class="btn" data-fm>Fechar</button><button class="btn" id="mCopia">Copiar HTML</button><button class="btn" id="mTeste">Enviar teste para mim</button><button class="btn primary" id="mEnviar">Enviar agora ao time</button></div>`,true);
+  $("mIf").srcdoc=html;
+}
+function modalSug(){
+  if(S.nivel!=="semana"){toast("A sugestão e a edição são feitas na visão semanal.");return;}
+  const w=S.w,ini=SEMANAS[w].ini,fim=isoAdd(ini,6),sug={},base={};
+  PESSOAS.forEach(p=>{
+    const ts=(BOOT.tarefas||[]).filter(t=>t.email===p.id&&(!t.ini||t.ini<=fim)&&(!t.fim||t.fim>=ini));
+    base[p.id]=ts.length;
+    const porP={};ts.forEach(t=>{const k="p"+t.pid;porP[k]=(porP[k]||0)+1;});
+    const aus=(sem[w][p.id]||{}).aus||0,livre=Math.max(0,p.cap-aus),n=ts.length;
+    sug[p.id]={};if(aus)sug[p.id].aus=aus;
+    if(n)Object.entries(porP).forEach(([k,c])=>{if(PROJ[k])sug[p.id][k]=Math.round(livre*c/n);});
+    else Object.assign(sug[p.id],sem[w][p.id]||{});
+  });
+  S.sug=sug;
+  const linhas=PESSOAS.map(p=>{const a=tot(w,p.id),b=Object.values(sug[p.id]).reduce((x,y)=>x+y,0),dd=b-a;
+    return `<tr class="diff"><td><b>${esc(p.nome)}</b></td><td>${a}h</td><td>${b}h</td><td class="${dd>0?"up":dd<0?"dn":""}">${dd>0?"+":""}${dd}h</td><td style="color:var(--muted);font-size:12px">${base[p.id]?`${base[p.id]} tarefa(s) abertas na semana como responsável ou apoio`:"sem tarefas na semana: mantém o lançado"}</td></tr>`;}).join("");
+  abrirModal(`<h3>Sugestão a partir das tarefas</h3><p class="hint">Para cada pessoa, o portal pega as tarefas abertas em que ela é responsável ou apoio e que caem nesta semana, e divide a capacidade (menos ausências) entre os projetos na proporção das tarefas. Revise antes de aplicar.</p>
+  <table><thead><tr><th>Pessoa</th><th>Lançado</th><th>Sugerido</th><th>Diferença</th><th>Base</th></tr></thead><tbody>${linhas}</tbody></table>
+  <div class="mfoot"><button class="btn" data-fm>Descartar</button><button class="btn primary" id="sAplicar">Aplicar sugestão na ${semLabel(w).split(" · ")[0].toLowerCase()}</button></div>`,true);
+}
+/* envio do placar: um e-mail por pessoa, com a linha dela destacada */
+async function plEnviar(w,apenasEu){
+  if(!API){toast("Abra esta página pelo portal para enviar.");return {ok:0,erro:1};}
+  const ass=CFG.assunto.replace("{sem}",SEMANAS[w].n);
+  const alvos=apenasEu?[{id:BOOT.email,nome:BOOT.usuario||"Você"}]:PESSOAS.filter(p=>p.id);
+  let ok=0,erros=[];
+  for(const p of alvos){
+    try{const r=await API.enviarEmail({para:[p.id],assunto:ass,html:htmlEmail(w,PESSOAS.some(x=>x.id===p.id)?p.id:null)});if(r&&r.ok)ok++;else erros.push(p.nome+": "+((r&&r.erro)||"falhou"));}
+    catch(e){erros.push(p.nome+": "+(e.message||e));}
+  }
+  if(!apenasEu&&ok){PL.enviados[semChave(w)]=agora().toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});plSalvar();}
+  return {ok,erro:erros.length,erros};
+}
+
+/* ---------------- eventos ---------------- */
+document.addEventListener("click",e=>{
+  const t=e.target;
+  const nvb=t.closest("[data-nivel]");
+  if(nvb){const n=nvb.dataset.nivel;if(n==="mes"&&S.nivel==="semana")S.m=SEMANAS[S.w].m;if(n==="semana"&&S.nivel==="mes"&&SEMANAS[S.w].m!==S.m)S.w=mesSems(S.m)[0];S.nivel=n;S.aba="placar";render();return;}
+  if(t.closest("#wPrev")){if(S.nivel==="semana")S.w=Math.max(0,S.w-1);else if(S.nivel==="mes")S.m=Math.max(0,S.m-1);render();return;}
+  if(t.closest("#wNext")){if(S.nivel==="semana")S.w=Math.min(SEMANAS.length-1,S.w+1);else if(S.nivel==="mes")S.m=Math.min(11,S.m+1);render();return;}
+  if(t.closest("[data-detalhe]")){S.aba="heat";render();return;}
+  const tab=t.closest(".tab");if(tab){S.aba=tab.dataset.t;render();return;}
+  const g=t.closest("[data-goto]");if(g){const [k,v]=g.dataset.goto.split(":");if(k==="semana"){S.w=+v;S.nivel="semana";}else{S.m=+v;S.nivel="mes";}S.aba="placar";render();return;}
+  const ed=t.closest("[data-edit]");if(ed){abrirEdicao(ed.dataset.edit);return;}
+  if(t.closest("[data-fechar]")||t.id==="ov"){fecharEdicao();return;}
+  if(t.closest("[data-fm]")){fecharModal();return;}
+  if(t.id==="modal"){fecharModal();return;}
+  if(t.closest("#bCfg")){modalCfg();return;}
+  if(t.closest("#bMail")){modalMail();return;}
+  if(t.closest("#bSug")){modalSug();return;}
+  if(t.id==="cSalvar"){
+    CFG.ativo=$("cAtivo").checked;CFG.dia=+$("cDia").value;CFG.hora=$("cHora").value||"08:00";CFG.assunto=$("cAss").value||CFG.assunto;
+    const l=+$("cLiv").value,s=+$("cSob").value;if(l<s){CFG.livre=l;CFG.sobre=s;}
+    plSalvar();fecharModal();render();toast("Configuração salva.");return;
+  }
+  if(t.id==="mCopia"){const h=$("mIf").srcdoc;(navigator.clipboard?navigator.clipboard.writeText(h):Promise.reject()).then(()=>toast("HTML do e-mail copiado.")).catch(()=>toast("Não foi possível copiar neste ambiente."));return;}
+  if(t.id==="mTeste"){if(!BOOT.email){toast("Conecte a conta Microsoft no portal para enviar o teste.");return;}t.disabled=true;t.textContent="Enviando…";const wm=S.nivel==="semana"?S.w:CUR;plEnviar(wm,true).then(r=>{t.disabled=false;t.textContent="Enviar teste para mim";toast(r.ok?`Teste enviado para ${BOOT.email}.`:"Não enviou: "+((r.erros||[])[0]||""));});return;}
+  if(t.id==="mEnviar"){const wm=S.nivel==="semana"?S.w:CUR;t.disabled=true;t.textContent="Enviando…";plEnviar(wm,false).then(r=>{fecharModal();render();toast(r.erro?`Enviado a ${r.ok} pessoa(s); ${r.erro} com erro: ${r.erros[0]}`:`Placar da semana ${SEMANAS[wm].n} enviado a ${r.ok} pessoa(s).`);});return;}
+  if(t.id==="sAplicar"){PESSOAS.forEach(p=>{const a=sem[S.w];Object.keys(a[p.id]||{}).forEach(k=>delete a[p.id][k]);a[p.id]=Object.assign(a[p.id]||{},S.sug[p.id]);});plSalvar();fecharModal();render();toast("Sugestão aplicada à semana.");return;}
+  if(t.id==="eAdd"){const livres=Object.keys(PROJ).filter(k=>!(k in S.draft));if(livres.length){S.draft[livres[0]]=4;drawEdit();}return;}
+  const rm=t.closest("[data-rm]");if(rm){delete S.draft[rm.dataset.rm];drawEdit();return;}
+  if(t.id==="eSalvar"){
+    const p=PESSOAS.find(x=>x.id===S.edit);const c=+$("eCap").value;if(c>0)p.cap=c;
+    const lim={};Object.entries(S.draft).forEach(([k,h])=>{if(+h>0)lim[k]=+h;});sem[S.w][S.edit]=lim;plSalvar();
+    fecharEdicao();render();toast(`Alocação de ${p.nome} salva.`);return;
+  }
+});
+document.addEventListener("input",e=>{
+  const t=e.target;
+  if(t.dataset&&t.dataset.h!==undefined&&S.draft){S.draft[t.dataset.h]=Math.max(0,+t.value||0);const sel=document.activeElement;const pos=t.selectionStart;drawEdit();const n=document.querySelector(`[data-h="${t.dataset.h}"]`);if(n){n.focus();}}
+  if(t.id==="eCap"&&S.edit){const p=PESSOAS.find(x=>x.id===S.edit);const v=+t.value;if(v>0){p.cap=v;const keep=t.value;drawEdit();const c=$("eCap");c.focus();c.setSelectionRange(keep.length,keep.length);}}
+});
+document.addEventListener("change",e=>{
+  const t=e.target;
+  if(t.dataset&&t.dataset.pj&&S.draft){const novo=t.value,velho=t.dataset.pj;if(novo!==velho){const h=S.draft[velho];const ord=Object.entries(S.draft).map(([k,v])=>k===velho?[novo,h]:[k,v]);S.draft=Object.fromEntries(ord);drawEdit();}}
+  if(t.id==="mQuem"){modalMail(t.value);}
+});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){fecharModal();fecharEdicao();}});
+if(!QS.has("auto"))render();
+
+/* ===================== ALOCAÇÃO FTE (contabilidade) ===================== */
+const FTE_SEED = {"meses":{"0":{"Alan":[["Sustentação","OPEX",1.0]],"Aldo":[["IT Security","CAPEX",0.1],["JCE Expenses (Lemontech)","CAPEX",0.2],["MDM","CAPEX",0.25],["Prédio Novo","CAPEX",0.25],["Reforma Tributária","CAPEX",0.1],["São Roque","CAPEX",0.1]],"Alisson":[["IT Security","CAPEX",0.1],["JCE Expenses (Lemontech)","CAPEX",0.2],["MDM","CAPEX",0.25],["Prédio Novo","CAPEX",0.25],["Reforma Tributária","CAPEX",0.1],["São Roque","CAPEX",0.1]],"André":[["e-Commerce","CAPEX",0.05],["Import Export","CAPEX",0.15],["IT Security","CAPEX",0.05],["JCE Expenses (Lemontech)","CAPEX",0.1],["MDM","CAPEX",0.1],["PontoCOB","CAPEX",0.1],["Prédio Novo","CAPEX",0.05],["Quirons (Med e Seg do trab)","CAPEX",0.05],["Reforma Tributária","CAPEX",0.05],["Salesforce (Comercial)","CAPEX",0.2],["São Roque","CAPEX",0.05],["WMS","CAPEX",0.05]],"Augusto":[["Go-to-Cloud","CAPEX",0.3],["IT Security","CAPEX",0.2],["Sustentação","OPEX",0.5]],"Cristiano":[["Import Export","CAPEX",0.3],["PontoCOB","CAPEX",0.15],["Quirons (Med e Seg do trab)","CAPEX",0.2],["Salesforce (Comercial)","CAPEX",0.35]],"Emanuel":[["Import Export","CAPEX",0.1],["PontoCOB","CAPEX",0.1],["Salesforce (Comercial)","CAPEX",0.8]],"Fermin":[["Go-to-Cloud","CAPEX",0.2],["Release Protheus","CAPEX",0.2],["Sustentação","OPEX",0.6]],"Helysson":[["e-Commerce","CAPEX",0.05],["Import Export","CAPEX",0.04],["IT Security","CAPEX",0.04],["JCE Expenses (Lemontech)","CAPEX",0.04],["MDM","CAPEX",0.04],["PontoCOB","CAPEX",0.04],["Prédio Novo","CAPEX",0.05],["Quirons (Med e Seg do trab)","CAPEX",0.04],["Reforma Tributária","CAPEX",0.04],["Salesforce (Comercial)","CAPEX",0.04],["São Roque","CAPEX",0.04],["Sustentação","OPEX",0.5],["WMS","CAPEX",0.04]],"Itamar":[["e-Commerce","CAPEX",1.0]],"Kaneta":[["Logística","CAPEX",0.2],["Salesforce (Comercial)","CAPEX",0.2],["Sustentação","OPEX",0.6]],"Marcellus":[["JCE Expenses (Lemontech)","CAPEX",0.5],["PontoCOB","CAPEX",0.1],["Sustentação","OPEX",0.4]],"Rogério":[["e-Commerce","CAPEX",0.8],["Salesforce (Comercial)","CAPEX",0.1],["Sustentação","OPEX",0.1]],"Thiago":[["Sustentação","OPEX",0.8],["WMS","CAPEX",0.2]]},"1":{"Alan":[["Sustentação","OPEX",1.0]],"Aldo":[["IT Security","CAPEX",0.2],["JCE Expenses (Lemontech)","CAPEX",0.2],["MDM","CAPEX",0.3],["Prédio Novo","CAPEX",0.1],["Reforma Tributária","CAPEX",0.1],["São Roque","CAPEX",0.05],["WMS","CAPEX",0.05]],"Alisson":[["IT Security","CAPEX",0.05],["JCE Expenses (Lemontech)","CAPEX",0.1],["MDM","CAPEX",0.1],["Prédio Novo","CAPEX",0.1],["Reforma Tributária","CAPEX",0.1],["São Roque","CAPEX",0.05],["WMS","CAPEX",0.5]],"André":[["Data Engineering","CAPEX",0.1],["e-Commerce","CAPEX",0.1],["Import Export","CAPEX",0.1],["IT Security","CAPEX",0.05],["JCE Expenses (Lemontech)","CAPEX",0.1],["MDM","CAPEX",0.1],["PontoCOB","CAPEX",0.1],["Prédio Novo","CAPEX",0.05],["Reforma Tributária","CAPEX",0.1],["Salesforce (Comercial)","CAPEX",0.1],["São Roque","CAPEX",0.05],["WMS","CAPEX",0.05]],"Augusto":[["Go-to-Cloud","CAPEX",0.3],["IT Security","CAPEX",0.2],["Sustentação","OPEX",0.5]],"Cristiano":[["Import Export","CAPEX",0.3],["PontoCOB","CAPEX",0.2],["Salesforce (Comercial)","CAPEX",0.5]],"Emanuel":[["Import Export","CAPEX",0.1],["PontoCOB","CAPEX",0.1],["Salesforce (Comercial)","CAPEX",0.8]],"Fermin":[["Go-to-Cloud","CAPEX",0.2],["Release Protheus","CAPEX",0.2],["Sustentação","OPEX",0.6]],"Gilberto":[["IT Security","CAPEX",1.0]],"Helysson":[["Data Engineering","CAPEX",0.04],["e-Commerce","CAPEX",0.05],["Import Export","CAPEX",0.04],["IT Security","CAPEX",0.04],["JCE Expenses (Lemontech)","CAPEX",0.04],["MDM","CAPEX",0.04],["PontoCOB","CAPEX",0.04],["Prédio Novo","CAPEX",0.05],["Reforma Tributária","CAPEX",0.04],["Salesforce (Comercial)","CAPEX",0.04],["São Roque","CAPEX",0.04],["Sustentação","OPEX",0.5],["WMS","CAPEX",0.04]],"Itamar":[["e-Commerce","CAPEX",1.0]],"Kaneta":[["Logística","CAPEX",0.4],["Sustentação","OPEX",0.6]],"Marcellus":[["JCE Expenses (Lemontech)","CAPEX",0.6],["PontoCOB","CAPEX",0.2],["Sustentação","OPEX",0.05],["WMS","CAPEX",0.15]],"Rogério":[["e-Commerce","CAPEX",1.0]],"Thiago":[["Sustentação","OPEX",0.8],["WMS","CAPEX",0.2]]},"2":{"Alan":[["Sustentação","OPEX",1.0]],"Aldo":[["JCE Expenses (Lemontech)","CAPEX",0.3],["MDM","CAPEX",0.35],["Prédio Novo","CAPEX",0.25],["Reforma Tributária","CAPEX",0.1]],"Alisson":[["JCE Expenses (Lemontech)","CAPEX",0.05],["MDM","CAPEX",0.1],["Prédio Novo","CAPEX",0.1],["Reforma Tributária","CAPEX",0.05],["WMS","CAPEX",0.7]],"André":[["Data Engineering","CAPEX",0.1],["e-Commerce","CAPEX",0.05],["Import Export","CAPEX",0.1],["IT Security","CAPEX",0.1],["JCE Expenses (Lemontech)","CAPEX",0.1],["MDM","CAPEX",0.1],["PontoCOB","CAPEX",0.1],["Prédio Novo","CAPEX",0.05],["Reforma Tributária","CAPEX",0.05],["Salesforce (Comercial)","CAPEX",0.1],["WMS","CAPEX",0.15]],"Augusto":[["Go-to-Cloud","CAPEX",0.3],["IT Security","CAPEX",0.2],["Sustentação","OPEX",0.5]],"Cristiano":[["Data Engineering","CAPEX",0.2],["Import Export","CAPEX",0.2],["PontoCOB","CAPEX",0.2],["Salesforce (Comercial)","CAPEX",0.4]],"Diego":[["e-Commerce","CAPEX",0.5],["JCE Expenses (Lemontech)","CAPEX",0.5]],"Emanuel":[["Import Export","CAPEX",0.2],["PontoCOB","CAPEX",0.2],["Salesforce (Comercial)","CAPEX",0.6]],"Fermin":[["Release Protheus","CAPEX",0.4],["Sustentação","OPEX",0.6]],"Geovanna":[["Data Engineering","CAPEX",0.8],["Fluxo de Engenharia","CAPEX",0.2]],"Gilberto":[["IT Security","CAPEX",1.0]],"Helysson":[["Data Engineering","CAPEX",0.04],["e-Commerce","CAPEX",0.06],["Import Export","CAPEX",0.04],["IT Security","CAPEX",0.06],["JCE Expenses (Lemontech)","CAPEX",0.04],["MDM","CAPEX",0.04],["PontoCOB","CAPEX",0.04],["Prédio Novo","CAPEX",0.06],["Reforma Tributária","CAPEX",0.04],["Salesforce (Comercial)","CAPEX",0.04],["Sustentação","OPEX",0.5],["WMS","CAPEX",0.04]],"Itamar":[["e-Commerce","CAPEX",1.0]],"Jean":[["WMS","CAPEX",1.0]],"Kaneta":[["Sustentação","OPEX",0.6],["Sustentação","OPEX",0.4]],"Marcellus":[["JCE Expenses (Lemontech)","CAPEX",0.28],["WMS","CAPEX",0.72]],"Rogério":[["Sustentação","OPEX",1.0]],"Thiago":[["Sustentação","OPEX",1.0]]},"3":{"Alan":[["Sustentação","OPEX",1.0]],"Aldo":[["JCE Expenses (Lemontech)","CAPEX",0.3],["MDM","CAPEX",0.4],["Prédio Novo","CAPEX",0.2],["Reforma Tributária","CAPEX",0.1]],"Alisson":[["IT Security","CAPEX",0.1],["Prédio Novo","CAPEX",0.1],["WMS","CAPEX",0.8]],"André":[["Data Engineering","CAPEX",0.1],["e-Commerce","CAPEX",0.05],["Go-to-Cloud","CAPEX",0.1],["Import Export","CAPEX",0.1],["IT Security","CAPEX",0.1],["JCE Expenses (Lemontech)","CAPEX",0.1],["PontoCOB","CAPEX",0.1],["Prédio Novo","CAPEX",0.1],["Release Protheus","CAPEX",0.05],["Salesforce (Comercial)","CAPEX",0.1],["WMS","CAPEX",0.1]],"Augusto":[["Go-to-Cloud","CAPEX",0.3],["IT Security","CAPEX",0.2],["Sustentação","OPEX",0.5]],"Cristiano":[["Data Engineering","CAPEX",0.2],["Fluxo de Engenharia","CAPEX",0.15],["Import Export","CAPEX",0.2],["JCE Expenses (Lemontech)","CAPEX",0.15],["PontoCOB","CAPEX",0.1],["Projuris","CAPEX",0.05],["Salesforce (Comercial)","CAPEX",0.15]],"Diego":[["e-Commerce","CAPEX",0.119],["Import Export","CAPEX",0.25],["JCE Expenses (Lemontech)","CAPEX",0.1786],["Salesforce (Comercial)","CAPEX",0.119],["Sustentação","OPEX",0.3333]],"Emanuel":[["Import Export","CAPEX",0.2],["PontoCOB","CAPEX",0.2],["Salesforce (Comercial)","CAPEX",0.6]],"Fermin":[["Go-to-Cloud","CAPEX",0.2],["Release Protheus","CAPEX",0.2],["Sustentação","OPEX",0.6]],"Geovanna":[["Data Engineering","CAPEX",0.4],["Fluxo de Engenharia","CAPEX",0.3],["Projuris","CAPEX",0.2],["S&OP Plannera","CAPEX",0.1]],"Gilberto":[["IT Security","CAPEX",1.0]],"Helysson":[["Data Engineering","CAPEX",0.05],["e-Commerce","CAPEX",0.1],["Go-to-Cloud","CAPEX",0.05],["Import Export","CAPEX",0.05],["IT Security","CAPEX",0.1],["Prédio Novo","CAPEX",0.05],["Release Protheus","CAPEX",0.05],["Sustentação","OPEX",0.5],["WMS","CAPEX",0.05]],"Itamar":[["e-Commerce","CAPEX",1.0]],"Jean":[["WMS","CAPEX",1.0]],"Kaneta":[["Import Export","CAPEX",0.1],["Sustentação","OPEX",0.9]],"Marcelo":[["e-Commerce","CAPEX",0.05],["Salesforce (Comercial)","CAPEX",0.05],["Sustentação","OPEX",0.15],["WMS","CAPEX",0.75]],"Morvan":[["Sustentação","OPEX",1.0]],"Thiago":[["Sustentação","CAPEX",1.0]]},"4":{"Alan":[["Sustentação","OPEX",1.0]],"Aldo":[["JCE Expenses (Lemontech)","CAPEX",0.3],["MDM","CAPEX",0.3],["Prédio Novo","CAPEX",0.2],["Reforma Tributária","CAPEX",0.2]],"Alisson":[["IT Security","CAPEX",0.1],["Prédio Novo","CAPEX",0.1],["WMS","CAPEX",0.8]],"André":[["Data Engineering","CAPEX",0.1],["e-Commerce","CAPEX",0.05],["Go-to-Cloud","CAPEX",0.1],["Import Export","CAPEX",0.1],["IT Security","CAPEX",0.05],["JCE Expenses (Lemontech)","CAPEX",0.1],["PontoCOB","CAPEX",0.1],["Prédio Novo","CAPEX",0.05],["Release Protheus","CAPEX",0.05],["S&OP Plannera","CAPEX",0.1],["Salesforce (Comercial)","CAPEX",0.1],["WMS","CAPEX",0.1]],"Augusto":[["Sustentação","OPEX",1.0]],"Cristiano":[["Data Engineering","CAPEX",0.2],["Fluxo de Engenharia","CAPEX",0.15],["Import Export","CAPEX",0.2],["JCE Expenses (Lemontech)","CAPEX",0.15],["PontoCOB","CAPEX",0.1],["Projuris","CAPEX",0.05],["Salesforce (Comercial)","CAPEX",0.15]],"Diego":[["e-Commerce","CAPEX",0.119],["Import Export","CAPEX",0.25],["JCE Expenses (Lemontech)","CAPEX",0.1786],["Salesforce (Comercial)","CAPEX",0.119],["Sustentação","OPEX",0.3333]],"Emanuel":[["Import Export","CAPEX",0.15],["PontoCOB","CAPEX",0.15],["Salesforce (Comercial)","CAPEX",0.7]],"Fermin":[["Go-to-Cloud","CAPEX",0.2],["Release Protheus","CAPEX",0.2],["Sustentação","OPEX",0.6]],"Geovanna":[["Data Engineering","CAPEX",0.2],["Fluxo de Engenharia","CAPEX",0.2],["Projuris","CAPEX",0.2],["S&OP Plannera","CAPEX",0.4]],"Gilberto":[["IT Security","CAPEX",1.0]],"Helysson":[["Data Engineering","CAPEX",0.05],["e-Commerce","CAPEX",0.05],["Go-to-Cloud","CAPEX",0.05],["Import Export","CAPEX",0.05],["IT Security","CAPEX",0.05],["Prédio Novo","CAPEX",0.05],["Release Protheus","CAPEX",0.05],["S&OP Plannera","CAPEX",0.1],["Sustentação","OPEX",0.5],["WMS","CAPEX",0.05]],"Itamar":[["e-Commerce","CAPEX",1.0]],"Jean":[["WMS","CAPEX",1.0]],"Kaneta":[["Import Export","CAPEX",0.05],["S&OP Plannera","CAPEX",0.05],["Sustentação","OPEX",0.9]],"Marcelo":[["e-Commerce","CAPEX",0.05],["Salesforce (Comercial)","CAPEX",0.05],["Sustentação","OPEX",0.15],["WMS","CAPEX",0.75]],"Morvan":[["Sustentação","OPEX",1.0]],"Thiago":[["Sustentação","CAPEX",1.0]]},"5":{"Alan":[["Sustentação","OPEX",1.0]],"Aldo":[["JCE Expenses (Lemontech)","CAPEX",0.3],["MDM","CAPEX",0.3],["Prédio Novo","CAPEX",0.2],["Reforma Tributária","CAPEX",0.2]],"Alisson":[["IT Security","CAPEX",0.2],["WMS","CAPEX",0.8]],"André":[["Data Engineering","CAPEX",0.15],["e-Commerce","CAPEX",0.05],["Fluxo de Engenharia","CAPEX",0.05],["Go-to-Cloud","CAPEX",0.05],["Import Export","CAPEX",0.1],["IT Security","CAPEX",0.05],["Reforma Tributária","CAPEX",0.2],["S&OP Plannera","CAPEX",0.15],["Salesforce (Comercial)","CAPEX",0.1],["WMS","CAPEX",0.1]],"Augusto":[["Sustentação","OPEX",1.0]],"Cristiano":[["Data Engineering","CAPEX",0.25],["Fluxo de Engenharia","CAPEX",0.25],["Import Export","CAPEX",0.25],["Salesforce (Comercial)","CAPEX",0.25]],"Diego":[["Data Engineering","CAPEX",0.05],["e-Commerce","CAPEX",0.2],["Import Export","CAPEX",0.05],["Salesforce (Comercial)","CAPEX",0.05],["Sustentação","OPEX",0.65]],"Emanuel":[["Import Export","CAPEX",0.3],["Salesforce (Comercial)","CAPEX",0.7]],"Fermin":[["Go-to-Cloud","CAPEX",0.1],["IT Security","CAPEX",0.1],["Release Protheus","CAPEX",0.1],["Stress Lab","CAPEX",0.1],["Sustentação","OPEX",0.6]],"Geovanna":[["Data Engineering","CAPEX",0.3],["Fluxo de Engenharia","CAPEX",0.3],["S&OP Plannera","CAPEX",0.4]],"Gilberto":[["IT Security","CAPEX",1.0]],"Helysson":[["Data Engineering","CAPEX",0.05],["e-Commerce","CAPEX",0.05],["Fluxo de Engenharia","CAPEX",0.05],["Go-to-Cloud","CAPEX",0.05],["Import Export","CAPEX",0.05],["IT Security","CAPEX",0.05],["Reforma Tributária","CAPEX",0.05],["S&OP Plannera","CAPEX",0.05],["Salesforce (Comercial)","CAPEX",0.05],["Sustentação","OPEX",0.5],["WMS","CAPEX",0.05]],"Itamar":[["e-Commerce","CAPEX",1.0]],"Jean":[["WMS","CAPEX",1.0]],"Kaneta":[["Import Export","CAPEX",0.2],["S&OP Plannera","CAPEX",0.1],["Sustentação","OPEX",0.7]],"Marcelo":[["Sustentação","OPEX",0.1],["WMS","CAPEX",0.9]],"Morvan":[["Sustentação","OPEX",1.0]],"Thiago":[["IT Security","CAPEX",0.05],["Sustentação","OPEX",0.8],["WMS","CAPEX",0.15]]},"6":{"Alan":[["Sustentação","OPEX",1.0]],"Aldo":[["IT Security","CAPEX",0.2],["MDM","CAPEX",0.3],["MDM","CAPEX",0.2],["Reforma Tributária","CAPEX",0.3]],"Alisson":[["IT Security","CAPEX",0.2],["WMS","CAPEX",0.8]],"André":[["Data Engineering","CAPEX",0.15],["e-Commerce","CAPEX",0.05],["Fluxo de Engenharia","CAPEX",0.05],["Go-to-Cloud","CAPEX",0.05],["Import Export","CAPEX",0.1],["IT Security","CAPEX",0.05],["Reforma Tributária","CAPEX",0.2],["S&OP Plannera","CAPEX",0.15],["Salesforce (Comercial)","CAPEX",0.1],["WMS","CAPEX",0.1]],"Augusto":[["Sustentação","OPEX",1.0]],"Cristiano":[["Data Engineering","CAPEX",0.25],["Fluxo de Engenharia","CAPEX",0.25],["Import Export","CAPEX",0.25],["Salesforce (Comercial)","CAPEX",0.25]],"Diego":[["Data Engineering","CAPEX",0.1],["e-Commerce","CAPEX",0.25],["Import Export","CAPEX",0.05],["Salesforce (Comercial)","CAPEX",0.05],["Sustentação","OPEX",0.55]],"Emanuel":[["Import Export","CAPEX",0.5],["Salesforce (Comercial)","CAPEX",0.5]],"Fermin":[["Go-to-Cloud","CAPEX",0.1],["IT Security","CAPEX",0.1],["Release Protheus","CAPEX",0.1],["Stress Lab","CAPEX",0.1],["Sustentação","OPEX",0.6]],"Geovanna":[["Data Engineering","CAPEX",0.2],["Fluxo de Engenharia","CAPEX",0.2],["S&OP Plannera","CAPEX",0.6]],"Gilberto":[["IT Security","CAPEX",1.0]],"Helysson":[["Data Engineering","CAPEX",0.05],["e-Commerce","CAPEX",0.05],["Fluxo de Engenharia","CAPEX",0.05],["Go-to-Cloud","CAPEX",0.05],["Import Export","CAPEX",0.05],["IT Security","CAPEX",0.05],["Reforma Tributária","CAPEX",0.05],["S&OP Plannera","CAPEX",0.05],["Salesforce (Comercial)","CAPEX",0.05],["Sustentação","OPEX",0.5],["WMS","CAPEX",0.05]],"Itamar":[["e-Commerce","CAPEX",1.0]],"Jean":[["WMS","CAPEX",1.0]],"Kaneta":[["Import Export","CAPEX",0.05],["S&OP Plannera","CAPEX",0.25],["Sustentação","OPEX",0.7]],"Marcelo":[["S&OP Plannera","CAPEX",0.2],["Sustentação","OPEX",0.1],["WMS","CAPEX",0.7]],"Morvan":[["Sustentação","OPEX",1.0]],"Thiago":[["IT Security","CAPEX",0.05],["Sustentação","OPEX",0.8],["WMS","CAPEX",0.15]]},"7":{"Alan":[["Sustentação","OPEX",1.0]],"Aldo":[["IT Security","CAPEX",0.7],["Lemontech","CAPEX",0.1],["MDM","CAPEX",0.1],["Reforma Tributária","CAPEX",0.1]],"Alisson":[["IT Security","CAPEX",0.5],["WMS","CAPEX",0.5]],"André":[["Data Engineering","CAPEX",0.15],["e-Commerce","CAPEX",0.05],["Fluxo de Engenharia","CAPEX",0.05],["Import Export","CAPEX",0.1],["IT Security","CAPEX",0.05],["Reforma Tributária","CAPEX",0.25],["S&OP Plannera","CAPEX",0.15],["Salesforce (Comercial)","CAPEX",0.1],["WMS","CAPEX",0.1]],"Augusto":[["Sustentação","OPEX",1.0]],"Cristiano":[["Data Engineering","CAPEX",0.25],["Fluxo de Engenharia","CAPEX",0.25],["Import Export","CAPEX",0.25],["Salesforce (Comercial)","CAPEX",0.25]],"Diego":[["Data Engineering","CAPEX",0.1],["e-Commerce","CAPEX",0.2],["Import Export","CAPEX",0.1],["Salesforce (Comercial)","CAPEX",0.1],["Sustentação","OPEX",0.5]],"Emanuel":[["Import Export","CAPEX",0.5],["Salesforce (Comercial)","CAPEX",0.5]],"Fermin":[["IT Security","CAPEX",0.2],["Stress Lab","CAPEX",0.1],["Sustentação","OPEX",0.7]],"Geovanna":[["Data Engineering","CAPEX",0.3],["Fluxo de Engenharia","CAPEX",0.3],["S&OP Plannera","CAPEX",0.4]],"Gilberto":[["IT Security","CAPEX",1.0]],"Helysson":[["Data Engineering","CAPEX",0.05],["e-Commerce","CAPEX",0.1],["Fluxo de Engenharia","CAPEX",0.05],["Import Export","CAPEX",0.05],["IT Security","CAPEX",0.05],["Reforma Tributária","CAPEX",0.05],["S&OP Plannera","CAPEX",0.05],["Sustentação","OPEX",0.5],["WMS","CAPEX",0.1]],"Itamar":[["e-Commerce","CAPEX",1.0]],"Jean":[["WMS","CAPEX",1.0]],"Kaneta":[["S&OP Plannera","CAPEX",0.6],["Sustentação","OPEX",0.4]],"Marcelo":[["S&OP Plannera","CAPEX",0.6],["Sustentação","OPEX",0.2],["WMS","CAPEX",0.2]],"Morvan":[["Sustentação","OPEX",1.0]],"Thiago":[["IT Security","CAPEX",0.2],["Sustentação","OPEX",0.7],["WMS","CAPEX",0.1]]},"8":{"Alan":[["Sustentação","OPEX",1.0]],"Aldo":[["IT Security","CAPEX",0.7],["Lemontech","CAPEX",0.2],["Reforma Tributária","CAPEX",0.1]],"Alisson":[["IT Security","CAPEX",0.45],["Reforma Tributária","CAPEX",0.1],["WMS","CAPEX",0.45]],"André":[["Data Engineering","CAPEX",0.15],["e-Commerce","CAPEX",0.05],["Fluxo de Engenharia","CAPEX",0.05],["Import Export","CAPEX",0.1],["IT Security","CAPEX",0.05],["Reforma Tributária","CAPEX",0.25],["S&OP Plannera","CAPEX",0.15],["Salesforce (Comercial)","CAPEX",0.1],["WMS","CAPEX",0.1]],"Augusto":[["Sustentação","OPEX",1.0]],"Cristiano":[["Data Engineering","CAPEX",0.3],["Fluxo de Engenharia","CAPEX",0.3],["Import Export","CAPEX",0.3],["Salesforce (Comercial)","CAPEX",0.1]],"Diego":[["Data Engineering","CAPEX",0.1],["e-Commerce","CAPEX",0.2],["Import Export","CAPEX",0.1],["Salesforce (Comercial)","CAPEX",0.1],["Sustentação","OPEX",0.5]],"Emanuel":[["Import Export","CAPEX",0.5],["Salesforce (Comercial)","CAPEX",0.5]],"Fermin":[["IT Security","CAPEX",0.2],["Sustentação","OPEX",0.8]],"Geovanna":[["Data Engineering","CAPEX",0.3],["Fluxo de Engenharia","CAPEX",0.3],["S&OP Plannera","CAPEX",0.4]],"Gilberto":[["IT Security","CAPEX",1.0]],"Helysson":[["Data Engineering","CAPEX",0.05],["e-Commerce","CAPEX",0.1],["Fluxo de Engenharia","CAPEX",0.05],["Import Export","CAPEX",0.05],["IT Security","CAPEX",0.05],["Reforma Tributária","CAPEX",0.05],["S&OP Plannera","CAPEX",0.05],["Sustentação","OPEX",0.5],["WMS","CAPEX",0.1]],"Itamar":[["e-Commerce","CAPEX",1.0]],"Jean":[["Data Engineering","CAPEX",0.3],["WMS","CAPEX",0.7]],"Kaneta":[["S&OP Plannera","CAPEX",0.6],["Sustentação","OPEX",0.4]],"Marcelo":[["S&OP Plannera","CAPEX",0.6],["Sustentação","OPEX",0.2],["WMS","CAPEX",0.2]],"Morvan":[["Sustentação","OPEX",1.0]],"Thiago":[["IT Security","CAPEX",0.2],["Sustentação","OPEX",0.7],["WMS","CAPEX",0.1]]},"9":{"Alan":[["Sustentação","OPEX",1.0]],"Aldo":[["IT Security","CAPEX",0.65],["Data Engineering","CAPEX",0.1],["Lemontech","CAPEX",0.15],["Reforma Tributária","CAPEX",0.1]],"Alisson":[["IT Security","CAPEX",0.45],["Reforma Tributária","CAPEX",0.1],["WMS","CAPEX",0.45]],"André":[["Data Engineering","CAPEX",0.15],["e-Commerce","CAPEX",0.05],["Fluxo de Engenharia","CAPEX",0.05],["Import Export","CAPEX",0.1],["IT Security","CAPEX",0.05],["Reforma Tributária","CAPEX",0.25],["S&OP Plannera","CAPEX",0.15],["Salesforce (Comercial)","CAPEX",0.1],["WMS","CAPEX",0.1]],"Augusto":[["Sustentação","OPEX",1.0]],"Cristiano":[["Data Engineering","CAPEX",0.2],["Fluxo de Engenharia","CAPEX",0.05],["Import Export","CAPEX",0.1],["Atualização tabela de Preços (novo projeto pricing)","CAPEX",0.2],["IT Security","CAPEX",0.05],["Salesforce (Comercial)","CAPEX",0.2],["Reforma Tributária","CAPEX",0.2]],"Diego":[["e-Commerce","CAPEX",0.2],["Sustentação","OPEX",0.8]],"Fermin":[["IT Security","CAPEX",0.2],["Sustentação","OPEX",0.8]],"Geovanna":[["Data Engineering","CAPEX",0.2],["Fluxo de Engenharia","CAPEX",0.2],["Salesforce (Comercial)","CAPEX",0.2],["S&OP Plannera","CAPEX",0.4]],"Gilberto":[["IT Security","CAPEX",1.0]],"Helysson":[["Data Engineering","CAPEX",0.05],["e-Commerce","CAPEX",0.1],["Fluxo de Engenharia","CAPEX",0.05],["Import Export","CAPEX",0.05],["IT Security","CAPEX",0.05],["Reforma Tributária","CAPEX",0.05],["S&OP Plannera","CAPEX",0.05],["Sustentação","OPEX",0.5],["WMS","CAPEX",0.1]],"Itamar":[["e-Commerce","CAPEX",1.0]],"Jean":[["Data Engineering","CAPEX",0.3],["WMS","CAPEX",0.7]],"Kaneta":[["S&OP Plannera","CAPEX",0.5],["Sustentação","OPEX",0.5]],"Marcelo":[["S&OP Plannera","CAPEX",0.1],["Sustentação","OPEX",0.6],["WMS","CAPEX",0.3]],"Morvan":[["Sustentação","OPEX",1.0]],"Thiago":[["Sustentação","OPEX",0.8],["WMS","CAPEX",0.2]]}},"pessoas":{"Alan":{"forn":"","reg":"CLT"},"Aldo":{"forn":"ALDO PEREIRA BRUN RIBEIRO","reg":"CLT"},"Alisson":{"forn":"ALISSON CONSULTORIA","reg":"PJ"},"André":{"forn":"ANDRE SANT ANNA VASQ","reg":"PJ"},"Augusto":{"forn":"","reg":"CLT"},"Cristiano":{"forn":"NEN CONSULTORIA","reg":"PJ"},"Emanuel":{"forn":"EMANUEL ZAVERUKA SENN","reg":"CLT"},"Fermin":{"forn":"FERMIN TECNOLOGIA DA","reg":"PJ"},"Helysson":{"forn":"CONSULTORIA HELYSSON","reg":"PJ"},"Itamar":{"forn":"JIF SOLUCOES WEB","reg":"PJ"},"Kaneta":{"forn":"WTK IT","reg":"PJ"},"Marcellus":{"forn":"DEVSUL SOLUCOES","reg":"PJ"},"Rogério":{"forn":"R L DESENVOLVIMENTO","reg":"PJ"},"Thiago":{"forn":"THIAGO GO","reg":"PJ"},"Gilberto":{"forn":"GILBERTO JUNIOR","reg":"CLT"},"Diego":{"forn":"DS CONSULTORIA","reg":"PJ"},"Geovanna":{"forn":"GEOVANNA RECH ARRUDA","reg":"CLT"},"Jean":{"forn":"JEAN RODRIGO MOREIRA FARIA","reg":"CLT"},"Marcelo":{"forn":"MARCELO EVANGELISTA (CLARISSA)","reg":"PJ"},"Morvan":{"forn":"MORVAN FERREIRA BRANDAO","reg":"CLT"}}}; /* planilha Alocação FTE 2026 (jan a out), usada só na primeira vez */
+const semAc=x=>String(x||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().trim();
+function fteMigrar(seed){
+  const f={ano:2026,meses:JSON.parse(JSON.stringify(seed.meses)),pessoas:JSON.parse(JSON.stringify(seed.pessoas)),enviado:{},para:"contabilidade@jcesa.com.br"};
+  Object.keys(f.pessoas).forEach(curto=>{
+    const c=BOOT.time.filter(p=>semAc(p.nome).split(/\s+/).includes(semAc(curto)));
+    if(c.length!==1||c[0].nome===curto||f.pessoas[c[0].nome])return;
+    const novo=c[0].nome;f.pessoas[novo]=f.pessoas[curto];delete f.pessoas[curto];
+    Object.values(f.meses).forEach(mm=>{if(mm[curto]){mm[novo]=mm[curto];delete mm[curto];}});
+  });
+  return f;
+}
+const FTE=BOOT.fte&&BOOT.fte.meses?BOOT.fte:fteMigrar(FTE_SEED);
+FTE.enviado=FTE.enviado||{};FTE.para=FTE.para||"contabilidade@jcesa.com.br";FTE.ano=FTE.ano||ANO;
+BOOT.time.forEach(p=>{if(!FTE.pessoas[p.nome])FTE.pessoas[p.nome]={forn:"",reg:""};});
+const TIME_NOMES=new Set(BOOT.time.map(p=>p.nome));
+let fTimer=0;
+function fSalvar(){clearTimeout(fTimer);fTimer=setTimeout(()=>{if(API)API.salvar("fte",FTE).catch(e=>toast("Não salvou no SharePoint: "+(e.message||e)));},700);}
+const MESES_F=["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+const F={m:Math.max(0,HOJE.getMonth()-(HOJE.getDate()<20?1:0)),busca:"",reg:"",pend:false};
+Object.defineProperty(F,"enviado",{get:()=>FTE.enviado});Object.defineProperty(F,"para",{get:()=>FTE.para,set:v=>{FTE.para=v;}});
+for(let m=0;m<12;m++) if(!FTE.meses[m]) FTE.meses[m]={};
+const fTime=()=>Object.keys(FTE.pessoas).filter(n=>TIME_NOMES.has(n)||Object.values(FTE.meses).some(mm=>(mm[n]||[]).length)).sort((a,b)=>a.localeCompare(b,"pt-BR"));
+const fProdutos=()=>{const s=new Set();Object.values(FTE.meses).forEach(mm=>Object.values(mm).forEach(l=>l.forEach(x=>s.add(x[0].trim()))));return [...s].filter(Boolean).sort((a,b)=>a.localeCompare(b,"pt-BR"));};
+const fCxPadrao=prod=>{if(/sustenta/i.test(prod))return "OPEX";for(let m=11;m>=0;m--)for(const l of Object.values(FTE.meses[m]))for(const x of l)if(x[0].trim()===prod.trim())return x[1];return "CAPEX";};
+const pc=v=>(Math.round(v*1000)/10).toLocaleString("pt-BR",{maximumFractionDigits:1})+"%";
+const fte=v=>(Math.round(v*100)/100).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+const fLinhas=(m,n)=>FTE.meses[m][n]||[];
+const fTot=(m,n)=>fLinhas(m,n).reduce((a,x)=>a+(+x[2]||0),0);
+const fOk=t=>Math.abs(t-1)<0.0005;
+function fResumo(m){
+  const r={pessoas:0,capex:0,opex:0,pend:[],sem:[],semForn:[],semReg:[]};
+  fTime().forEach(n=>{const l=fLinhas(m,n),t=fTot(m,n);if(!l.length){r.sem.push(n);return;}r.pessoas++;if(!(FTE.pessoas[n].forn||"").trim())r.semForn.push(n);if(!FTE.pessoas[n].reg)r.semReg.push(n);l.forEach(x=>{if(x[1]==="OPEX")r.opex+=x[2];else r.capex+=x[2];});if(!fOk(t))r.pend.push(n);});
+  return r;
+}
+function renderFte(){
+  const m=F.m,R=fResumo(m),tot=R.capex+R.opex,env=F.enviado[m];
+  const nomes=fTime().filter(n=>(!F.busca||(n+" "+(FTE.pessoas[n].forn||"")).toLowerCase().includes(F.busca.toLowerCase()))&&(!F.reg||FTE.pessoas[n].reg===F.reg)&&(!F.pend||R.pend.includes(n)||R.sem.includes(n)));
+  const regs=["PJ","CLT",""];
+  const cards=regs.map(rg=>{const ns=nomes.filter(n=>FTE.pessoas[n].reg===rg);if(!ns.length)return "";return `<h3 style="margin:18px 0 10px;color:var(--hi);font-size:15px">${rg||"Regime a definir"} <span class="sub" style="font-size:12px;font-weight:600">· ${ns.length} pessoa(s)</span></h3><div class="fgrid2">${ns.map(n=>fCardHtml(m,n)).join("")}</div>`;}).join("");
+  $("mFte").innerHTML=`
+  <div class="top">
+    <div><div class="eyebrow">Administração · somente PMO</div><h1>Alocação FTE</h1>
+      <p class="sub">Percentual de dedicação de cada pessoa do time de Tecnologia por produto, separado em CAPEX e OPEX. Preencha uma vez por mês e envie o PDF à contabilidade.</p></div>
+    <div class="acts"><button class="btn" id="fCopiar">Copiar do mês anterior</button><button class="btn" id="fCsv">Exportar Excel</button><button class="btn" id="fPdf">Prévia do PDF</button><button class="btn primary" id="fEnviar">Enviar à contabilidade</button></div>
+  </div>
+  <div class="fbar">
+    <button class="arrow" id="fPrev" ${m===0?"disabled":""}>‹</button>
+    <select id="fMes">${MESES_F.map((x,i)=>`<option value="${i}" ${i===m?"selected":""}>${x} de ${FTE.ano}</option>`).join("")}</select>
+    <button class="arrow" id="fNext" ${m===11?"disabled":""}>›</button>
+    <span class="fst ${env?"env":"rasc"}">${env?"Enviado à contabilidade em "+env:"Rascunho · ainda não enviado"}</span>
+    <span style="flex:1"></span>
+    <input type="search" id="fBusca" placeholder="Buscar pessoa ou fornecedor" value="${esc(F.busca)}">
+    <select id="fReg"><option value="">CLT e PJ</option><option ${F.reg==="PJ"?"selected":""}>PJ</option><option ${F.reg==="CLT"?"selected":""}>CLT</option></select>
+    <label style="display:flex;gap:6px;align-items:center;font-size:12.5px;color:var(--muted)"><input type="checkbox" id="fPend" ${F.pend?"checked":""}> só pendências</label>
+  </div>
+  <div class="kpis">
+    <div class="kpi"><small>Pessoas alocadas</small><b>${R.pessoas}</b><span>de ${fTime().length} no time de Tecnologia</span></div>
+    <div class="kpi info"><small>FTE total</small><b>${fte(tot)}</b><span>soma dos percentuais</span></div>
+    <div class="kpi"><small>CAPEX</small><b style="color:var(--teal-l)">${fte(R.capex)}</b><span>${tot?pc(R.capex/tot):"—"} do total</span></div>
+    <div class="kpi"><small>OPEX</small><b style="color:#e6bf96">${fte(R.opex)}</b><span>${tot?pc(R.opex/tot):"—"} do total</span></div>
+    <div class="kpi ${R.pend.length?"warn":"ok"}"><small>Pendências</small><b>${R.pend.length}</b><span>${R.pend.length?"pessoa(s) com total diferente de 100%":"todos fecham 100%"}${R.sem.length?` · ${R.sem.length} sem alocação`:""}</span></div>
+  </div>
+  ${R.pend.length||R.sem.length||R.semForn.length||R.semReg.length?`<div class="alerts"><h3>Antes de enviar</h3><ul>${R.pend.map(n=>`<li><i class="dot" style="background:var(--sobre)"></i><span><b>${esc(n)}</b> soma ${pc(fTot(m,n))}: ajuste para fechar 100%.</span></li>`).join("")}${R.semReg.length?`<li><i class="dot" style="background:var(--sobre)"></i><span>Regime (CLT ou PJ) não informado: <b>${R.semReg.map(esc).join(", ")}</b>.</span></li>`:""}${R.semForn.length?`<li><i class="dot" style="background:var(--amber)"></i><span>Sem razão social preenchida: <b>${R.semForn.map(esc).join(", ")}</b>. No PDF a coluna Fornecedor fica em branco.</span></li>`:""}${R.sem.length?`<li><i class="dot" style="background:var(--amber)"></i><span>Sem alocação em ${MESES_F[m].toLowerCase()}: <b>${R.sem.map(esc).join(", ")}</b>. Ficam fora do PDF. Se ainda fazem parte do time, use "Copiar do mês anterior" ou adicione os produtos.</span></li>`:""}</ul></div>`:""}
+  ${cards||`<div class="card" style="padding:20px">Nenhuma pessoa com esses filtros.</div>`}
+  <datalist id="fProds">${fProdutos().map(p=>`<option value="${esc(p)}">`).join("")}</datalist>`;
+}
+function fCardHtml(m,n){
+  const p=FTE.pessoas[n],l=fLinhas(m,n),t=fTot(m,n),cls=!l.length?"zero":fOk(t)?"ok":"no";
+  const cx=l.filter(x=>x[1]==="CAPEX").reduce((a,x)=>a+x[2],0),ox=t-cx;
+  return `<div class="fp ${cls==="no"?"erro":""}" data-fp="${esc(n)}">
+    <div class="fp-h"><span class="av" style="background:${["#4697A8","#ED174F","#8a6fd1","#C39366","#4FA36B","#5B7BB8","#E7B24A","#c0507a"][n.length%8]}">${ini(n)}</span>
+      <div class="nm"><b>${esc(n)}</b>${TIME_NOMES.has(n)?"":` <span class="cx o" title="Não está com departamento Tecnologia no Cadastro de pessoas">fora do time no cadastro</span>`}<small>${l.length?`<span class="cx c">CAPEX ${pc(cx)}</span> <span class="cx o">OPEX ${pc(ox)}</span>`:"sem alocação neste mês"}</small></div>
+      <select data-freg="${esc(n)}" title="Regime">${p.reg?"":`<option value="" selected>Regime?</option>`}<option ${p.reg==="PJ"?"selected":""}>PJ</option><option ${p.reg==="CLT"?"selected":""}>CLT</option></select>
+      <span class="tot ${cls}">${l.length?pc(t):"0%"}</span></div>
+    <input class="fp-forn" data-fforn="${esc(n)}" value="${esc(p.forn||"")}" placeholder="${p.reg==="CLT"?"Razão social (CLT): nome completo do colaborador":"Razão social do fornecedor (PJ)"}" title="${p.reg==="CLT"?"Razão social (CLT)":"Razão social (PJ)"}">
+    ${l.map((x,i)=>`<div class="fl"><input list="fProds" data-fprod="${i}" value="${esc(x[0])}" placeholder="Produto ou projeto"><select data-fcx="${i}"><option ${x[1]==="CAPEX"?"selected":""}>CAPEX</option><option ${x[1]==="OPEX"?"selected":""}>OPEX</option></select><input type="number" min="0" max="100" step="5" data-fpct="${i}" value="${Math.round(x[2]*1000)/10}" title="% de dedicação"><button class="rm" data-frm="${i}" title="Remover">✕</button></div>`).join("")}
+    <button class="btn sm add" data-fadd>+ Produto</button>
+  </div>`;
+}
+/* ---------- PDF (mesma estrutura da planilha) ---------- */
+function fPdfHtml(m){
+  const R=fResumo(m),tot=R.capex+R.opex,mes=`${MESES_F[m]}/${FTE.ano}`,hoje=new Date().toLocaleDateString("pt-BR");
+  const f1=v=>v?pc(v):"";
+  let mapa="";
+  ["PJ","CLT",""].forEach(rg=>{
+    const ns=fTime().filter(n=>(FTE.pessoas[n].reg||"")===rg&&fLinhas(m,n).length);if(!ns.length)return;
+    let cR=0,oR=0;
+    let rows=ns.map(n=>{const l=fLinhas(m,n).slice().sort((a,b)=>a[0].localeCompare(b[0],"pt-BR"));let c=0,o=0;l.forEach(x=>x[1]==="OPEX"?o+=x[2]:c+=x[2]);cR+=c;oR+=o;
+      return `<tr class="p"><td>${esc(n)} <span class="forn">${esc(FTE.pessoas[n].forn||"")}</span></td><td class="n">${f1(c)}</td><td class="n">${f1(o)}</td><td class="n">${pc(c+o)}</td></tr>`+l.map(x=>`<tr><td class="pr">${esc(x[0])}</td><td class="n">${x[1]==="CAPEX"?pc(x[2]):""}</td><td class="n">${x[1]==="OPEX"?pc(x[2]):""}</td><td></td></tr>`).join("");}).join("");
+    mapa+=`<tr class="rg"><td>${rg||"Regime não informado"} · ${ns.length} pessoa(s)</td><td class="n">${fte(cR)}</td><td class="n">${fte(oR)}</td><td class="n">${fte(cR+oR)}</td></tr>`+rows;
+  });
+  const prods={};fTime().forEach(n=>fLinhas(m,n).forEach(x=>{const k=x[0].trim();prods[k]=prods[k]||{c:0,o:0,p:new Set()};x[1]==="OPEX"?prods[k].o+=x[2]:prods[k].c+=x[2];prods[k].p.add(n);}));
+  const resP=Object.entries(prods).sort((a,b)=>(b[1].c+b[1].o)-(a[1].c+a[1].o)).map(([k,v])=>`<tr><td>${esc(k)}</td><td class="n">${v.c?fte(v.c):""}</td><td class="n">${v.o?fte(v.o):""}</td><td class="n"><b>${fte(v.c+v.o)}</b></td><td>${[...v.p].join(", ")}</td></tr>`).join("");
+  const det=fTime().flatMap(n=>fLinhas(m,n).map(x=>`<tr><td>${String(m+1).padStart(2,"0")}.${MESES_F[m].slice(0,3)}</td><td>${esc(n)}</td><td>${esc(FTE.pessoas[n].forn||"")}</td><td>${FTE.pessoas[n].reg}</td><td>${x[1]}</td><td class="n">${pc(x[2])}</td><td>${esc(x[0])}</td></tr>`)).join("");
+  const mesesAte=[...Array(m+1).keys()];
+  const anoRows=fTime().map(n=>{const chaves={};mesesAte.forEach(mm=>fLinhas(mm,n).forEach(x=>{const k=x[1]+"|"+x[0].trim();chaves[k]=chaves[k]||Array(m+1).fill(0);chaves[k][mm]+=x[2];}));const ks=Object.keys(chaves).sort();if(!ks.length)return "";
+    return `<tr class="p"><td colspan="${m+3}">${esc(n)}</td></tr>`+["CAPEX","OPEX"].map(cx=>{const kk=ks.filter(k=>k.startsWith(cx+"|"));if(!kk.length)return "";return `<tr class="cxr"><td colspan="${m+3}">${cx}</td></tr>`+kk.map(k=>`<tr><td class="pr">${esc(k.split("|")[1])}</td>${chaves[k].map(v=>`<td class="n">${v?pc(v):""}</td>`).join("")}<td class="n"><b>${fte(chaves[k].reduce((a,b)=>a+b,0))}</b></td></tr>`).join("");}).join("");}).join("");
+  const cab=(t,sub)=>`<div class="hd"><div><div class="ey">JCE SA BRAZIL · TECNOLOGIA DA INFORMAÇÃO · PMO</div><h1>${t}</h1><div class="sb">${sub}</div></div><div class="lg">${BOOT.logo?`<img src="${BOOT.logo}" alt="JCE SA Brazil">`:`JCE<span>SA</span>`}</div></div><div class="bar"></div>`;
+  const rod=pg=>`<div class="ft"><span>Alocação FTE · ${mes} · gerado pelo Portal PMO em ${hoje}</span><span>Página ${pg}</span></div>`;
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Alocacao_FTE_${FTE.ano}-${String(m+1).padStart(2,"0")}</title><style>
+  @page{size:A4;margin:12mm}*{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Arial,sans-serif;color:#1B2740;background:#e9edf3}
+  .pg{width:210mm;min-height:297mm;margin:10px auto;background:#fff;padding:12mm 12mm 16mm;position:relative;box-shadow:0 4px 18px rgba(12,27,56,.15)}
+  @media print{body{background:#fff}.pg{margin:0;box-shadow:none;width:auto;min-height:auto;padding:0;page-break-after:always}.pg:last-child{page-break-after:auto}}
+  .hd{display:flex;justify-content:space-between;align-items:flex-start}.ey{font-size:8.5px;letter-spacing:.14em;color:#ED174F;font-weight:700}h1{margin:3px 0 2px;font-size:19px;color:#0C1B38}.sb{font-size:10.5px;color:#5B6780}
+  .lg{background:#0C1B38;color:#fff;font-weight:900;font-size:15px;padding:8px 12px;border-radius:6px;letter-spacing:.02em;line-height:0}.lg img{height:34px;width:auto;display:block}.lg span{color:#ED174F;margin-left:3px}
+  .bar{height:3px;background:#ED174F;margin:8px 0 12px;border-radius:2px}
+  .kp{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}.kp div{border:1px solid #E1E6EF;border-left:4px solid #4697A8;border-radius:8px;padding:7px 10px}.kp b{display:block;font-size:16px;color:#0C1B38}.kp span{font-size:8.5px;text-transform:uppercase;letter-spacing:.06em;color:#5B6780;font-weight:700}
+  table{width:100%;border-collapse:collapse;font-size:9.5px}th{background:#0C1B38;color:#fff;text-align:left;padding:5px 7px;font-size:8.5px;letter-spacing:.05em;text-transform:uppercase}th.n,td.n{text-align:right}
+  td{padding:3.5px 7px;border-bottom:1px solid #EEF1F6}tr.rg td{background:#0C1B38;color:#fff;font-weight:800;font-size:10px}tr.p td{background:#EEF2F8;font-weight:700;color:#0C1B38}tr.cxr td{font-size:8.5px;font-weight:800;color:#2C7A8B;letter-spacing:.06em}
+  td.pr{padding-left:18px}.forn{font-weight:400;color:#5B6780;font-size:8.5px;margin-left:6px}tr.tg td{background:#ED174F;color:#fff;font-weight:800}
+  h2{font-size:12px;color:#0C1B38;margin:14px 0 6px}.nt{font-size:8.5px;color:#5B6780;margin-top:8px}
+  .ft{position:absolute;left:12mm;right:12mm;bottom:7mm;display:flex;justify-content:space-between;font-size:8px;color:#8A93A6}@media print{.ft{position:static;margin-top:10px}}
+  .ass{display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-top:28px;font-size:9px;color:#5B6780}.ass div{border-top:1px solid #8A93A6;padding-top:4px}
+  </style></head><body>
+  <div class="pg">${cab("Mapa FTE · "+mes,"Percentual de alocação por pessoa e produto · CAPEX e OPEX · time de Tecnologia")}
+    <div class="kp"><div><span>Pessoas</span><b>${R.pessoas}</b></div><div><span>FTE total</span><b>${fte(tot)}</b></div><div style="border-left-color:#4697A8"><span>CAPEX</span><b>${fte(R.capex)} · ${tot?pc(R.capex/tot):"—"}</b></div><div style="border-left-color:#C39366"><span>OPEX</span><b>${fte(R.opex)} · ${tot?pc(R.opex/tot):"—"}</b></div></div>
+    <table><thead><tr><th>Regime · Pessoa · Produto</th><th class="n">CAPEX</th><th class="n">OPEX</th><th class="n">Total</th></tr></thead><tbody>${mapa}<tr class="tg"><td>Total geral (FTE)</td><td class="n">${fte(R.capex)}</td><td class="n">${fte(R.opex)}</td><td class="n">${fte(tot)}</td></tr></tbody></table>
+    <p class="nt">FTE = soma dos percentuais de dedicação (100% = uma pessoa em tempo integral). Linhas de regime e total mostram FTE; linhas de pessoa e produto mostram o percentual.</p>
+    <div class="ass"><div>PMO · Tecnologia da Informação</div><div>Contabilidade · recebido em ___/___/______</div></div>
+    ${rod(1)}</div>
+  <div class="pg">${cab("Resumo por produto · "+mes,"FTE por produto/projeto, separado em CAPEX e OPEX")}
+    <table><thead><tr><th>Produto / projeto</th><th class="n">CAPEX (FTE)</th><th class="n">OPEX (FTE)</th><th class="n">Total</th><th>Pessoas</th></tr></thead><tbody>${resP}<tr class="tg"><td>Total</td><td class="n">${fte(R.capex)}</td><td class="n">${fte(R.opex)}</td><td class="n">${fte(tot)}</td><td></td></tr></tbody></table>
+    ${rod(2)}</div>
+  <div class="pg">${cab("Detalhado · "+mes,"Uma linha por pessoa e produto · mesmas colunas da planilha")}
+    <table><thead><tr><th>Mês</th><th>Nome</th><th>Fornecedor</th><th>Regime</th><th>Capex/Opex</th><th class="n">%Alocação</th><th>Produto</th></tr></thead><tbody>${det}</tbody></table>
+    ${rod(3)}</div>
+  <div class="pg">${cab("% Alocação no ano · janeiro a "+MESES_F[m].toLowerCase()+"/"+FTE.ano,"Por pessoa, CAPEX/OPEX e produto, mês a mês")}
+    <table><thead><tr><th>Pessoa · Produto</th>${mesesAte.map(mm=>`<th class="n">${MESES_F[mm].slice(0,3)}</th>`).join("")}<th class="n">FTE·mês</th></tr></thead><tbody>${anoRows}</tbody></table>
+    ${rod(4)}</div>
+  </body></html>`;
+}
+function fModalPdf(){
+  abrirModal(`<h3>Prévia do PDF · ${MESES_F[F.m]}/${FTE.ano}</h3><p class="hint">4 páginas, como a planilha: Mapa FTE (por regime, pessoa e produto), Resumo por produto, Detalhado e % Alocação no ano.</p>
+    <iframe class="pdfv" id="fIf"></iframe>
+    <div class="mfoot"><button class="btn" data-fm>Fechar</button><button class="btn" id="fBaixar">Baixar PDF</button><button class="btn primary" id="fEnviar2">Enviar à contabilidade</button></div>`,true);
+  $("modal").querySelector(".box").style.width="min(1000px,100%)";
+  $("fIf").srcdoc=fPdfHtml(F.m);
+}
+function fModalMail(){
+  const R=fResumo(F.m),tot=R.capex+R.opex,mes=`${MESES_F[F.m]}/${FTE.ano}`,arq=`Alocacao_FTE_${FTE.ano}-${String(F.m+1).padStart(2,"0")}`;
+  abrirModal(`<h3>Enviar à contabilidade</h3>
+    ${R.pend.length?`<p class="hint" style="color:#ff8fa8">Atenção: ${R.pend.length} pessoa(s) não fecham 100% (${R.pend.join(", ")}). Ajuste antes de enviar.</p>`:""}
+    <div class="mail-f"><label class="f" style="margin:0">Para</label><input type="text" id="fPara" value="${esc(F.para)}" title="Separe vários e-mails com ponto e vírgula">
+    <label class="f" style="margin:0">Cc</label><input type="text" value="PMO (${esc(API?API.pmoEmail():"alisson.santos@jcesa.com.br")})" disabled>
+    <label class="f" style="margin:0">Assunto</label><input type="text" id="fAss" value="Alocação FTE · Tecnologia · ${mes}"></div>
+    <label class="f">Mensagem</label>
+    <textarea id="fMsg" style="width:100%;min-height:150px;background:var(--surface3);border:1px solid var(--line2);border-radius:9px;padding:10px;color:var(--text);font:inherit">Olá, equipe de Contabilidade.
+
+Segue a alocação FTE do time de Tecnologia referente a ${mes}.
+
+Resumo: ${R.pessoas} pessoas · ${fte(tot)} FTE · CAPEX ${fte(R.capex)} (${tot?pc(R.capex/tot):"—"}) · OPEX ${fte(R.opex)} (${tot?pc(R.opex/tot):"—"}).
+
+O PDF anexo traz o mapa por pessoa e produto, o resumo por produto, o detalhado e o acumulado do ano. A planilha segue anexa no mesmo formato.
+
+Qualquer dúvida, fico à disposição.
+PMO · Tecnologia da Informação</textarea>
+    <label class="f">Anexos</label><div><span class="anx">📄 ${arq}.pdf</span><span class="anx">📊 ${arq}.xlsx</span></div>
+    <div class="mfoot"><button class="btn" data-fm>Cancelar</button><button class="btn" id="fVerPdf">Ver PDF</button><button class="btn primary" id="fMandar" ${R.pend.length?"":""}>Enviar pelo Outlook</button></div>`,true);
+}
+function fPlanilhas(){
+  const det=[["Mês","Nome","fornecedor","valor","valor_gerencial","Regime","Capex/Opex","%Alocação","Produto_"]];
+  for(let mm=0;mm<=F.m;mm++) fTime().forEach(n=>fLinhas(mm,n).forEach(x=>det.push([`${String(mm+1).padStart(2,"0")}.${MESES_F[mm].slice(0,3)}`,n,FTE.pessoas[n].forn||"","","",FTE.pessoas[n].reg||"",x[1],x[2],x[0]])));
+  const mapa=[["Mês",`${String(F.m+1).padStart(2,"0")}.${MESES_F[F.m].slice(0,3)}`],[],["Regime","Pessoa","Fornecedor","Produto","CAPEX","OPEX"]];
+  ["PJ","CLT",""].forEach(rg=>fTime().filter(n=>(FTE.pessoas[n].reg||"")===rg).forEach(n=>fLinhas(F.m,n).forEach(x=>mapa.push([rg||"—",n,FTE.pessoas[n].forn||"",x[0],x[1]==="CAPEX"?x[2]:"",x[1]==="OPEX"?x[2]:""]))));
+  const ms=[...Array(F.m+1).keys()];
+  const ano=[["Pessoa","Capex/Opex","Produto",...ms.map(mm=>`${String(mm+1).padStart(2,"0")}.${MESES_F[mm].slice(0,3)}`),"Total Geral"]];
+  fTime().forEach(n=>{const ch={};ms.forEach(mm=>fLinhas(mm,n).forEach(x=>{const k=x[1]+"|"+x[0].trim();ch[k]=ch[k]||Array(F.m+1).fill("");ch[k][mm]=(+ch[k][mm]||0)+x[2];}));
+    Object.keys(ch).sort().forEach(k=>ano.push([n,k.split("|")[0],k.split("|")[1],...ch[k],ch[k].reduce((a,b)=>a+(+b||0),0)]));});
+  return [{nome:"Detalhado",linhas:det,pct:[7]},{nome:"MAPA FTE",linhas:mapa,pct:[4,5]},{nome:"%Alocação",linhas:ano,pct:ms.map(x=>x+3).concat(F.m+3)}];
+}
+const fArq=()=>`Alocacao_FTE_${FTE.ano}-${String(F.m+1).padStart(2,"0")}`;
+async function fCsv(){
+  if(!API){toast("Abra esta página pelo portal para exportar.");return;}
+  try{await API.baixarXlsx(fPlanilhas(),fArq());toast("Planilha gerada com as abas Detalhado, MAPA FTE e %Alocação.");}
+  catch(e){toast("Não foi possível gerar o Excel: "+(e.message||e));}
+}
+/* PDF de verdade: cada página do documento vira uma página A4 (html2canvas + jsPDF do portal) */
+let fLibsOk=false;
+function fLibs(){
+  if(fLibsOk)return;
+  const L=API.libs();[L.h2c,L.jspdf].forEach(src=>{const sc=document.createElement("script");sc.textContent=src;document.head.appendChild(sc);});fLibsOk=true;
+}
+async function fGerarPdf(){
+  fLibs();
+  const host=document.createElement("iframe");host.style.cssText="position:fixed;left:-30000px;top:0;width:900px;height:1200px;border:0";document.body.appendChild(host);
+  host.srcdoc=fPdfHtml(F.m);await new Promise(r=>host.onload=r);await new Promise(r=>setTimeout(r,150));
+  const doc=new window.jspdf.jsPDF({unit:"mm",format:"a4",orientation:"portrait",compress:true});
+  const pgs=[...host.contentDocument.querySelectorAll(".pg")];let primeira=true;
+  for(const pg of pgs){
+    pg.style.margin="0";pg.style.boxShadow="none";
+    const cv=await window.html2canvas(pg,{scale:1.6,backgroundColor:"#ffffff",windowWidth:900});
+    const pxPorPag=Math.floor(cv.width*297/210);
+    for(let y=0;y<cv.height-4;y+=pxPorPag){
+      const h=Math.min(pxPorPag,cv.height-y),c=document.createElement("canvas");c.width=cv.width;c.height=h;
+      c.getContext("2d").drawImage(cv,0,y,cv.width,h,0,0,cv.width,h);
+      if(!primeira)doc.addPage();primeira=false;
+      doc.addImage(c.toDataURL("image/jpeg",.86),"JPEG",0,0,210,h*210/cv.width);
+    }
+  }
+  host.remove();
+  return doc;
+}
+async function fBaixarPdf(){
+  if(!API){toast("Abra esta página pelo portal para gerar o PDF.");return;}
+  toast("Gerando o PDF…");
+  try{const doc=await fGerarPdf();doc.save(fArq()+".pdf");toast("PDF gerado.");}catch(e){toast("Não foi possível gerar o PDF: "+(e.message||e));}
+}
+async function fMandar(btn){
+  if(!API){toast("Abra esta página pelo portal para enviar.");return;}
+  const para=$("fPara").value.split(/[;,\s]+/).filter(x=>/@/.test(x));
+  if(!para.length){toast("Informe o e-mail da contabilidade.");return;}
+  const RR=fResumo(F.m);
+  if(!RR.pessoas){toast(`Não há alocação lançada em ${MESES_F[F.m].toLowerCase()}. Use "Copiar do mês anterior" ou preencha antes de enviar.`);return;}
+  if(RR.pend.length&&!confirm(`${RR.pend.length} pessoa(s) não fecham 100% (${RR.pend.join(", ")}). Enviar mesmo assim?`))return;
+  FTE.para=para.join("; ");btn.disabled=true;btn.textContent="Gerando PDF…";
+  try{
+    const doc=await fGerarPdf(),pdfB64=doc.output("datauristring").split(",")[1];
+    btn.textContent="Gerando planilha…";
+    const xls=await API.xlsxBase64(fPlanilhas());
+    btn.textContent="Enviando…";
+    const corpo=$("fMsg").value;
+    const r=await API.enviarEmail({para,cc:[API.pmoEmail()],assunto:$("fAss").value,html:`<div style="font-family:Segoe UI,Arial,sans-serif;font-size:14px;color:#1B2740;white-space:pre-wrap">${esc(corpo)}</div>`,
+      anexos:[{nome:fArq()+".pdf",tipo:"application/pdf",b64:pdfB64},{nome:fArq()+".xlsx",tipo:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",b64:xls}]});
+    if(!r||!r.ok)throw new Error((r&&r.erro)||"o Outlook recusou o envio");
+    FTE.enviado[F.m]=agora().toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});fSalvar();
+    fecharModal();renderFte();toast(`Enviado a ${para.join(", ")} com o PDF e a planilha.`);
+  }catch(e){btn.disabled=false;btn.textContent="Enviar pelo Outlook";toast("Não foi possível enviar: "+(e.message||e));}
+}
+function fModo(mod){
+  document.querySelectorAll(".mod").forEach(b=>b.classList.toggle("on",b.dataset.mod===mod));
+  $("mPlacar").hidden=mod!=="placar";$("mFte").hidden=mod!=="fte";
+  if(mod==="fte")renderFte();else render();
+}
+document.addEventListener("click",e=>{
+  const t=e.target;
+  const md=t.closest("[data-mod]");if(md){fModo(md.dataset.mod);return;}
+  if($("mFte").hidden&&!t.closest("#modal"))return;
+  if(t.closest("#fPrev")){F.m=Math.max(0,F.m-1);renderFte();return;}
+  if(t.closest("#fNext")){F.m=Math.min(11,F.m+1);renderFte();return;}
+  if(t.closest("#fPdf")||t.closest("#fVerPdf")){fModalPdf();return;}
+  if(t.closest("#fEnviar")||t.closest("#fEnviar2")){fModalMail();return;}
+  if(t.closest("#fCsv")){fCsv();return;}
+  if(t.closest("#fBaixar")){fBaixarPdf();return;}
+  if(t.closest("#fMandar")){fMandar(t.closest("#fMandar"));return;}
+  if(t.closest("#fCopiar")){
+    if(F.m===0){toast("Janeiro não tem mês anterior.");return;}
+    const ant=FTE.meses[F.m-1],cur=FTE.meses[F.m];let n=0;
+    fTime().forEach(p=>{if(!(cur[p]||[]).length&&(ant[p]||[]).length){cur[p]=JSON.parse(JSON.stringify(ant[p]));n++;}});
+    fSalvar();renderFte();toast(n?`${n} pessoa(s) copiadas de ${MESES_F[F.m-1].toLowerCase()}. Ajuste o que mudou.`:"Todas as pessoas já têm alocação neste mês: nada foi sobrescrito.");return;
+  }
+  const card=t.closest("[data-fp]");if(!card)return;
+  const n=card.dataset.fp,l=(FTE.meses[F.m][n]=FTE.meses[F.m][n]||[]);
+  if(t.closest("[data-fadd]")){l.push(["","CAPEX",0]);fSalvar();renderFte();const c=document.querySelector(`[data-fp="${CSS.escape(n)}"] [data-fprod="${l.length-1}"]`);if(c)c.focus();return;}
+  const rm=t.closest("[data-frm]");if(rm){l.splice(+rm.dataset.frm,1);fSalvar();renderFte();}
+});
+document.addEventListener("change",e=>{
+  const t=e.target;
+  if(e.target.closest&&e.target.closest("[data-fp]"))setTimeout(fSalvar,0);
+  if(t.id==="fMes"){F.m=+t.value;renderFte();return;}
+  if(t.id==="fReg"){F.reg=t.value;renderFte();return;}
+  if(t.id==="fPend"){F.pend=t.checked;renderFte();return;}
+  const card=t.closest&&t.closest("[data-fp]");if(!card)return;
+  const n=card.dataset.fp,l=FTE.meses[F.m][n]||[];
+  if(t.dataset.freg!==undefined){const pp=FTE.pessoas[n];pp.reg=t.value;if(t.value==="CLT"&&!(pp.forn||"").trim()&&n.includes(" ")){pp.forn=n.toUpperCase();toast(`Razão social preenchida com o nome do Cadastro: ${pp.forn}.`);}renderFte();return;}
+  if(t.dataset.fforn!==undefined){FTE.pessoas[n].forn=t.value;return;}
+  if(t.dataset.fprod!==undefined){const i=+t.dataset.fprod;l[i][0]=t.value;if(!l[i][2]||l[i][1]==="CAPEX")l[i][1]=fCxPadrao(t.value);renderFte();return;}
+  if(t.dataset.fcx!==undefined){l[+t.dataset.fcx][1]=t.value;renderFte();return;}
+  if(t.dataset.fpct!==undefined){l[+t.dataset.fpct][2]=Math.max(0,Math.min(100,+t.value||0))/100;renderFte();return;}
+});
+document.addEventListener("input",e=>{if(e.target.id==="fBusca"){F.busca=e.target.value;const pos=e.target.selectionStart;renderFte();const b=$("fBusca");b.focus();b.setSelectionRange(pos,pos);}});
+
+/* disparo automático: o portal abre esta página escondida (?auto=1) quando um administrador entra */
+if(QS.has("auto")){
+  (async()=>{
+    const due=CFG.ativo&&PESSOAS.length&&!PL.enviados[semChave(CUR)]&&agora()>=disparoDaSemana(CUR);
+    if(!due){API&&API.autoFim&&API.autoFim(null);return;}
+    const r=await plEnviar(CUR,false);
+    API&&API.autoFim&&API.autoFim({semana:SEMANAS[CUR].n,ok:r.ok,erro:r.erro,erros:r.erros});
+  })();
+}
+if(!API)$("protoAviso").hidden=false,$("protoAviso").textContent="Abra esta página pelo Portal PMO (menu Alocação): sozinha ela não tem os dados do time.";
+</script>
+</body>
+</html>
