@@ -205,6 +205,8 @@ const PL=BOOT.placar&&typeof BOOT.placar==="object"?BOOT.placar:{};
 PL.sem=PL.sem||{};PL.cap=PL.cap||{};PL.projNomes=PL.projNomes||{};PL.enviados=PL.enviados||{};
 const PROJ={};
 BOOT.projetos.forEach((p,i)=>{PROJ["p"+p.id]={n:p.nome,c:CORES[i%CORES.length],d:p.sub||""};});
+PROJ.gpmo={n:"Gestão de Equipe - PMO",c:"#ED6A8C",d:"Gestão do time pelo PMO"};
+PROJ.gsust={n:"Gestão de Equipe - Sustentação",c:"#7FA6D9",d:"Gestão do time de sustentação"};
 PROJ.sust={n:"Sustentação",c:"#5B7BB8",d:"Suporte e incidentes"};
 PROJ.aus={n:"Ausência (férias, folga)",c:"#6E7A91",d:"Não disponível"};
 Object.entries(PL.projNomes).forEach(([k,n],i)=>{if(!PROJ[k])PROJ[k]={n:n+" (encerrado)",c:"#77777A",d:"Projeto que saiu da gestão"};});
@@ -547,7 +549,7 @@ const F={m:Math.max(0,HOJE.getMonth()-(HOJE.getDate()<20?1:0)),busca:"",reg:"",p
 Object.defineProperty(F,"enviado",{get:()=>FTE.enviado});Object.defineProperty(F,"para",{get:()=>FTE.para,set:v=>{FTE.para=v;}});
 for(let m=0;m<12;m++) if(!FTE.meses[m]) FTE.meses[m]={};
 const fTime=()=>Object.keys(FTE.pessoas).filter(n=>TIME_NOMES.has(n)||Object.values(FTE.meses).some(mm=>(mm[n]||[]).length)).sort((a,b)=>a.localeCompare(b,"pt-BR"));
-const fProdutos=()=>{const s=new Set();Object.values(FTE.meses).forEach(mm=>Object.values(mm).forEach(l=>l.forEach(x=>s.add(x[0].trim()))));return [...s].filter(Boolean).sort((a,b)=>a.localeCompare(b,"pt-BR"));};
+const fProdutos=()=>{const s=new Set(["Gestão de Equipe - PMO","Gestão de Equipe - Sustentação","Sustentação"]);Object.values(FTE.meses).forEach(mm=>Object.values(mm).forEach(l=>l.forEach(x=>s.add(x[0].trim()))));return [...s].filter(Boolean).sort((a,b)=>a.localeCompare(b,"pt-BR"));};
 const fCxPadrao=prod=>{if(/sustenta/i.test(prod))return "OPEX";for(let m=11;m>=0;m--)for(const l of Object.values(FTE.meses[m]))for(const x of l)if(x[0].trim()===prod.trim())return x[1];return "CAPEX";};
 const pc=v=>(Math.round(v*1000)/10).toLocaleString("pt-BR",{maximumFractionDigits:1})+"%";
 const fte=v=>(Math.round(v*100)/100).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
