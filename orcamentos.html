@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Orçamentos TI · Portal PMO</title>
+<style>
+:root{--bg:#0C1B38;--surface:#11244A;--surface2:#183060;--surface3:#0E1F42;--line:rgba(224,224,224,.10);--line2:rgba(224,224,224,.22);
+--text:#E9EDF5;--muted:#A3AEC4;--hi:#fff;--cherry:#ED174F;--teal:#4697A8;--teal-l:#74BFCD;--capex:#29A6C2;--opex:#C97C33;--amber:#E7B24A;--green:#4FA36B;color-scheme:dark}
+*{box-sizing:border-box}[hidden]{display:none!important}
+html,body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 Inter,"Segoe UI",system-ui,sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+.wrap{max-width:1560px;margin:0 auto;padding:18px 24px 60px}
+.proto{display:inline-flex;background:rgba(231,178,74,.12);border:1px solid rgba(231,178,74,.4);color:#f3cf94;border-radius:999px;padding:4px 12px;font-size:12px;font-weight:600;margin-bottom:12px}
+.top{display:flex;justify-content:space-between;gap:16px;align-items:flex-end;flex-wrap:wrap;margin-bottom:12px}
+.eyebrow{color:var(--cherry);font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:800}
+h1{margin:2px 0 4px;font-size:26px;color:var(--hi)}.sub{color:var(--muted);margin:0;font-size:13.5px}
+.sync{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:8px 12px;font-size:12.5px;color:var(--muted)}
+.sync b{color:var(--text)}.dot{width:9px;height:9px;border-radius:50%;background:var(--green);display:inline-block}
+.dot.busy{background:var(--amber);animation:pisca 1s infinite}@keyframes pisca{50%{opacity:.3}}
+.btn{background:var(--surface2);border:1px solid var(--line2);border-radius:999px;padding:8px 15px;cursor:pointer;font-weight:600;font-size:13px}
+.btn:hover{border-color:var(--teal-l)}.btn.primary{background:var(--cherry);border-color:var(--cherry);color:#fff}.btn.sm{padding:5px 11px;font-size:12px}
+.btn:disabled{opacity:.5;cursor:default}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:6px 0 12px}
+.tab{background:none;border:0;border-bottom:2px solid transparent;padding:10px 14px;cursor:pointer;color:var(--muted);font-weight:700}
+.tab.on{color:var(--hi);border-color:var(--cherry)}.tab .n{background:var(--cherry);color:#fff;border-radius:999px;padding:0 7px;font-size:11px;margin-left:6px}
+.filtros{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin-bottom:10px}
+.filtros input,.filtros select{background:var(--surface3);border:1px solid var(--line2);border-radius:9px;padding:7px 10px;min-width:0}
+.filtros input[type=search]{flex:1 1 240px}
+.filtros input[type=date]{width:150px}
+.filtros select{flex:0 1 170px;max-width:220px}
+.filtros input.ac{flex:0 1 170px;max-width:220px}
+#acBox{position:fixed;z-index:9999;background:var(--surface2);border:1px solid var(--line2);border-radius:10px;box-shadow:0 12px 30px rgba(0,0,0,.45);max-height:320px;overflow:auto;padding:4px;display:none;min-width:220px}
+#acBox div{padding:7px 10px;border-radius:7px;cursor:pointer;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#acBox div.on,#acBox div:hover{background:var(--surface3)}
+#acBox div b{color:#7fd3e6}
+#acBox p{margin:0;padding:7px 10px;font-size:12.5px;color:var(--muted)}
+.filtros label{display:flex;gap:6px;align-items:center;font-size:12.5px;color:var(--muted)}
+.ativos{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+.chip{background:var(--surface2);border:1px solid var(--line2);border-radius:999px;padding:3px 6px 3px 11px;font-size:12px;display:inline-flex;gap:4px;align-items:center}
+.chip button{background:none;border:0;color:var(--muted);cursor:pointer;font-size:14px}
+.resumo{display:flex;flex-wrap:wrap;gap:16px;align-items:center;font-size:13px;color:var(--muted);margin:0 0 8px}
+.resumo b{color:var(--hi)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px}
+.tb-wrap{overflow:auto;max-height:68vh;border-radius:16px}
+table{width:100%;border-collapse:collapse}
+th{position:sticky;top:0;background:var(--surface2);text-align:left;font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);padding:9px 10px;cursor:pointer;white-space:nowrap;z-index:1}
+th.n,td.n{text-align:right}th .ar{color:var(--cherry);margin-left:3px}
+td{padding:8px 10px;border-bottom:1px solid var(--line);font-size:13px;vertical-align:top}
+tbody tr{cursor:pointer}tbody tr:hover td{background:rgba(255,255,255,.035)}
+td.serv{min-width:220px;max-width:360px}td.forn{font-weight:700;color:var(--hi);min-width:140px}
+td.nw{white-space:nowrap}
+.tipo{font-size:11px;font-weight:800;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.tipo.Capex{background:color-mix(in srgb,var(--capex) 25%,transparent);color:#8fd6e6}.tipo.Opex{background:color-mix(in srgb,var(--opex) 25%,transparent);color:#ecb98a}
+.q{font-size:11px;font-weight:800;color:#ffd38a;white-space:nowrap}.q.ok{color:#8fe0ab}
+.muted{color:var(--muted)}
+.pag{display:flex;gap:8px;align-items:center;justify-content:flex-end;padding:10px 12px;font-size:12.5px;color:var(--muted)}
+/* indicadores */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-bottom:12px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.kpi small{display:block;color:var(--muted);font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-weight:800}
+.kpi b{display:block;font-size:24px;color:var(--hi);margin-top:3px;font-variant-numeric:tabular-nums}.kpi span{font-size:12px;color:var(--muted)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(460px,1fr));gap:12px}
+.ch{padding:14px 16px}.ch h3{margin:0 0 2px;font-size:14px;color:var(--hi)}.ch p{margin:0 0 10px;font-size:12px;color:var(--muted)}
+.lg{display:flex;gap:14px;font-size:12px;color:var(--muted);margin:0 0 8px}.lg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.hb{display:grid;grid-template-columns:minmax(120px,190px) 1fr 110px;gap:8px;align-items:center;font-size:12.5px;margin:5px 0;cursor:pointer}
+.hb .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.hb .tr{height:14px;background:var(--surface3);border-radius:4px;overflow:hidden;display:flex}
+.hb .tr i{display:block;height:100%}.hb .tr i+i{border-left:2px solid var(--surface)}.hb b{text-align:right;font-variant-numeric:tabular-nums}
+.hb:hover .nm{color:var(--hi);text-decoration:underline}
+svg text{fill:var(--muted);font-size:11px}
+#tip{position:fixed;pointer-events:none;background:var(--surface2);border:1px solid var(--line2);border-radius:10px;padding:8px 11px;font-size:12px;z-index:90;box-shadow:0 10px 28px rgba(0,0,0,.4);opacity:0}
+#tip b{color:var(--hi)}
+/* gaveta e modal */
+.ov{position:fixed;inset:0;background:rgba(5,10,22,.62);z-index:50;backdrop-filter:blur(2px)}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(620px,100%);background:var(--surface);border-left:1px solid var(--line2);z-index:60;display:flex;flex-direction:column;border-radius:18px 0 0 18px;overflow:hidden}
+.drawer header{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.drawer header b{display:block;font-size:17px;color:var(--hi)}.drawer header small{color:var(--muted)}
+.drawer .body{padding:16px 20px 28px;overflow:auto;flex:1}
+.x{background:none;border:0;color:var(--muted);font-size:22px;cursor:pointer}
+.dl{display:grid;grid-template-columns:150px 1fr;gap:6px 12px;font-size:13px;margin:0}.dl dt{color:var(--muted)}.dl dd{margin:0;overflow-wrap:anywhere}
+.sec{background:var(--surface3);border:1px solid var(--line);border-radius:14px;padding:14px;margin-top:14px}
+.sec h4{margin:0 0 10px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.fld{margin-bottom:8px}.fld label{display:block;font-size:11.5px;color:var(--muted);font-weight:700;margin-bottom:4px}
+.fld input,.fld textarea{width:100%;background:var(--surface);border:1px solid var(--line2);border-radius:9px;padding:8px 10px}
+.fld textarea{min-height:90px;resize:vertical}
+.msg{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px;background:var(--surface)}
+.msg small{color:var(--muted)}.msg p{margin:6px 0 0;white-space:pre-wrap}
+.st{font-size:11px;font-weight:800;padding:2px 8px;border-radius:999px}.st.ab{background:rgba(231,178,74,.2);color:#f3cf94}.st.ok{background:rgba(79,163,107,.2);color:#8fe0ab}
+.modal{position:fixed;inset:0;z-index:70;display:grid;place-items:center;padding:16px;background:rgba(5,10,22,.62)}
+.modal .box{background:var(--surface);border:1px solid var(--line2);border-radius:18px;width:min(760px,100%);max-height:92vh;overflow:auto;padding:22px 24px;box-shadow:0 30px 80px rgba(0,0,0,.5)}
+.modal h3{margin:0 0 6px;font-size:19px;color:var(--hi)}.hint{color:var(--muted);font-size:13px;margin:0 0 12px}
+.mfoot{display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap}
+.anx{display:inline-flex;gap:6px;background:var(--surface3);border:1px solid var(--line2);border-radius:10px;padding:6px 10px;font-size:12.5px}
+iframe.pv{width:100%;height:66vh;border:1px solid var(--line2);border-radius:12px;background:#e9edf3}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--line2);border-left:4px solid var(--cherry);padding:11px 16px;border-radius:12px;opacity:0;transition:.2s;z-index:99;pointer-events:none}
+#toast.on{opacity:1}
+.empty{padding:26px;text-align:center;color:var(--muted)}
+.anos{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.anos .btn.on{background:var(--teal);border-color:var(--teal);color:#fff}
+.var.up{color:#ff8fa8;font-weight:800}.var.dn{color:#8fe0ab;font-weight:800}
+td.y{font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.proj-tot{display:flex;gap:18px;flex-wrap:wrap;font-size:13px;margin:0 0 6px}.proj-tot b{color:var(--hi)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="proto" id="aviso" hidden></div>
+  <div class="top">
+    <div><div class="eyebrow">Tecnologia · Controle financeiro</div><h1>Orçamentos TI</h1>
+      <p class="sub">Lançamentos das planilhas <b>Contratos_TI_2024, 2025 e 2026</b> (pasta Controle - TI), lidos do SharePoint.</p></div>
+    <div class="sync"><span class="dot" id="sDot"></span><span id="sTxt"></span><button class="btn sm" id="bAtu">Atualizar agora</button></div>
+  </div>
+  <div class="tabs">
+    <button class="tab on" data-t="lanc">Lançamentos</button>
+    <button class="tab" data-t="ind">Indicadores</button>
+    <button class="tab" data-t="hist">Histórico e comparações</button>
+    <button class="tab" data-t="qst" data-adm>Questionamentos<span class="n" id="nQ" hidden></span></button>
+  </div>
+  <div class="filtros" id="filtros"></div>
+  <div class="ativos" id="ativos"></div>
+  <div id="view"></div>
+</div>
+<div id="tip"></div>
+<div id="toast"></div>
+<script>
+/* Portal PMO · Orçamentos TI. Lê Contratos_TI_2024/2025/2026 (PMO-Projetos/9. CAPEX - OPEX/Controle - TI) pelo portal (window.ORC_API).
+   Perfis: admin (PMO) = consulta + questionamentos + envio por e-mail; consulta (GP) = lançamentos, indicadores e comparações. */
+const API=(()=>{try{return parent&&parent!==window&&parent.ORC_API?parent.ORC_API:null;}catch(e){return null;}})();
+const ADM=!!API&&API.perfil()==="admin";
+const LOGO=API?API.logo():"";
+const CCONT = {"102040100008":"Softwares em andamento","304020900007":"Manutenção de informática"};
+const PADRAO_PARA=[{nome:"Alan Bruno",email:"alan.bruno@jcesa.com.br"}], PADRAO_CC=[{nome:"Tiago Fermin",email:"tiago.fermin@jcesa.com.br"}];
+const C={capex:"#29A6C2",opex:"#C97C33"};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const brl=v=>"R$ "+(+v||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+const brlK=v=>v>=1e6?"R$ "+(v/1e6).toLocaleString("pt-BR",{maximumFractionDigits:2})+" mi":v>=1e3?"R$ "+(v/1e3).toLocaleString("pt-BR",{maximumFractionDigits:1})+" mil":brl(v);
+const pct=v=>(Math.round(v*1000)/10).toLocaleString("pt-BR")+"%";
+const semAc=s=>String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
+const isoBR=d=>{const m=/^(\d{2})\/(\d{2})\/(\d{4})$/.exec(d||"");return m&&+m[2]>0?`${m[3]}-${m[2]}-${m[1]}`:"";};
+const MESES=["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+function toast(t){const e=$("toast");e.textContent=t;e.classList.add("on");clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove("on"),3400);}
+/* ---- linhas: leitura das planilhas ---- */
+let L=[];
+const pad2=n=>String(n).padStart(2,"0");
+function dtTxt(v){
+  if(v==null||v==="")return "";
+  if(typeof v==="number"){if(v<20000||v>80000)return String(v);const d=new Date(Date.UTC(1899,11,30)+Math.round(v*864e5));return `${pad2(d.getUTCDate())}/${pad2(d.getUTCMonth()+1)}/${d.getUTCFullYear()}`;}
+  const t=String(v).trim(),m=/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})$/.exec(t);
+  return m?`${pad2(m[1])}/${pad2(m[2])}/${m[3].length===2?"20"+m[3]:m[3]}`:t;
+}
+function numV(v){if(typeof v==="number")return v;const t=String(v||"").replace(/R\$|\s/g,"");if(!t||t==="-")return null;const n=+(/,\d{1,2}$/.test(t)?t.replace(/\./g,"").replace(",","."):t.replace(/,/g,""));return isFinite(n)?n:null;}
+const txtV=v=>v==null?"":String(v).trim();
+const COLS=[["forn",h=>h==="fornecedor"],["emis",h=>h.startsWith("emiss")],["venc",h=>h.startsWith("venc")],["emp",h=>h.startsWith("empresa")],["serv",h=>h.startsWith("servi")],["sc",h=>h==="sc"],["ped",h=>h.startsWith("pedido")],["valor",h=>h.startsWith("valor")],["nf",h=>h.startsWith("nf")],["forma",h=>h.startsWith("forma")],["envio",h=>h.startsWith("envio")],["proj",h=>h.startsWith("projeto")],["tipo",h=>/despesa|capex|opex/.test(h)],["cc",h=>/^c\.? ?contab/.test(h)],["receb",h=>/recebimento/.test(h)],["obs",h=>h.startsWith("observ")]];
+/* 2024 não tem a coluna Capex/Opex: classificação estimada pelo serviço */
+const CAPEX_2024=/projeto|wi-?fi|c[aâ]meras?|bartender|storage|firewall|facilities|fibra|pontos de rede|terminal server|plataforma elevat|tesoura|diretivas|pdti|incidente|ramais/i;
+function lerAba(linhas,ano,mesAba){
+  const hi=linhas.slice(0,8).findIndex(l=>(l||[]).some(c=>semAc(txtV(c))==="fornecedor"));if(hi<0)return [];
+  const cab=linhas[hi].map(c=>semAc(txtV(c)).replace(/\s+/g," ")),ix={};
+  COLS.forEach(([k,f])=>{const i=cab.findIndex(f);if(i>=0)ix[k]=i;});
+  const g=(l,k)=>ix[k]==null?"":l[ix[k]];
+  const out=[];
+  linhas.slice(hi+1).forEach(l=>{
+    const forn=txtV(g(l,"forn")),valor=numV(g(l,"valor"));
+    if(!forn||valor==null||/^total/i.test(forn))return;
+    const serv=txtV(g(l,"serv")),obs0=txtV(g(l,"obs"));let nf=txtV(g(l,"nf")),obs=obs0;
+    if(ix.nf==null){nf=(/(NF|Fatura)[^;,]*/i.exec(obs0)||[""])[0];obs=nf===obs0?"":obs0;}
+    const pj=txtV(g(l,"proj")),tp=txtV(g(l,"tipo"));
+    out.push({ano,forn,emis:dtTxt(g(l,"emis")),venc:dtTxt(g(l,"venc")),emp:txtV(g(l,"emp")),serv,sc:txtV(g(l,"sc")),ped:txtV(g(l,"ped")),valor,nf,forma:txtV(g(l,"forma")),envio:dtTxt(g(l,"envio")),
+      proj:pj&&pj!=="*"?pj:"Sem projeto",tipo:ix.tipo!=null?(/capex/i.test(tp)?"Capex":"Opex"):(CAPEX_2024.test(serv)?"Capex":"Opex"),cc:txtV(g(l,"cc")),receb:txtV(g(l,"receb")),obs,mesAba,estimado:ix.tipo==null});
+  });
+  return out;
+}
+const ABA_MES=/^\s*(\d{1,2})\s*-/;
+/* 2026: aba "Geral - Em andamento" (todos os lançamentos do ano). 2024 e 2025: abas mensais "MM - mês". */
+const filtroAba=(nome,ano)=>ano===2026?/^geral/i.test(nome.trim()):ABA_MES.test(nome);
+let ERROS={};
+async function carregar(forcar,anos){
+  if(!API)throw new Error("Abra esta página pelo portal.");
+  const res=await API.planilhas(anos||[2024,2025,2026],filtroAba,forcar);
+  ERROS={};const porAno={};
+  Object.entries(res).forEach(([a,r])=>{a=+a;
+    if(r.erro){ERROS[a]=r.erro;return;}
+    let lst=[];
+    r.abas.forEach(ab=>{if(!filtroAba(ab.nome,a))return;const m=ABA_MES.exec(ab.nome);lst=lst.concat(lerAba(ab.linhas,a,a===2026?0:(m?+m[1]:0)));});
+    porAno[a]=lst;});
+  if(anos&&anos.length<3)L.forEach(r=>{if(!anos.includes(r.ano))(porAno[r.ano]=porAno[r.ano]||[]).push(r);});
+  [2024,2025,2026].forEach(a=>{if(!porAno[a]&&ERROS[a])porAno[a]=L.filter(r=>r.ano===a);});
+  L=[2026,2025,2024].flatMap(a=>porAno[a]||[]).map((r,i)=>Object.assign(r,{id:i+1,iEm:isoBR(r.emis),iVe:isoBR(r.venc),iEn:isoBR(r.envio)}));
+  /* mês de referência: o mês da aba (2024/2025) ou do envio/emissão (2026) */
+  L.forEach(r=>{r.mRef=r.mesAba?`${r.ano}-${pad2(r.mesAba)}`:((r.iEn||r.iEm).slice(0,7).startsWith(String(r.ano))?(r.iEn||r.iEm).slice(0,7):"");});
+}
+/* ---- estado ---- */
+const F={ano:"2026",q:"",forn:"",proj:"",emp:"",tipo:"",forma:"",cc:"",de:"",ate:"",venc:"",vde:"",vate:"",semPed:false,comQ:false};
+const HOJE_ISO=new Date().toISOString().slice(0,10);
+const isoMais=d=>{const x=new Date(HOJE_ISO+"T12:00:00");x.setDate(x.getDate()+d);return x.toISOString().slice(0,10);};
+const S={aba:"lanc",ord:"iEm",dir:-1,pag:0,por:50,abre:null,ultima:new Date(),prox:null};
+const Q={}; /* questionamentos por lançamento: id -> [{em,para,cc,assunto,texto,status}] */
+const chaveL=r=>[r.forn,r.nf,r.valor,r.emis].join("|"); /* chave estável entre atualizações */
+const uniq=k=>[...new Set(L.map(r=>r[k]).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"pt-BR"));
+const mesesDisp=()=>[...new Set(L.filter(r=>!F.ano||String(r.ano)===F.ano).map(r=>r.mRef).filter(Boolean))].sort();
+const rotMes=m=>`${MESES[+m.slice(5,7)-1]}/${m.slice(2,4)}`;
+function filtrar(){
+  const q=semAc(F.q);
+  return L.filter(r=>(!F.ano||String(r.ano)===F.ano)&&(!q||semAc([r.forn,r.serv,r.nf,r.ped,r.sc,r.obs,r.proj].join(" ")).includes(q))&&(!F.forn||r.forn===F.forn)&&(!F.proj||r.proj===F.proj)&&(!F.emp||r.emp===F.emp)&&(!F.tipo||r.tipo===F.tipo)&&(!F.forma||r.forma===F.forma)
+    &&(!F.venc||(F.venc==="passou"?r.iVe&&r.iVe<HOJE_ISO:r.iVe&&r.iVe>=HOJE_ISO&&r.iVe<=isoMais(+F.venc)))&&(!F.vde||r.iVe>=F.vde)&&(!F.vate||(r.iVe&&r.iVe<=F.vate))
+    &&(!F.cc||r.cc===F.cc)&&(!F.de||(r.mRef||r.iEm.slice(0,7))>=F.de)&&(!F.ate||(r.mRef||r.iEm.slice(0,7))<=F.ate)&&(!F.semPed||(r.ped==="N"||!r.ped))&&(!F.comQ||(Q[chaveL(r)]||[]).length));
+}
+/* ---- filtros ---- */
+function renderFiltros(){
+  const sel=(k,rot,ops,fmt)=>`<select data-f="${k}" title="${rot}"><option value="">${rot}: todos</option>${ops.map(o=>`<option value="${esc(o)}" ${F[k]===o?"selected":""}>${esc(fmt?fmt(o):o)}</option>`).join("")}</select>`;
+  const ms=mesesDisp();
+  const acF=(k,rot)=>`<input type="text" class="ac" data-ac="f:${k}" placeholder="${rot}: digite…" title="${rot}" value="${esc(F[k]?acRotF(k,F[k]):"")}" autocomplete="off">`;
+  $("filtros").innerHTML=`<select data-f="ano" title="Ano" style="flex:0 0 auto;font-weight:700"><option value="">Todos os anos</option>${[2026,2025,2024].map(a=>`<option ${F.ano==String(a)?"selected":""}>${a}</option>`).join("")}</select>
+    <input type="search" data-f="q" placeholder="Buscar fornecedor, serviço, NF, pedido, SC…" value="${esc(F.q)}">
+    ${acF("forn","Fornecedor")}${acF("proj","Projeto")}${sel("tipo","Capex/Opex",["Capex","Opex"])}${acF("emp","Empresa")}
+    ${acF("forma","Pagamento")}${acF("cc","C. contábil")}
+    ${sel("de","Mês de",ms,rotMes)}${sel("ate","até",ms,rotMes)}
+    <select data-f="venc" title="Vencimento"><option value="">Vencimento: todos</option><option value="7" ${F.venc==="7"?"selected":""}>Vence nos próximos 7 dias</option><option value="30" ${F.venc==="30"?"selected":""}>Vence nos próximos 30 dias</option><option value="passou" ${F.venc==="passou"?"selected":""}>Vencimento já passou</option></select>
+    <label title="Vencimento a partir de">Venc. de <input type="date" data-f="vde" value="${F.vde}"></label><label title="Vencimento até">até <input type="date" data-f="vate" value="${F.vate}"></label>
+    <label><input type="checkbox" data-f="semPed" ${F.semPed?"checked":""}> sem pedido</label>
+    ${ADM?`<label><input type="checkbox" data-f="comQ" ${F.comQ?"checked":""}> com questionamento</label>`:""}
+    <button class="btn sm" id="fLimpa">Limpar</button>`;
+}
+function renderAtivos(){
+  const nomes={venc:"Vencimento",vde:"Vencimento de",vate:"Vencimento até",ano:"Ano",q:"Busca",forn:"Fornecedor",proj:"Projeto",emp:"Empresa",tipo:"Tipo",forma:"Pagamento",cc:"C. contábil",de:"De",ate:"Até",semPed:"Sem pedido",comQ:"Com questionamento"};
+  $("ativos").innerHTML=Object.keys(F).filter(k=>F[k]).map(k=>`<span class="chip">${nomes[k]}${typeof F[k]==="boolean"?"":": <b>"+esc(k==="de"||k==="ate"?rotMes(F[k]):k==="vde"||k==="vate"?F[k].split("-").reverse().join("/"):k==="venc"?({"7":"próximos 7 dias","30":"próximos 30 dias",passou:"já passou"})[F[k]]:F[k])+"</b>"}<button data-rmf="${k}">×</button></span>`).join("");
+}
+/* ---- lançamentos ---- */
+function renderLanc(){
+  const lst=filtrar();
+  const k=S.ord,d=S.dir;lst.sort((a,b)=>(typeof a[k]==="number"?a[k]-b[k]:String(a[k]).localeCompare(String(b[k]),"pt-BR"))*d);
+  const tot=lst.reduce((a,r)=>a+r.valor,0),cx=lst.filter(r=>r.tipo==="Capex").reduce((a,r)=>a+r.valor,0);
+  const pags=Math.max(1,Math.ceil(lst.length/S.por));S.pag=Math.min(S.pag,pags-1);
+  const pg=lst.slice(S.pag*S.por,(S.pag+1)*S.por);
+  const col=(k,t,cls)=>`<th data-ord="${k}" class="${cls||""}">${t}${S.ord===k?`<span class="ar">${S.dir>0?"▲":"▼"}</span>`:""}</th>`;
+  $("view").innerHTML=`<div class="resumo"><span><b>${lst.length.toLocaleString("pt-BR")}</b> lançamento(s)</span><span>Total <b>${brl(tot)}</b></span><span><i style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${C.capex}"></i> Capex <b>${brl(cx)}</b></span><span><i style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${C.opex}"></i> Opex <b>${brl(tot-cx)}</b></span></div>
+  <div class="card"><div class="tb-wrap"><table><thead><tr>${col("iEm","Emissão")}${col("iVe","Vencimento")}${col("forn","Fornecedor")}${col("emp","Empresa")}${col("serv","Serviço")}${col("proj","Projeto")}${col("tipo","Tipo")}${col("sc","SC")}${col("ped","Pedido")}${col("nf","NF / Fatura")}${col("valor","Valor","n")}${col("iEn","Envio")}<th></th></tr></thead>
+  <tbody>${pg.map(r=>{const qs=Q[chaveL(r)]||[],ab=qs.some(x=>x.status==="aberto");return `<tr data-id="${r.id}"><td class="nw">${esc(r.emis)}</td><td class="nw">${esc(r.venc)}</td><td class="forn">${esc(r.forn)}</td><td class="nw">${esc(r.emp)}</td><td class="serv">${esc(r.serv)}</td><td>${esc(r.proj)}</td><td><span class="tipo ${r.tipo}">${r.tipo}</span></td><td class="nw ${r.sc==="N"?"muted":""}">${esc(r.sc)}</td><td class="nw ${r.ped==="N"?"muted":""}">${esc(r.ped)}</td><td class="nw">${esc(r.nf)}</td><td class="n nw"><b>${brl(r.valor)}</b></td><td class="nw">${esc(r.envio)}</td><td>${qs.length?`<span class="q ${ab?"":"ok"}" title="${qs.length} questionamento(s)">💬 ${ab?"aberto":"resolvido"}</span>`:""}</td></tr>`;}).join("")||`<tr><td colspan="13" class="empty">Nenhum lançamento com esses filtros.</td></tr>`}</tbody></table></div>
+  <div class="pag"><span>Página ${S.pag+1} de ${pags}</span><button class="btn sm" data-pg="-1" ${S.pag?"":"disabled"}>‹ Anterior</button><button class="btn sm" data-pg="1" ${S.pag<pags-1?"":"disabled"}>Próxima ›</button><button class="btn sm" id="bXls">Exportar Excel</button></div></div>`;
+}
+/* ---- indicadores ---- */
+function agrega(lst,k){const m={};lst.forEach(r=>{const kk=r[k]||"(não informado)";const a=m[kk]=m[kk]||{n:kk,c:0,o:0,q:0};r.tipo==="Capex"?a.c+=r.valor:a.o+=r.valor;a.q++;});return Object.values(m).sort((a,b)=>(b.c+b.o)-(a.c+a.o));}
+function barrasH(lista,k,max){
+  const top=lista.slice(0,max),mx=Math.max(1,...top.map(x=>x.c+x.o));
+  return top.map(x=>`<div class="hb" data-fil="${k}" data-v="${esc(x.n)}" data-tip="<b>${esc(x.n)}</b><br>Capex ${brl(x.c)}<br>Opex ${brl(x.o)}<br>${x.q} lançamento(s)"><span class="nm" title="${esc(x.n)}">${esc(x.n)}</span><span class="tr">${x.c?`<i style="width:${x.c/mx*100}%;background:${C.capex}"></i>`:""}${x.o?`<i style="width:${x.o/mx*100}%;background:${C.opex}"></i>`:""}</span><b>${brlK(x.c+x.o)}</b></div>`).join("")+(lista.length>max?`<p class="muted" style="font-size:12px;margin:6px 0 0">+ ${lista.length-max} outros · ${brlK(lista.slice(max).reduce((a,x)=>a+x.c+x.o,0))}</p>`:"");
+}
+function mensal(lst,claro){
+  const ms={};lst.forEach(r=>{const m=r.mRef;if(!m)return;const a=ms[m]=ms[m]||{c:0,o:0};r.tipo==="Capex"?a.c+=r.valor:a.o+=r.valor;});
+  const ks=Object.keys(ms).sort(),W=900,H=250,pl=62,pb=26,pt=10,bw=(W-pl-10)/Math.max(ks.length,1);
+  const mx=Math.max(1,...ks.map(m=>ms[m].c+ms[m].o)),passo=Math.pow(10,Math.floor(Math.log10(mx))),topo=Math.ceil(mx/passo)*passo,y=v=>pt+(H-pt-pb)*(1-v/topo);
+  const ln=claro?"#E1E6EF":"rgba(224,224,224,.10)",tx=claro?"#5B6780":"";
+  let g="";for(let i=0;i<=4;i++){const v=topo*i/4;g+=`<line x1="${pl}" x2="${W-6}" y1="${y(v)}" y2="${y(v)}" stroke="${ln}"/><text x="${pl-8}" y="${y(v)+4}" text-anchor="end" ${tx?`fill="${tx}"`:""}>${brlK(v).replace("R$ ","")}</text>`;}
+  const bars=ks.map((m,i)=>{const a=ms[m],x=pl+i*bw+bw*.18,w=bw*.64,yc=y(a.c),yo=y(a.c+a.o);
+    return `<g class="mb" data-tip="<b>${rotMes(m)}</b><br>Capex ${brl(a.c)}<br>Opex ${brl(a.o)}<br>Total ${brl(a.c+a.o)}"><rect x="${pl+i*bw}" y="${pt}" width="${bw}" height="${H-pt-pb}" fill="transparent"/>
+      ${a.c?`<rect x="${x}" y="${yc}" width="${w}" height="${Math.max(0,H-pb-yc)}" rx="2" fill="${C.capex}"/>`:""}${a.o?`<rect x="${x}" y="${yo}" width="${w}" height="${Math.max(0,yc-yo-2)}" rx="3" fill="${C.opex}"/>`:""}
+      <text x="${x+w/2}" y="${H-8}" text-anchor="middle" ${tx?`fill="${tx}"`:""}>${rotMes(m)}</text></g>`;}).join("");
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Valor por mês de emissão, Capex e Opex">${g}${bars}</svg>`;
+}
+function kpisHtml(lst){
+  const tot=lst.reduce((a,r)=>a+r.valor,0),cx=lst.filter(r=>r.tipo==="Capex").reduce((a,r)=>a+r.valor,0),sem=lst.filter(r=>r.ped==="N"||!r.ped);
+  const fs=new Set(lst.map(r=>r.forn)).size,abQ=Object.values(Q).flat().filter(x=>x.status==="aberto").length;
+  return [["Total lançado",brl(tot),`${lst.length} lançamento(s)`],["Capex",brl(cx),tot?pct(cx/tot)+" do total":"—"],["Opex",brl(tot-cx),tot?pct((tot-cx)/tot)+" do total":"—"],["Fornecedores",fs,`ticket médio ${brl(lst.length?tot/lst.length:0)}`],["Sem pedido",sem.length,brl(sem.reduce((a,r)=>a+r.valor,0))],["Questionamentos abertos",abQ,"aguardando resposta"]];
+}
+function renderInd(){
+  const lst=filtrar();
+  $("view").innerHTML=`<div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:10px"><button class="btn" id="bPdf">Baixar PDF</button>${ADM?`<button class="btn primary" id="bMailInd">Enviar por e-mail com o PDF</button>`:""}</div>
+  <div class="kpis">${kpisHtml(lst).map(k=>`<div class="kpi"><small>${k[0]}</small><b>${k[1]}</b><span>${k[2]}</span></div>`).join("")}</div>
+  <div class="card ch" style="margin-bottom:12px"><h3>Valor por mês</h3><p>Mês de lançamento (envio). Capex e Opex empilhados. Passe o mouse para ver os valores.</p><div class="lg"><span><i style="background:${C.capex}"></i>Capex</span><span><i style="background:${C.opex}"></i>Opex</span></div>${mensal(lst)}</div>
+  <div class="card ch" style="margin-bottom:12px">${projecaoHtml(lst)}</div>
+  <div class="card ch" style="margin-bottom:12px">${vencHtml(lst)}</div>
+  <div class="grid2">
+    <div class="card ch"><h3>Maiores fornecedores</h3><p>Clique para filtrar.</p><div class="lg"><span><i style="background:${C.capex}"></i>Capex</span><span><i style="background:${C.opex}"></i>Opex</span></div>${barrasH(agrega(lst,"forn"),"forn",12)}</div>
+    <div class="card ch"><h3>Por projeto</h3><p>"Sem projeto" são os lançamentos marcados com * na planilha.</p><div class="lg"><span><i style="background:${C.capex}"></i>Capex</span><span><i style="background:${C.opex}"></i>Opex</span></div>${barrasH(agrega(lst,"proj"),"proj",12)}</div>
+    <div class="card ch"><h3>Por empresa</h3><p>Clique para filtrar.</p>${barrasH(agrega(lst,"emp"),"emp",10)}</div>
+    <div class="card ch"><h3>Por forma de pagamento</h3><p>Clique para filtrar.</p>${barrasH(agrega(lst,"forma"),"forma",10)}</div>
+  </div>`;
+}
+/* ---- questionamentos ---- */
+function renderQst(){
+  const itens=Object.entries(Q).flatMap(([k,qs])=>qs.map((x,i)=>({k,i,...x,r:L.find(r=>chaveL(r)===k)})));
+  itens.sort((a,b)=>(a.status==="aberto"?0:1)-(b.status==="aberto"?0:1)||b.em.localeCompare(a.em));
+  $("view").innerHTML=`<div class="card">${itens.length?`<div class="tb-wrap"><table><thead><tr><th>Quando</th><th>Lançamento</th><th>Vencimento</th><th>Pergunta</th><th>Para / Cc</th><th>Situação</th></tr></thead><tbody>
+    ${itens.map(x=>`<tr data-id="${x.r?x.r.id:""}"><td class="nw">${new Date(x.em).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}</td><td><b>${esc(x.r?x.r.forn:"(fora da planilha)")}</b><br><span class="muted">${x.r?esc(x.r.nf)+" · "+brl(x.r.valor):""}</span></td><td class="nw">${x.r?esc(x.r.venc):""}</td><td style="max-width:420px">${esc(x.texto)}</td><td class="muted">${esc(x.para.map(p=>p.nome).join(", "))}<br>Cc: ${esc(x.cc.map(p=>p.nome).join(", "))}</td><td><span class="st ${x.status==="aberto"?"ab":"ok"}">${x.status==="aberto"?"Aguardando":"Resolvido"}</span></td></tr>`).join("")}
+  </tbody></table></div>`:`<div class="empty">Nenhum questionamento ainda. Abra um lançamento e use a caixa <b>Questionar lançamento</b>.</div>`}</div>`;
+}
+function render(){
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.dataset.t===S.aba));
+  $("filtros").hidden=S.aba==="qst"||S.aba==="hist";$("ativos").hidden=S.aba==="qst"||S.aba==="hist";
+  const ab=Object.values(Q).flat().filter(x=>x.status==="aberto").length;$("nQ").hidden=!ab;$("nQ").textContent=ab;
+  renderAtivos();
+  if(S.aba==="lanc")renderLanc();else if(S.aba==="ind")renderInd();else if(S.aba==="hist")renderHist();else renderQst();
+}
+/* ---- gaveta do lançamento ---- */
+function abrirL(id){
+  const r=L.find(x=>x.id===+id);if(!r)return;S.abre=r;
+  const qs=Q[chaveL(r)]||[];
+  const ov=document.createElement("div");ov.className="ov";ov.id="dOv";
+  const dr=document.createElement("aside");dr.className="drawer";dr.id="dDr";
+  const ass=`[Orçamentos TI] ${r.forn} · ${r.nf||"sem NF"} · ${brl(r.valor)}`;
+  dr.innerHTML=`<header><div><small>Lançamento · ${esc(r.emp)} · ${esc(r.emis)}</small><b>${esc(r.forn)}</b><small>${esc(r.serv)}</small></div><button class="x" data-fechaD>×</button></header>
+  <div class="body">
+    <dl class="dl"><dt>Valor</dt><dd><b style="font-size:18px;color:var(--hi)">${brl(r.valor)}</b> <span class="tipo ${r.tipo}">${r.tipo}</span></dd>
+    <dt>Emissão / vencimento</dt><dd>${esc(r.emis)} · vence ${esc(r.venc)}</dd><dt>Envio</dt><dd>${esc(r.envio)||"—"}</dd>
+    <dt>SC / Pedido</dt><dd>${esc(r.sc)} / ${esc(r.ped)}</dd><dt>NF / Fatura</dt><dd>${esc(r.nf)||"—"}</dd>
+    <dt>Projeto</dt><dd>${esc(r.proj)}</dd><dt>Forma de pagamento</dt><dd>${esc(r.forma)||"—"}</dd>
+    <dt>Conta contábil</dt><dd>${r.cc?esc(r.cc)+(CCONT[r.cc]?" · "+CCONT[r.cc]:""):"—"}</dd><dt>Recebimento</dt><dd>${esc(r.receb)||"—"}</dd><dt>Observação</dt><dd>${esc(r.obs)||"—"}</dd></dl>
+    ${ADM?`    <div class="sec"><h4>Questionamentos (${qs.length})</h4>
+      ${qs.map((x,i)=>`<div class="msg"><small>${new Date(x.em).toLocaleString("pt-BR")} · para ${esc(x.para.map(p=>p.nome).join(", "))} · cc ${esc(x.cc.map(p=>p.nome).join(", "))}</small> <span class="st ${x.status==="aberto"?"ab":"ok"}">${x.status==="aberto"?"Aguardando":"Resolvido"}</span><p>${esc(x.texto)}</p>${x.status==="aberto"?`<button class="btn sm" data-resolve="${i}" style="margin-top:8px">Marcar como resolvido</button>`:""}</div>`).join("")||`<p class="muted" style="margin:0">Nenhum questionamento sobre este lançamento.</p>`}
+    </div>
+    <div class="sec"><h4>Questionar lançamento</h4>
+      <div class="fld"><label>Para</label><input id="qPara" value="${esc(PADRAO_PARA.map(p=>p.email).join("; "))}"></div>
+      <div class="fld"><label>Cc</label><input id="qCc" value="${esc(PADRAO_CC.map(p=>p.email).join("; "))}"></div>
+      <div class="fld"><label>Assunto</label><input id="qAss" value="${esc(ass)}"></div>
+      <div class="fld"><label>Pergunta</label><textarea id="qTxt" placeholder="Ex.: Este lançamento está sem pedido. Qual SC deve ser usada?"></textarea></div>
+      <p class="muted" style="font-size:12px;margin:0 0 8px">O e-mail leva os dados do lançamento (fornecedor, NF, pedido, valor, vencimento) e sai do seu Outlook.</p>
+      <div style="display:flex;justify-content:flex-end"><button class="btn primary" id="qEnviar">Enviar pergunta</button></div>
+    </div>
+`:""}
+  </div>`;
+  document.body.append(ov,dr);
+}
+function fecharL(){$("dOv")&&$("dOv").remove();$("dDr")&&$("dDr").remove();S.abre=null;}
+
+
+/* ---- Vencimentos: próximos e por mês de vencimento ---- */
+function vencHtml(lst,claro){
+  const fut=lst.filter(r=>r.iVe&&r.iVe>=HOJE_ISO).sort((a,b)=>a.iVe.localeCompare(b.iVe));
+  const em=d=>fut.filter(r=>r.iVe<=isoMais(d)),soma=l=>l.reduce((a,r)=>a+r.valor,0);
+  const v7=em(7),v30=em(30);
+  const ms={};lst.forEach(r=>{if(!r.iVe)return;const m=r.iVe.slice(0,7);const a=ms[m]=ms[m]||{c:0,o:0};r.tipo==="Capex"?a.c+=r.valor:a.o+=r.valor;});
+  const ks=Object.keys(ms).sort().slice(-14),mx=Math.max(1,...ks.map(m=>ms[m].c+ms[m].o));
+  const barras=ks.map(m=>`<div class="hb" style="grid-template-columns:70px 1fr 110px" data-tip="<b>Vencem em ${rotMes(m)}</b><br>Capex ${brl(ms[m].c)}<br>Opex ${brl(ms[m].o)}"><span class="nm">${rotMes(m)}${m===HOJE_ISO.slice(0,7)?" ·":""}</span><span class="tr">${ms[m].c?`<i style="width:${ms[m].c/mx*100}%;background:${C.capex}"></i>`:""}${ms[m].o?`<i style="width:${ms[m].o/mx*100}%;background:${C.opex}"></i>`:""}</span><b>${brlK(ms[m].c+ms[m].o)}</b></div>`).join("");
+  const lista=fut.slice(0,10).map(r=>`<tr data-id="${r.id}"><td class="nw"><b>${esc(r.venc)}</b></td><td class="forn">${esc(r.forn)}</td><td>${esc(r.serv)}</td><td class="nw">${esc(r.nf)}</td><td class="n nw"><b>${brl(r.valor)}</b></td></tr>`).join("");
+  if(claro)return `<h2>Próximos vencimentos</h2><p style="font-size:10px;color:#5B6780">Próximos 7 dias: ${v7.length} · ${brl(soma(v7))} · Próximos 30 dias: ${v30.length} · ${brl(soma(v30))}</p><table><thead><tr><th>Vencimento</th><th>Fornecedor</th><th>Serviço</th><th>NF</th><th class="n">Valor</th></tr></thead><tbody>${fut.slice(0,15).map(r=>`<tr><td>${esc(r.venc)}</td><td>${esc(r.forn)}</td><td>${esc(r.serv)}</td><td>${esc(r.nf)}</td><td class="n">${brl(r.valor)}</td></tr>`).join("")||`<tr><td colspan="5">Nenhum vencimento futuro nos lançamentos filtrados.</td></tr>`}</tbody></table>`;
+  return `<h3>Vencimentos</h3><p>Pela data de vencimento de cada lançamento. A planilha não marca o que já foi pago: "já passou" quer dizer só que a data ficou para trás.</p>
+  <div class="kpis" style="margin:8px 0 12px">
+    <div class="kpi" data-venc="7" style="cursor:pointer"><small>Vencem em 7 dias</small><b>${brl(soma(v7))}</b><span>${v7.length} lançamento(s) · clique para filtrar</span></div>
+    <div class="kpi" data-venc="30" style="cursor:pointer"><small>Vencem em 30 dias</small><b>${brl(soma(v30))}</b><span>${v30.length} lançamento(s) · clique para filtrar</span></div>
+    <div class="kpi"><small>Próximo vencimento</small><b>${fut[0]?esc(fut[0].venc):"—"}</b><span>${fut[0]?esc(fut[0].forn)+" · "+brl(fut[0].valor):"nenhum futuro"}</span></div>
+  </div>
+  <div class="grid2"><div><div class="lg"><span><i style="background:${C.capex}"></i>Capex</span><span><i style="background:${C.opex}"></i>Opex</span><span>por mês de vencimento</span></div>${barras||`<p class="muted">Sem datas de vencimento.</p>`}</div>
+  <div><div class="tb-wrap" style="max-height:340px;border:1px solid var(--line)"><table><thead><tr><th>Vencimento</th><th>Fornecedor</th><th>Serviço</th><th>NF</th><th class="n">Valor</th></tr></thead><tbody>${lista||`<tr><td colspan="5" class="empty">Nenhum vencimento futuro com esses filtros.</td></tr>`}</tbody></table></div></div></div>`;
+}
+document.addEventListener("click",e=>{const v=e.target.closest("[data-venc]");if(v){F.venc=v.dataset.venc;S.aba="lanc";S.ord="iVe";S.dir=1;S.pag=0;renderFiltros();render();}},true);
+/* ===================== Projeção Capex/Opex até dez/26 ===================== */
+const mesLanc=r=>r.mRef||(r.iEn||r.iEm).slice(0,7);
+function projecao(lst){
+  const ano=2026,acum={Capex:Array(12).fill(0),Opex:Array(12).fill(0)};
+  lst.forEach(r=>{const m=mesLanc(r);if(!m||+m.slice(0,4)!==ano)return;acum[r.tipo][+m.slice(5,7)-1]+=r.valor;});
+  const hoje=new Date(),ultimoFechado=hoje.getFullYear()>ano?11:hoje.getMonth()-1; /* último mês completo */
+  const out={};
+  ["Capex","Opex"].forEach(t=>{
+    const m=acum[t],base=m.slice(Math.max(0,ultimoFechado-2),ultimoFechado+1),media=base.reduce((a,b)=>a+b,0)/Math.max(1,base.length);
+    let c=0;const real=[],proj=[];
+    for(let i=0;i<12;i++){ if(i<=ultimoFechado){c+=m[i];real.push(c);proj.push(i===ultimoFechado?c:null);} else {c+=i===ultimoFechado+1&&m[i]>media?m[i]:media;real.push(null);proj.push(c);} }
+    out[t]={real,proj,media,total:c,ate:real[ultimoFechado]||0};
+  });
+  out.ultimo=ultimoFechado;return out;
+}
+function projecaoHtml(lst,claro){
+  if(!lst.some(r=>r.ano===2026))return `<h3>Projeção de gasto até dez/26</h3><p>A projeção usa os lançamentos de 2026. Selecione 2026 (ou todos os anos) no filtro de ano.</p>`;
+  lst=lst.filter(r=>r.ano===2026);
+  const P=projecao(lst),W=900,H=260,pl=70,pb=28,pt=14,x=i=>pl+i*(W-pl-60)/11;
+  const mx=Math.max(1,P.Capex.total,P.Opex.total),passo=Math.pow(10,Math.floor(Math.log10(mx))),topo=Math.ceil(mx/passo)*passo,y=v=>pt+(H-pt-pb)*(1-v/topo);
+  const ln=claro?"#E1E6EF":"rgba(224,224,224,.10)",tx=claro?'fill="#5B6780"':"";
+  let g="";for(let i=0;i<=4;i++){const v=topo*i/4;g+=`<line x1="${pl}" x2="${W-50}" y1="${y(v)}" y2="${y(v)}" stroke="${ln}"/><text x="${pl-8}" y="${y(v)+4}" text-anchor="end" ${tx}>${brlK(v).replace("R$ ","")}</text>`;}
+  MESES.forEach((m,i)=>{g+=`<text x="${x(i)}" y="${H-8}" text-anchor="middle" ${tx}>${m}/26</text>`;});
+  const path=(arr,cor,dash)=>{const pts=arr.map((v,i)=>v==null?null:`${x(i)},${y(v)}`).filter(Boolean);return pts.length>1?`<polyline points="${pts.join(" ")}" fill="none" stroke="${cor}" stroke-width="2" ${dash?'stroke-dasharray="6 5"':""}/>`:"";};
+  const pontos=(arr,cor,t,proj)=>arr.map((v,i)=>v==null?"":`<circle cx="${x(i)}" cy="${y(v)}" r="${proj?3:4}" fill="${proj?"none":cor}" stroke="${cor}" stroke-width="2" data-tip="<b>${t} · ${MESES[i]}/26</b><br>${proj?"Projetado":"Realizado"} acumulado ${brl(v)}"/>`).join("");
+  const fim=(t,cor)=>`<text x="${x(11)+8}" y="${y(P[t].total)+4}" style="fill:${claro?"#1B2740":"var(--text)"};font-weight:700">${t}</text>`;
+  const svg=`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Projeção acumulada de Capex e Opex até dezembro de 2026">${g}
+    <line x1="${x(P.ultimo)}" x2="${x(P.ultimo)}" y1="${pt}" y2="${H-pb}" stroke="${claro?"#8A93A6":"rgba(224,224,224,.35)"}" stroke-dasharray="2 4"/><text x="${x(P.ultimo)+4}" y="${pt+10}" ${tx}>hoje</text>
+    ${path(P.Capex.real,C.capex)}${path(P.Capex.proj,C.capex,1)}${path(P.Opex.real,C.opex)}${path(P.Opex.proj,C.opex,1)}
+    ${pontos(P.Capex.real,C.capex,"Capex")}${pontos(P.Capex.proj,C.capex,"Capex",1)}${pontos(P.Opex.real,C.opex,"Opex")}${pontos(P.Opex.proj,C.opex,"Opex",1)}${fim("Capex")}${fim("Opex")}</svg>`;
+  const mesTxt=MESES[P.ultimo]+"/26";
+  return `<h3>Projeção de gasto até dez/26</h3><p>Acumulado no ano pelo mês de envio. Linha cheia: realizado até ${mesTxt}. Tracejada: projeção pela média dos últimos 3 meses fechados.</p>
+    <div class="lg"><span><i style="background:${C.capex}"></i>Capex</span><span><i style="background:${C.opex}"></i>Opex</span><span>— realizado · - - projetado</span></div>
+    <div class="proj-tot"><span>Capex: <b>${brl(P.Capex.ate)}</b> até ${mesTxt} → projeção <b>${brl(P.Capex.total)}</b> em dez/26 (média ${brlK(P.Capex.media)}/mês)</span><span>Opex: <b>${brl(P.Opex.ate)}</b> → projeção <b>${brl(P.Opex.total)}</b> (média ${brlK(P.Opex.media)}/mês)</span><span>Total projetado: <b>${brl(P.Capex.total+P.Opex.total)}</b></span></div>${svg}`;
+}
+
+/* ===================== Histórico 2024 · 2025 · 2026 ===================== */
+const ANOS=[2024,2025,2026],COR_ANO={2024:"#8C7BE6",2025:"#E7B24A",2026:"#ED174F"};
+const normF=s=>semAc(s).replace(/\(.*?\)/g," ").replace(/\b(s\/?a|ltda|me|eireli|brasil|do brasil)\b/g," ").replace(/\s-\s?\d+$/,"").replace(/[^a-z0-9&]+/g," ").trim().split(" ").slice(0,2).join(" ");
+let HL=[];
+function montarHist(){
+  HL=L.map(r=>({ano:r.ano,mes:r.mRef?+r.mRef.slice(5,7):0,forn:r.forn,emis:r.emis,emp:r.emp,serv:r.serv,valor:r.valor,proj:r.proj,tipo:r.tipo}));
+  const nomes={};HL.forEach(r=>{const k=normF(r.forn);r.fk=k;(nomes[k]=nomes[k]||{})[r.forn]=((nomes[k]||{})[r.forn]||0)+1;});
+  const disp={};Object.entries(nomes).forEach(([k,o])=>{disp[k]=Object.entries(o).sort((a,b)=>b[1]-a[1])[0][0];});HL.forEach(r=>r.fn=disp[r.fk]);
+}
+const H={anos:[2024,2025,2026],q:"",ord:"t2026",dir:-1,forn:null,tipoH:"",cmp:[],cmpModo:"mes"};
+const COR_CMP=["#338ced","#e76624","#00a888","#d28e05","#e24d8b"];
+function renderHist(){
+  montarHist();
+  const q=semAc(H.q),base=HL.filter(r=>H.anos.includes(r.ano)&&(!H.tipoH||r.tipo===H.tipoH)&&(!H.forn||r.fk===H.forn));
+  const todosF=HF=Object.values(HL.reduce((o,r)=>{(o[r.fk]=o[r.fk]||{n:r.fn,fk:r.fk,t:0}).t+=r.valor;return o;},{})).sort((a,b)=>b.t-a.t);
+  const fAtual=H.forn?todosF.find(x=>x.fk===H.forn):null;
+  const porAno=ano=>{const l=base.filter(r=>r.ano===ano);return {t:l.reduce((a,r)=>a+r.valor,0),c:l.filter(r=>r.tipo==="Capex").reduce((a,r)=>a+r.valor,0),n:l.length,f:new Set(l.map(r=>r.fk)).size,meses:new Set(l.map(r=>r.mes)).size};};
+  const A=Object.fromEntries(ANOS.map(a=>[a,porAno(a)]));
+  /* tabela de fornecedores */
+  const F2={};base.forEach(r=>{const a=F2[r.fk]=F2[r.fk]||{n:r.fn,fk:r.fk,2024:0,2025:0,2026:0,c:0,o:0,q:0};a[r.ano]+=r.valor;r.tipo==="Capex"?a.c+=r.valor:a.o+=r.valor;a.q++;});
+  let fl=Object.values(F2).filter(x=>!q||semAc(x.n).includes(q));
+  fl.forEach(x=>{x.t=x[2024]+x[2025]+x[2026];x.v=x[2025]?(x[2026]/x[2025]-1):null;});
+  const k=H.ord;fl.sort((a,b)=>{const va=k==="n"?a.n:k==="v"?(a.v??-9):k==="t"?a.t:a[+k.slice(1)],vb=k==="n"?b.n:k==="v"?(b.v??-9):k==="t"?b.t:b[+k.slice(1)];return (typeof va==="string"?va.localeCompare(vb,"pt-BR"):va-vb)*H.dir;});
+  const th=(key,t,cls)=>`<th data-ho="${key}" class="${cls||""}">${t}${H.ord===key?`<span class="ar">${H.dir>0?"▲":"▼"}</span>`:""}</th>`;
+  /* gráfico por ano (barras Capex/Opex) */
+  const mxA=Math.max(1,...ANOS.map(a=>A[a].t));
+  const barrasAno=ANOS.filter(a=>H.anos.includes(a)).map(a=>`<div class="hb" style="grid-template-columns:60px 1fr 130px;cursor:default" data-tip="<b>${a}</b><br>Capex ${brl(A[a].c)}<br>Opex ${brl(A[a].t-A[a].c)}<br>${A[a].meses} mês(es) com lançamentos"><span class="nm"><b>${a}</b></span><span class="tr">${A[a].c?`<i style="width:${A[a].c/mxA*100}%;background:${C.capex}"></i>`:""}${A[a].t-A[a].c?`<i style="width:${(A[a].t-A[a].c)/mxA*100}%;background:${C.opex}"></i>`:""}</span><b>${brlK(A[a].t)}</b></div>`).join("");
+  /* linhas mensais por ano */
+  const W=900,Hh=230,pl=62,pb=26,pt=12,x=i=>pl+i*(W-pl-70)/11;
+  const ser=ANOS.filter(a=>H.anos.includes(a)).map(a=>{const v=Array(12).fill(0);base.filter(r=>r.ano===a&&r.mes).forEach(r=>v[r.mes-1]+=r.valor);return {a,v,tem:v.map(x=>x>0)};});
+  const mx=Math.max(1,...ser.flatMap(s=>s.v)),passo=Math.pow(10,Math.floor(Math.log10(mx))),topo=Math.ceil(mx/passo)*passo,y=v=>pt+(Hh-pt-pb)*(1-v/topo);
+  let g="";for(let i=0;i<=4;i++){const v=topo*i/4;g+=`<line x1="${pl}" x2="${W-60}" y1="${y(v)}" y2="${y(v)}" stroke="rgba(224,224,224,.10)"/><text x="${pl-8}" y="${y(v)+4}" text-anchor="end">${brlK(v).replace("R$ ","")}</text>`;}
+  MESES.forEach((m,i)=>g+=`<text x="${x(i)}" y="${Hh-8}" text-anchor="middle">${m}</text>`);
+  ser.forEach(s=>{const pts=s.v.map((v,i)=>s.tem[i]?`${x(i)},${y(v)}`:null).filter(Boolean);
+    g+=`<polyline points="${pts.join(" ")}" fill="none" stroke="${COR_ANO[s.a]}" stroke-width="2" ${s.a===2024?'stroke-dasharray="4 4"':""}/>`;
+    g+=s.v.map((v,i)=>s.tem[i]?`<circle cx="${x(i)}" cy="${y(v)}" r="4" fill="${COR_ANO[s.a]}" stroke="var(--surface)" stroke-width="2" data-tip="<b>${MESES[i]}/${s.a}</b><br>${brl(v)}"/>`:"").join("");
+    const li=s.tem.lastIndexOf(true);if(li>=0)g+=`<text x="${x(li)+8}" y="${y(s.v[li])+4}" style="fill:var(--text);font-weight:700">${s.a}</text>`;});
+  const fSel=H.forn?Object.values(F2).find(x=>x.fk===H.forn):null;
+  $("view").innerHTML=`<div class="filtros"><span class="anos">Anos: ${ANOS.map(a=>`<button class="btn sm ${H.anos.includes(a)?"on":""}" data-ano="${a}">${a}</button>`).join("")}</span>
+    <select data-ht><option value="">Capex e Opex</option><option ${H.tipoH==="Capex"?"selected":""}>Capex</option><option ${H.tipoH==="Opex"?"selected":""}>Opex</option></select>
+    <input type="search" id="hBusca" class="ac" data-ac="h:forn" placeholder="Digite o nome do fornecedor para comparar os anos" value="${esc(fAtual?fAtual.n:H.q)}" autocomplete="off">
+    ${fAtual?`<span class="chip">Fornecedor: <b>${esc(fAtual.n)}</b><button data-fechaF title="Ver todos os fornecedores">×</button></span>`:""}
+    <span class="muted" style="font-size:12px;flex-basis:100%">Escolhendo um fornecedor, os números e gráficos abaixo passam a ser só dele. Digitar sem escolher filtra a tabela de fornecedores no fim da página. 2024 tem só outubro a dezembro.</span></div>
+  <div class="kpis">${ANOS.filter(a=>H.anos.includes(a)).map(a=>`<div class="kpi"><small>${a}</small><b>${brl(A[a].t)}</b><span>Capex ${brlK(A[a].c)} · Opex ${brlK(A[a].t-A[a].c)}<br>${A[a].n} lançamentos · ${A[a].f} fornecedores · ${A[a].meses} mês(es)</span></div>`).join("")}
+    ${H.anos.includes(2025)&&H.anos.includes(2026)?(()=>{const m26=Math.max(1,A[2026].meses),m25=Math.max(1,A[2025].meses),v=(A[2026].t/m26)/(A[2025].t/m25)-1;return `<div class="kpi"><small>Média mensal 2026 vs 2025</small><b class="var ${v>0?"up":"dn"}">${v>0?"+":""}${pct(v)}</b><span>${brlK(A[2026].t/m26)}/mês em 2026 · ${brlK(A[2025].t/m25)}/mês em 2025</span></div>`;})():""}</div>
+  <div class="grid2" style="margin-bottom:12px">
+    <div class="card ch"><h3>Total por ano</h3><p>Capex e Opex. Passe o mouse para ver os valores.</p><div class="lg"><span><i style="background:${C.capex}"></i>Capex</span><span><i style="background:${C.opex}"></i>Opex</span></div>${barrasAno}</div>
+    <div class="card ch"><h3>Mês a mês, por ano</h3><p>Valor lançado em cada mês. Passe o mouse nos pontos.</p><div class="lg">${ser.map(s=>`<span><i style="background:${COR_ANO[s.a]}"></i>${s.a}</span>`).join("")}</div><svg viewBox="0 0 ${W} ${Hh}" width="100%" role="img" aria-label="Valor por mês em cada ano">${g}</svg></div>
+  </div>
+  ${fSel?fornDetalhe(fSel):""}
+  ${cmpHtml(todosF)}
+  <div class="card"><div style="padding:12px 14px 0"><h3 style="margin:0;font-size:14px;color:var(--hi)">Investimento por fornecedor</h3><p class="muted" style="font-size:12px;margin:2px 0 8px">Nomes parecidos entre os anos são agrupados (ex.: "TOTVS" e "Totvs S/A"). Clique num fornecedor para ver a evolução.</p></div>
+  <div class="tb-wrap" style="max-height:60vh"><table><thead><tr>${th("n","Fornecedor")}${ANOS.filter(a=>H.anos.includes(a)).map(a=>th("t"+a,String(a),"n")).join("")}${th("v","2026 vs 2025","n")}${th("t","Total no período","n")}<th class="n">Capex</th><th class="n">Opex</th></tr></thead>
+  <tbody>${fl.slice(0,300).map(x=>`<tr data-forn="${esc(x.fk)}"><td class="forn">${esc(x.n)}</td>${ANOS.filter(a=>H.anos.includes(a)).map(a=>`<td class="y">${x[a]?brl(x[a]):"—"}</td>`).join("")}<td class="y">${x.v==null?"—":`<span class="var ${x.v>0?"up":"dn"}">${x.v>0?"+":""}${pct(x.v)}</span>`}</td><td class="y"><b>${brl(x.t)}</b></td><td class="y">${brlK(x.c)}</td><td class="y">${brlK(x.o)}</td></tr>`).join("")}</tbody></table></div></div>`;
+}
+
+/* ---------- Comparar fornecedores ao longo do tempo (até 5) ---------- */
+function cmpHtml(todosF){
+  const base=HL.filter(r=>H.anos.includes(r.ano)&&(!H.tipoH||r.tipo===H.tipoH)&&r.mes);
+  const sel=H.cmp.map((fk,i)=>({fk,cor:COR_CMP[i],n:(todosF.find(x=>x.fk===fk)||{n:fk}).n}));
+  const totTI=base.reduce((a,r)=>a+r.valor,0);
+  const chips=sel.map(x=>`<span class="chip" style="border-color:${x.cor}"><i style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${x.cor}"></i> ${esc(x.n)}<button data-cmprm="${esc(x.fk)}">×</button></span>`).join("");
+  const cab=`<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start"><div><h3>Comparar fornecedores</h3><p>Escolha até 5 fornecedores para ver o investimento lado a lado ao longo do tempo. Segue os filtros de ano e Capex/Opex acima.</p></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">${H.cmp.length<5?`<input id="cmpIn" class="ac" data-ac="h:cmp" placeholder="Adicionar fornecedor: digite…" autocomplete="off" style="background:var(--surface3);border:1px solid var(--line2);border-radius:9px;padding:7px 10px;width:260px">`:""}<button class="btn sm" data-cmptop>Top 5 do período</button>${H.cmp.length?`<button class="btn sm" data-cmplimpa>Limpar</button>`:""}</div></div>
+    <div class="ativos" style="margin:8px 0">${chips}</div>`;
+  if(!sel.length)return `<div class="card ch" style="margin-bottom:12px">${cab}<p class="muted" style="margin:4px 0 0">Nenhum fornecedor escolhido. Digite no campo acima ou clique em <b>Top 5 do período</b>.</p></div>`;
+  /* séries */
+  const meses=[];H.anos.slice().sort().forEach(a=>{for(let m=1;m<=12;m++)meses.push(`${a}-${String(m).padStart(2,"0")}`);});
+  const comDado=meses.filter(k=>base.some(r=>`${r.ano}-${String(r.mes).padStart(2,"0")}`===k));
+  const ini=meses.indexOf(comDado[0]),fim=meses.indexOf(comDado[comDado.length-1]),eixo=ini<0?[]:meses.slice(ini,fim+1);
+  const serie=sel.map(x=>{const v=eixo.map(k=>base.filter(r=>r.fk===x.fk&&`${r.ano}-${String(r.mes).padStart(2,"0")}`===k).reduce((a,r)=>a+r.valor,0));let c=0;const ac=v.map(y=>c+=y);return Object.assign({},x,{v,ac});});
+  const modo=H.cmpModo,W=1300,Hh=300,pl=70,pb=30,pt=14,pr=150;
+  let svg="";
+  const grade=(topo,y)=>{let g="";for(let i=0;i<=4;i++){const v=topo*i/4;g+=`<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" stroke="rgba(224,224,224,.10)"/><text x="${pl-8}" y="${y(v)+4}" text-anchor="end">${brlK(v).replace("R$ ","")}</text>`;}return g;};
+  const escala=mx=>{mx=Math.max(1,mx);const p=Math.pow(10,Math.floor(Math.log10(mx)));return Math.ceil(mx/p)*p;};
+  if(modo==="ano"){
+    const anos=H.anos.slice().sort(),vals=sel.map(x=>anos.map(a=>base.filter(r=>r.fk===x.fk&&r.ano===a).reduce((s,r)=>s+r.valor,0)));
+    const topo=escala(Math.max(...vals.flat())),y=v=>pt+(Hh-pt-pb)*(1-v/topo),gw=(W-pl-pr)/anos.length,bw=Math.min(46,(gw*.8)/sel.length);
+    svg=grade(topo,y)+anos.map((a,ai)=>{const x0=pl+ai*gw+(gw-bw*sel.length-(sel.length-1)*2)/2;return sel.map((x,si)=>{const v=vals[si][ai],xx=x0+si*(bw+2);return `<g data-tip="<b>${esc(x.n)} · ${a}</b><br>${brl(v)}"><rect x="${xx}" y="${pt}" width="${bw}" height="${Hh-pt-pb}" fill="transparent"/>${v?`<rect x="${xx}" y="${y(v)}" width="${bw}" height="${Hh-pb-y(v)}" rx="3" fill="${x.cor}"/>`:""}</g>`;}).join("")+`<text x="${pl+ai*gw+gw/2}" y="${Hh-8}" text-anchor="middle" style="font-weight:700">${a}</text>`;}).join("");
+  } else {
+    const key=modo==="acum"?"ac":"v",topo=escala(Math.max(...serie.flatMap(x=>x[key]))),y=v=>pt+(Hh-pt-pb)*(1-v/topo),x=i=>pl+(eixo.length<2?0:i*(W-pl-pr)/(eixo.length-1));
+    svg=grade(topo,y)+eixo.map((k,i)=>(+k.slice(5,7)===1||i===0||eixo.length<=14||i%2===0)?`<text x="${x(i)}" y="${Hh-8}" text-anchor="middle">${MESES[+k.slice(5,7)-1]}/${k.slice(2,4)}</text>`:"").join("")
+      +serie.map(sr=>{const pts=sr[key].map((v,i)=>`${x(i)},${y(v)}`).join(" ");const li=sr[key].length-1;
+        return `<polyline points="${pts}" fill="none" stroke="${sr.cor}" stroke-width="2"/>`+sr[key].map((v,i)=>`<circle cx="${x(i)}" cy="${y(v)}" r="${v||modo==="acum"?4:2.5}" fill="${sr.cor}" stroke="var(--surface)" stroke-width="2" data-tip="<b>${esc(sr.n)} · ${MESES[+eixo[i].slice(5,7)-1]}/${eixo[i].slice(0,4)}</b><br>${modo==="acum"?"Acumulado ":""}${brl(v)}"/>`).join("")
+        ;}).join("");
+    const li=eixo.length-1,lab=serie.map(sr=>({sr,yy:y(sr[key][li])+4})).sort((a,b)=>a.yy-b.yy);
+    for(let i=1;i<lab.length;i++)if(lab[i].yy-lab[i-1].yy<15)lab[i].yy=lab[i-1].yy+15;
+    const lim=Hh-pb-2;if(lab.length&&lab[lab.length-1].yy>lim){lab[lab.length-1].yy=lim;for(let i=lab.length-2;i>=0;i--)if(lab[i+1].yy-lab[i].yy<15)lab[i].yy=lab[i+1].yy-15;}
+    svg+=lab.map(o=>`<text x="${x(li)+10}" y="${o.yy}" style="fill:${o.sr.cor};font-weight:700">${esc(o.sr.n.length>18?o.sr.n.slice(0,17)+"…":o.sr.n)}</text>`).join("");
+  }
+  const anosT=H.anos.slice().sort();
+  const linhas=sel.map(x=>{const l=base.filter(r=>r.fk===x.fk),t=l.reduce((a,r)=>a+r.valor,0),c=l.filter(r=>r.tipo==="Capex").reduce((a,r)=>a+r.valor,0),pa=a=>l.filter(r=>r.ano===a).reduce((s,r)=>s+r.valor,0),v=pa(2025)?pa(2026)/pa(2025)-1:null;
+    return `<tr><td class="forn"><i style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${x.cor};margin-right:6px"></i>${esc(x.n)}</td>${anosT.map(a=>`<td class="y">${pa(a)?brl(pa(a)):"—"}</td>`).join("")}<td class="y"><b>${brl(t)}</b></td><td class="y">${totTI?pct(t/totTI):"—"}</td><td class="y">${v==null||!H.anos.includes(2025)||!H.anos.includes(2026)?"—":`<span class="var ${v>0?"up":"dn"}">${v>0?"+":""}${pct(v)}</span>`}</td><td class="y">${brlK(c)} / ${brlK(t-c)}</td><td class="y">${l.length}</td></tr>`;}).join("");
+  return `<div class="card ch" style="margin-bottom:12px">${cab}
+    <div class="anos" style="margin-bottom:8px"><span class="muted" style="font-size:12px">Ver:</span>${[["mes","Mês a mês"],["acum","Acumulado"],["ano","Por ano"]].map(([k,t])=>`<button class="btn sm ${modo===k?"on":""}" data-cmpmodo="${k}">${t}</button>`).join("")}</div>
+    <svg viewBox="0 0 ${W} ${Hh}" width="100%" role="img" aria-label="Comparação de investimento entre fornecedores">${svg}</svg>
+    <div class="tb-wrap" style="margin-top:10px;border:1px solid var(--line)"><table><thead><tr><th>Fornecedor</th>${anosT.map(a=>`<th class="n">${a}</th>`).join("")}<th class="n">Total</th><th class="n">% do gasto de TI</th><th class="n">2026 vs 2025</th><th class="n">Capex / Opex</th><th class="n">Lanç.</th></tr></thead><tbody>${linhas}</tbody></table></div></div>`;
+}
+document.addEventListener("click",e=>{
+  const t=e.target;
+  const rm=t.closest("[data-cmprm]");if(rm){H.cmp=H.cmp.filter(x=>x!==rm.dataset.cmprm);renderHist();return;}
+  if(t.closest("[data-cmplimpa]")){H.cmp=[];renderHist();return;}
+  const md=t.closest("[data-cmpmodo]");if(md){H.cmpModo=md.dataset.cmpmodo;renderHist();return;}
+  if(t.closest("[data-cmptop]")){const b=HL.filter(r=>H.anos.includes(r.ano)&&(!H.tipoH||r.tipo===H.tipoH));const m={};b.forEach(r=>m[r.fk]=(m[r.fk]||0)+r.valor);H.cmp=Object.entries(m).sort((a,b)=>b[1]-a[1]).slice(0,5).map(x=>x[0]);renderHist();return;}
+},true);
+/* ---------- Autocompletar: a lista só aparece enquanto digita ---------- */
+let HF=[];
+function acRotF(k,v){return k==="cc"?v+(CCONT[v]?" · "+CCONT[v]:""):v;}
+function acOpcoes(tipo){
+  const [g,k]=tipo.split(":");
+  if(g==="f")return [...new Set(L.filter(r=>!F.ano||String(r.ano)===F.ano).map(r=>r[k]).filter(Boolean))].map(v=>({v,rot:acRotF(k,v)}));
+  if(k==="forn")return HF.map(x=>({v:x.fk,rot:x.n}));
+  if(k==="cmp")return HF.filter(x=>!H.cmp.includes(x.fk)).map(x=>({v:x.fk,rot:x.n}));
+  return [];
+}
+const AC={el:null,itens:[],i:0};
+function acBox(){let b=$("acBox");if(!b){b=document.createElement("div");b.id="acBox";document.body.appendChild(b);
+  b.addEventListener("mousedown",e=>{const d=e.target.closest("[data-i]");if(!d)return;e.preventDefault();acEscolher(+d.dataset.i);});}return b;}
+function acFechar(){const b=$("acBox");if(b)b.style.display="none";AC.el=null;AC.itens=[];}
+function acAbrir(el){
+  const q=semAc(el.value.trim()),b=acBox();
+  if(!q){acFechar();return;}
+  const todos=acOpcoes(el.dataset.ac).map(o=>Object.assign(o,{n:semAc(o.rot)})).filter(o=>o.n.includes(q));
+  todos.sort((a,c)=>(c.n.startsWith(q)-a.n.startsWith(q))||a.rot.localeCompare(c.rot,"pt-BR"));
+  AC.el=el;AC.itens=todos.slice(0,15);AC.i=0;
+  const marca=t=>{const i=semAc(t).indexOf(q);return i<0?esc(t):esc(t.slice(0,i))+"<b>"+esc(t.slice(i,i+q.length))+"</b>"+esc(t.slice(i+q.length));};
+  b.innerHTML=AC.itens.length?AC.itens.map((o,i)=>`<div data-i="${i}" class="${i?"":"on"}" title="${esc(o.rot)}">${marca(o.rot)}</div>`).join("")+(todos.length>15?`<p>+ ${todos.length-15} — continue digitando para refinar</p>`:""):`<p>Nenhum resultado para “${esc(el.value.trim())}”</p>`;
+  const r=el.getBoundingClientRect();b.style.left=r.left+"px";b.style.top=(r.bottom+4)+"px";b.style.width=Math.max(r.width,260)+"px";b.style.display="block";
+}
+function acEscolher(i){
+  const o=AC.itens[i],el=AC.el;if(!o||!el)return;const [g,k]=el.dataset.ac.split(":");acFechar();
+  if(g==="f"){F[k]=o.v;S.pag=0;renderFiltros();render();return;}
+  if(k==="forn"){H.forn=o.v;H.q="";renderHist();window.scrollTo({top:0,behavior:"smooth"});return;}
+  if(k==="cmp"){if(H.cmp.length>=5){toast("Compare até 5 fornecedores por vez.");return;}
+    H.cmp.push(o.v);const y=window.scrollY;renderHist();window.scrollTo(0,y);const n=$("cmpIn");if(n)n.focus();}
+}
+document.addEventListener("input",e=>{const el=e.target;if(!el.dataset||!el.dataset.ac)return;
+  const [g,k]=el.dataset.ac.split(":");
+  if(g==="f"&&!el.value.trim()&&F[k]){F[k]="";S.pag=0;render();}
+  acAbrir(el);});
+document.addEventListener("keydown",e=>{const el=e.target;if(!el.dataset||!el.dataset.ac||AC.el!==el)return;
+  const b=$("acBox"),n=AC.itens.length;
+  if(e.key==="ArrowDown"||e.key==="ArrowUp"){e.preventDefault();if(!n)return;AC.i=(AC.i+(e.key==="ArrowDown"?1:n-1))%n;b.querySelectorAll("[data-i]").forEach((d,i)=>d.classList.toggle("on",i===AC.i));b.querySelector(".on").scrollIntoView({block:"nearest"});}
+  else if(e.key==="Enter"){if(n){e.preventDefault();acEscolher(AC.i);}}
+  else if(e.key==="Escape")acFechar();});
+document.addEventListener("focusout",e=>{const el=e.target;if(!el.dataset||!el.dataset.ac)return;
+  setTimeout(()=>{if(AC.el===el)acFechar();},120);
+  const [g,k]=el.dataset.ac.split(":");if(g==="f")el.value=F[k]?acRotF(k,F[k]):"";
+  if(k==="cmp")el.value="";});
+window.addEventListener("scroll",e=>{if(!AC.el||e.target.id==="acBox")return;const r=AC.el.getBoundingClientRect(),b=$("acBox");b.style.left=r.left+"px";b.style.top=(r.bottom+4)+"px";},true);
+window.addEventListener("resize",acFechar);
+function fornDetalhe(f){
+  const ls=HL.filter(r=>r.fk===f.fk),W=1400,Hh=200,pl=62,pb=24,pt=10;
+  const meses=[];ANOS.forEach(a=>{for(let m=1;m<=12;m++){const v=ls.filter(r=>r.ano===a&&r.mes===m).reduce((s,r)=>s+r.valor,0);meses.push({a,m,v});}});
+  const ini=meses.findIndex(x=>x.v>0),fim=meses.length-1-[...meses].reverse().findIndex(x=>x.v>0),vis=ini<0?[]:meses.slice(ini,fim+1);
+  const bw=(W-pl-10)/Math.max(1,vis.length),mx=Math.max(1,...vis.map(x=>x.v)),y=v=>pt+(Hh-pt-pb)*(1-v/mx);
+  const bars=vis.map((x,i)=>`<g data-tip="<b>${MESES[x.m-1]}/${x.a}</b><br>${brl(x.v)}"><rect x="${pl+i*bw}" y="${pt}" width="${bw}" height="${Hh-pt-pb}" fill="transparent"/>${x.v?`<rect x="${pl+i*bw+bw*.15}" y="${y(x.v)}" width="${bw*.7}" height="${Hh-pb-y(x.v)}" rx="2" fill="${COR_ANO[x.a]}"/>`:""}${x.m===1||i===0?`<text x="${pl+i*bw+bw/2}" y="${Hh-6}" text-anchor="middle">${MESES[x.m-1]}/${String(x.a).slice(2)}</text>`:""}</g>`).join("");
+  const projs=[...new Set(ls.map(r=>r.proj))].filter(p=>p!=="Sem projeto");
+  return `<div class="card ch" style="margin-bottom:12px;border-color:var(--cherry)"><div style="display:flex;justify-content:space-between;gap:10px"><div><h3>${esc(f.n)}</h3><p>${ls.length} lançamento(s) · 2024 ${brlK(f[2024])} · 2025 ${brlK(f[2025])} · 2026 ${brlK(f[2026])}${projs.length?" · projetos: "+projs.map(esc).join(", "):""}</p></div><div><button class="btn sm" data-fil26="${esc(f.n)}">Ver lançamentos de 2026</button> <button class="btn sm" data-fechaF>Fechar</button></div></div>
+    <div class="lg">${ANOS.map(a=>`<span><i style="background:${COR_ANO[a]}"></i>${a}</span>`).join("")}</div><svg viewBox="0 0 ${W} ${Hh}" width="100%" role="img" aria-label="Valor mensal do fornecedor">${bars}</svg></div>`;
+}
+document.addEventListener("click",e=>{
+  const t=e.target;
+  const an=t.closest("[data-ano]");if(an){const a=+an.dataset.ano;H.anos=H.anos.includes(a)?H.anos.filter(x=>x!==a):[...H.anos,a].sort();if(!H.anos.length)H.anos=[a];renderHist();return;}
+  const ho=t.closest("[data-ho]");if(ho){const k=ho.dataset.ho;if(H.ord===k)H.dir=-H.dir;else{H.ord=k;H.dir=k==="n"?1:-1;}renderHist();return;}
+  const fr=t.closest("tr[data-forn]");if(fr){H.forn=fr.dataset.forn;renderHist();window.scrollTo({top:0,behavior:"smooth"});return;}
+  if(t.closest("[data-fechaF]")){H.forn=null;renderHist();return;}
+  const f26=t.closest("[data-fil26]");if(f26){const nome=uniq("forn").find(n=>normF(n)===normF(f26.dataset.fil26));F.forn=nome||"";F.q=nome?"":f26.dataset.fil26;S.aba="lanc";renderFiltros();render();return;}
+},true);
+document.addEventListener("input",e=>{if(e.target.id!=="hBusca")return;
+  const v=e.target.value;
+  if(!v&&H.forn){H.forn=null;}
+  H.q=v;clearTimeout(H.t);H.t=setTimeout(()=>{if(document.activeElement!==e.target&&!$("hBusca"))return;const p=e.target.selectionStart;renderHist();const b=$("hBusca");if(b){b.focus();b.setSelectionRange(p,p);acAbrir(b);}},350);});
+document.addEventListener("change",e=>{if(e.target.matches&&e.target.matches("[data-ht]")){H.tipoH=e.target.value;renderHist();}});
+/* ---- PDF dos indicadores ---- */
+function pdfHtml(){
+  const lst=filtrar(),hoje=new Date().toLocaleString("pt-BR");
+  const filtros=Object.keys(F).filter(k=>F[k]).map(k=>`${k==='ano'?'Ano':k}: ${F[k]}`).join(" · ")||"todos os anos";
+  const tab=(t,lista,n)=>`<h2>${t}</h2><table><thead><tr><th>Item</th><th class="n">Capex</th><th class="n">Opex</th><th class="n">Total</th><th class="n">Lanç.</th></tr></thead><tbody>${lista.slice(0,n).map(x=>`<tr><td>${esc(x.n)}</td><td class="n">${brl(x.c)}</td><td class="n">${brl(x.o)}</td><td class="n"><b>${brl(x.c+x.o)}</b></td><td class="n">${x.q}</td></tr>`).join("")}</tbody></table>`;
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Orcamentos_TI</title><style>@page{size:A4;margin:12mm}body{font-family:Segoe UI,Arial,sans-serif;color:#1B2740;margin:0;background:#e9edf3}
+  .pg{width:210mm;min-height:297mm;margin:10px auto;background:#fff;padding:12mm;box-shadow:0 4px 18px rgba(12,27,56,.15)}@media print{body{background:#fff}.pg{margin:0;box-shadow:none;width:auto;min-height:0;padding:0;page-break-after:always}}
+  .hd{display:flex;justify-content:space-between;align-items:flex-start}.ey{font-size:8.5px;letter-spacing:.14em;color:#ED174F;font-weight:700}h1{margin:3px 0 2px;font-size:20px;color:#0C1B38}.sb{font-size:10px;color:#5B6780}
+  .lg{background:#0C1B38;padding:8px 12px;border-radius:6px;line-height:0}.lg img{height:34px}.bar{height:3px;background:#ED174F;margin:8px 0 12px}
+  .kp{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}.kp div{border:1px solid #E1E6EF;border-left:4px solid #29A6C2;border-radius:8px;padding:7px 10px}.kp b{display:block;font-size:14px;color:#0C1B38}.kp span{font-size:8px;text-transform:uppercase;letter-spacing:.06em;color:#5B6780;font-weight:700}.kp em{font-style:normal;font-size:9px;color:#5B6780}
+  h2{font-size:12px;color:#0C1B38;margin:12px 0 6px}table{width:100%;border-collapse:collapse;font-size:9.5px}th{background:#0C1B38;color:#fff;text-align:left;padding:5px 7px;font-size:8.5px;text-transform:uppercase}td{padding:4px 7px;border-bottom:1px solid #EEF1F6}.n{text-align:right}
+  .leg{font-size:9px;color:#5B6780}.leg i{display:inline-block;width:9px;height:9px;border-radius:2px;margin:0 4px 0 10px;vertical-align:-1px}svg text{font-size:11px;fill:#5B6780}</style></head><body>
+  <div class="pg"><div class="hd"><div><div class="ey">JCE SA BRAZIL · TECNOLOGIA DA INFORMAÇÃO · PMO</div><h1>Orçamentos TI · Indicadores</h1><div class="sb">Planilhas Contratos_TI (Controle - TI) · gerado em ${hoje} · filtros: ${esc(filtros)}</div></div><div class="lg">${LOGO.startsWith("data:")?`<img src="${LOGO}">`:"<b style='color:#fff;font-size:15px;line-height:1.2'>JCE SA</b>"}</div></div><div class="bar"></div>
+  <div class="kp">${kpisHtml(lst).map(k=>`<div><span>${k[0]}</span><b>${k[1]}</b><em>${k[2]}</em></div>`).join("")}</div>
+  <h2>Valor por mês <span class="leg"><i style="background:${C.capex}"></i>Capex<i style="background:${C.opex}"></i>Opex</span></h2>${mensal(lst,true)}
+  ${tab("Maiores fornecedores",agrega(lst,"forn"),12)}</div>
+  <div class="pg">${projecaoHtml(lst,true).replace("<h3>","<h2>").replace("</h3>","</h2>")}${vencHtml(lst,true)}</div>
+  <div class="pg">${tab("Por projeto",agrega(lst,"proj"),30)}${tab("Por empresa",agrega(lst,"emp"),12)}${tab("Por forma de pagamento",agrega(lst,"forma"),8)}</div></body></html>`;
+}
+function modalPdf(enviar){
+  const m=document.createElement("div");m.className="modal";m.id="mod";
+  m.innerHTML=`<div class="box" style="width:min(1000px,100%)"><h3>${enviar?"Enviar indicadores por e-mail":"Prévia do PDF"}</h3>
+  ${enviar?`<div class="fld"><label>Para</label><input id="mPara" placeholder="nome@jcesa.com.br; outro@jcesa.com.br"></div><div class="fld"><label>Cc</label><input id="mCc" value="${esc(API?API.pmoEmail():"")}"></div><div class="fld"><label>Assunto</label><input id="mAss" value="Orçamentos TI · indicadores · ${new Date().toLocaleDateString("pt-BR")}"></div>
+  <div class="fld"><label>Mensagem</label><textarea id="mTxt">Olá,\n\nSeguem os indicadores de orçamento de TI (PDF anexo), com os filtros aplicados no portal.\n\nPMO · Tecnologia da Informação</textarea></div><p><span class="anx">📄 Orcamentos_TI_${new Date().toISOString().slice(0,10)}.pdf</span></p>`:`<iframe class="pv" id="pv"></iframe>`}
+  <div class="mfoot"><button class="btn" data-fm>Fechar</button>${enviar?`<button class="btn primary" id="mEnv">Enviar pelo Outlook</button>`:`<button class="btn primary" id="mBaixar">Baixar PDF</button>`}</div></div>`;
+  document.body.append(m);if(!enviar)$("pv").srcdoc=pdfHtml();
+}
+/* ---- sincronização (no portal: lê a planilha pelo Microsoft Graph) ---- */
+const HORA=60*60*1000;
+function syncTxt(){const u=S.ultima,p=new Date(u.getTime()+HORA),f=d=>d.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});$("sTxt").innerHTML=`Atualizado às <b>${f(u)}</b> · próxima atualização automática às <b>${f(p)}</b> · ${L.length.toLocaleString("pt-BR")} lançamentos`;}
+async function atualizar(manual){
+  if(!API)return;
+  $("sDot").classList.add("busy");$("bAtu").disabled=true;$("sTxt").textContent="Lendo as planilhas no SharePoint…";
+  try{await carregar(true,manual?null:[2026]);S.ultima=new Date();if(manual)toast("Dados atualizados das planilhas.");}
+  catch(e){toast("Não foi possível atualizar: "+(e.message||e));}
+  $("sDot").classList.remove("busy");$("bAtu").disabled=false;avisoErros();syncTxt();renderFiltros();render();
+}
+function avisoErros(){const a=$("aviso"),k=Object.keys(ERROS);a.hidden=!k.length;a.textContent=k.length?"Não foi possível ler: "+k.map(x=>`Contratos_TI_${x} (${ERROS[x]})`).join(" · ")+(L.length?" · mostrando a última leitura disponível":""):"";}
+setInterval(()=>atualizar(false),HORA);
+/* ---- ações reais (pelo portal) ---- */
+const emails=v=>String(v||"").split(/[;,\s]+/).map(x=>x.trim().toLowerCase()).filter(x=>/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x));
+const nomeDe=e=>(PADRAO_PARA.concat(PADRAO_CC).find(p=>p.email===e)||{nome:e}).nome;
+async function salvarQ(){if(!ADM)return;try{await API.salvarQ(Q);}catch(e){toast("Atenção: não gravou no SharePoint ("+(e.message||e)+").");}}
+function corpoLanc(r,texto){
+  const lin=[["Fornecedor",r.forn],["Empresa",r.emp],["Serviço",r.serv],["Valor",brl(r.valor)+" · "+r.tipo],["Emissão",r.emis],["Vencimento",r.venc],["NF / Fatura",r.nf||"—"],["SC / Pedido",`${r.sc||"—"} / ${r.ped||"—"}`],["Projeto",r.proj],["Forma de pagamento",r.forma||"—"],["Envio",r.envio||"—"],["Planilha",`Contratos_TI_${r.ano}`]];
+  return `<div style="font-family:Segoe UI,Arial,sans-serif;font-size:14px;color:#1B2740"><p>${esc(texto).replace(/\n/g,"<br>")}</p>
+  <table style="border-collapse:collapse;font-size:13px;margin-top:10px">${lin.map(([k,v])=>`<tr><td style="padding:5px 12px 5px 0;color:#5B6780;white-space:nowrap">${k}</td><td style="padding:5px 0"><b>${esc(v)}</b></td></tr>`).join("")}</table>
+  <p style="color:#5B6780;font-size:12px;margin-top:16px">Enviado pelo Portal PMO · Orçamentos TI, por ${esc(API.usuario())}.</p></div>`;
+}
+async function perguntar(btn){
+  const r=S.abre,txt=$("qTxt").value.trim();if(txt.length<5){toast("Escreva a pergunta.");return;}
+  const para=emails($("qPara").value),cc=emails($("qCc").value);if(!para.length){toast("Informe para quem vai a pergunta.");return;}
+  btn.disabled=true;btn.textContent="Enviando…";
+  const res=await API.enviarEmail({assunto:$("qAss").value.trim()||"[Orçamentos TI] Questionamento",html:corpoLanc(r,txt),para,cc});
+  if(!res.ok){btn.disabled=false;btn.textContent="Enviar pergunta";toast("E-mail não enviado: "+res.erro);return;}
+  const k=chaveL(r);(Q[k]=Q[k]||[]).push({em:new Date().toISOString(),por:API.usuario(),para:para.map(e=>({nome:nomeDe(e),email:e})),cc:cc.map(e=>({nome:nomeDe(e),email:e})),assunto:$("qAss").value,texto:txt,status:"aberto",forn:r.forn,nf:r.nf,valor:r.valor,venc:r.venc});
+  await salvarQ();const id=r.id;fecharL();abrirL(id);render();toast(`Pergunta enviada a ${para.map(nomeDe).join(", ")}${cc.length?" com cópia para "+cc.map(nomeDe).join(", "):""}.`);
+}
+let libsOk=false;
+async function gerarPdf(){
+  if(!libsOk){const lb=API.libs();[lb.h2c,lb.jspdf].forEach(src=>{const sc=document.createElement("script");sc.textContent=src;document.head.appendChild(sc);});libsOk=true;}
+  const host=document.createElement("iframe");host.style.cssText="position:fixed;left:-30000px;top:0;width:900px;height:1200px;border:0";document.body.appendChild(host);
+  host.srcdoc=pdfHtml();await new Promise(r=>host.onload=r);await new Promise(r=>setTimeout(r,200));
+  const doc=new window.jspdf.jsPDF({unit:"mm",format:"a4",orientation:"portrait",compress:true});let primeira=true;
+  for(const pg of host.contentDocument.querySelectorAll(".pg")){
+    pg.style.margin="0";pg.style.boxShadow="none";
+    const cv=await window.html2canvas(pg,{scale:1.6,backgroundColor:"#ffffff",windowWidth:900}),pp=Math.floor(cv.width*297/210);
+    for(let y=0;y<cv.height-4;y+=pp){const h=Math.min(pp,cv.height-y),c=document.createElement("canvas");c.width=cv.width;c.height=h;c.getContext("2d").drawImage(cv,0,y,cv.width,h,0,0,cv.width,h);
+      if(!primeira)doc.addPage();primeira=false;doc.addImage(c.toDataURL("image/jpeg",.86),"JPEG",0,0,210,h*210/cv.width);}
+  }
+  host.remove();return doc;
+}
+const arqPdf=()=>`Orcamentos_TI_${new Date().toISOString().slice(0,10)}`;
+async function baixarPdf(btn){btn.disabled=true;btn.textContent="Gerando…";try{(await gerarPdf()).save(arqPdf()+".pdf");toast("PDF gerado.");}catch(e){toast("Não foi possível gerar o PDF: "+(e.message||e));}btn.disabled=false;btn.textContent="Baixar PDF";}
+async function enviarInd(btn){
+  const para=emails($("mPara").value),cc=emails($("mCc").value);if(!para.length){toast("Informe o destinatário.");return;}
+  btn.disabled=true;btn.textContent="Gerando o PDF…";
+  try{
+    const doc=await gerarPdf(),b64=doc.output("datauristring").split(",")[1];btn.textContent="Enviando…";
+    const res=await API.enviarEmail({assunto:$("mAss").value.trim(),html:`<div style="font-family:Segoe UI,Arial,sans-serif;font-size:14px">${esc($("mTxt").value).replace(/\n/g,"<br>")}</div>`,para,cc,anexos:[{nome:arqPdf()+".pdf",tipo:"application/pdf",b64}]});
+    if(!res.ok)throw new Error(res.erro);
+    $("mod").remove();toast(`Indicadores enviados a ${para.join(", ")} com o PDF anexo.`);
+  }catch(e){btn.disabled=false;btn.textContent="Enviar pelo Outlook";toast("Não enviado: "+(e.message||e));}
+}
+async function exportarXls(){
+  const lst=filtrar();
+  const linhas=[["Ano","Emissão","Vencimento","Fornecedor","Empresa","Serviço","Projeto","Capex/Opex","SC","Pedido","NF / Fatura","Valor","Forma de pagamento","Envio","C. contábil","Observação"],
+    ...lst.map(r=>[r.ano,r.emis,r.venc,r.forn,r.emp,r.serv,r.proj,r.tipo,r.sc,r.ped,r.nf,r.valor,r.forma,r.envio,r.cc,r.obs])];
+  try{await API.baixarXlsx([{nome:"Lançamentos",linhas}],arqPdf());toast(`${lst.length} lançamento(s) exportados.`);}catch(e){toast("Não foi possível gerar o Excel: "+(e.message||e));}
+}
+/* ---- eventos ---- */
+document.addEventListener("click",e=>{
+  const t=e.target;
+  const tb=t.closest(".tab");if(tb){S.aba=tb.dataset.t;render();return;}
+  if(t.closest("#bAtu")){atualizar(true);return;}
+  const th=t.closest("th[data-ord]");if(th){const k=th.dataset.ord;if(S.ord===k)S.dir=-S.dir;else{S.ord=k;S.dir=k==="valor"||k.startsWith("i")?-1:1;}render();return;}
+  const pg=t.closest("[data-pg]");if(pg){S.pag+=+pg.dataset.pg;render();return;}
+  const rm=t.closest("[data-rmf]");if(rm){const k=rm.dataset.rmf;F[k]=typeof F[k]==="boolean"?false:"";S.pag=0;renderFiltros();render();return;}
+  if(t.closest("#fLimpa")){Object.keys(F).forEach(k=>F[k]=typeof F[k]==="boolean"?false:"");F.ano="2026";S.pag=0;renderFiltros();render();return;}
+  const hb=t.closest("[data-fil]");if(hb){F[hb.dataset.fil]=hb.dataset.v;S.pag=0;renderFiltros();render();toast(`Filtro aplicado: ${hb.dataset.v}`);return;}
+  const tr=t.closest("tbody tr[data-id]");if(tr&&tr.dataset.id&&!t.closest(".drawer")){abrirL(tr.dataset.id);return;}
+  if(t.closest("[data-fechaD]")||t.id==="dOv"){fecharL();return;}
+  const rs=t.closest("[data-resolve]");if(rs&&S.abre&&ADM){const qs=Q[chaveL(S.abre)];Object.assign(qs[+rs.dataset.resolve],{status:"resolvido",resolvidoEm:new Date().toISOString(),resolvidoPor:API.usuario()});const id=S.abre.id;fecharL();abrirL(id);render();salvarQ();toast("Questionamento marcado como resolvido.");return;}
+  if(t.id==="qEnviar"&&S.abre&&ADM){perguntar(t);return;}
+  if(t.closest("#bPdf")){modalPdf(false);return;}
+  if(t.closest("#bMailInd")){modalPdf(true);return;}
+  if(t.closest("[data-fm]")||t.id==="mod"){$("mod")&&$("mod").remove();return;}
+  if(t.id==="mBaixar"){baixarPdf(t);return;}
+  if(t.id==="mEnv"&&ADM){enviarInd(t);return;}
+  if(t.closest("#bXls")){exportarXls();return;}
+});
+document.addEventListener("input",e=>{const k=e.target.dataset&&e.target.dataset.f;if(k==="q"){F.q=e.target.value;S.pag=0;render();}});
+document.addEventListener("change",e=>{const k=e.target.dataset&&e.target.dataset.f;if(!k||k==="q")return;F[k]=e.target.type==="checkbox"?e.target.checked:e.target.value;if(k==="ano"){F.de="";F.ate="";renderFiltros();}S.pag=0;render();});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){fecharL();$("mod")&&$("mod").remove();}});
+document.addEventListener("mousemove",e=>{const el=e.target.closest&&e.target.closest("[data-tip]"),tp=$("tip");if(!el){tp.style.opacity=0;return;}tp.innerHTML=el.dataset.tip;tp.style.opacity=1;tp.style.left=Math.min(innerWidth-220,e.clientX+14)+"px";tp.style.top=(e.clientY+14)+"px";});
+(async()=>{
+  document.querySelectorAll("[data-adm]").forEach(e=>e.hidden=!ADM);
+  if(!API){$("view").innerHTML=`<div class="card empty">Abra esta página pelo Portal PMO (menu Orçamentos TI).</div>`;$("sTxt").textContent="";return;}
+  $("view").innerHTML=`<div class="card empty">Lendo as planilhas Contratos_TI 2024, 2025 e 2026 no SharePoint…</div>`;
+  $("sDot").classList.add("busy");$("bAtu").disabled=true;$("sTxt").textContent="Lendo as planilhas no SharePoint…";
+  try{await carregar(false);if(ADM)Object.assign(Q,(await API.lerQ())||{});}
+  catch(e){$("sDot").classList.remove("busy");$("bAtu").disabled=false;$("sTxt").textContent="";$("view").innerHTML=`<div class="card empty">Não foi possível ler as planilhas: ${esc(e.message||e)}</div>`;return;}
+  S.ultima=API.lidoEm()||new Date();$("sDot").classList.remove("busy");$("bAtu").disabled=false;
+  avisoErros();syncTxt();renderFiltros();render();
+})();
+</script>
+</body>
+</html>
