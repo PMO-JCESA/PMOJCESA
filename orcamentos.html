@@ -209,11 +209,13 @@ function filtrar(){
 function renderFiltros(){
   const sel=(k,rot,ops,fmt)=>`<select data-f="${k}" title="${rot}"><option value="">${rot}: todos</option>${ops.map(o=>`<option value="${esc(o)}" ${F[k]===o?"selected":""}>${esc(fmt?fmt(o):o)}</option>`).join("")}</select>`;
   const ms=mesesDisp();
+  /* listas da barra de filtros: só os valores do ano escolhido (mantém o valor já filtrado) */
+  const uAno=k=>{const v=[...new Set(L.filter(r=>!F.ano||String(r.ano)===F.ano).map(r=>r[k]).filter(Boolean))];if(F[k]&&!v.includes(F[k]))v.push(F[k]);return v.sort((a,b)=>a.localeCompare(b,"pt-BR"));};
   const acF=(k,rot)=>`<input type="text" class="ac" data-ac="f:${k}" placeholder="${rot}: digite…" title="${rot}" value="${esc(F[k]?acRotF(k,F[k]):"")}" autocomplete="off">`;
   $("filtros").innerHTML=`<select data-f="ano" title="Ano" style="flex:0 0 auto;font-weight:700"><option value="">Todos os anos</option>${[2026,2025,2024].map(a=>`<option ${F.ano==String(a)?"selected":""}>${a}</option>`).join("")}</select>
     <input type="search" data-f="q" placeholder="Buscar fornecedor, serviço, NF, pedido, SC…" value="${esc(F.q)}">
-    ${acF("forn","Fornecedor")}${acF("proj","Projeto")}${sel("tipo","Capex/Opex",["Capex","Opex"])}${acF("emp","Empresa")}
-    ${acF("forma","Pagamento")}${acF("cc","C. contábil")}
+    ${sel("forn","Fornecedor",uAno("forn"))}${sel("proj","Projeto",uAno("proj"))}${sel("tipo","Capex/Opex",["Capex","Opex"])}${sel("emp","Empresa",uAno("emp"))}
+    ${sel("forma","Pagamento",uAno("forma"))}${sel("cc","C. contábil",uAno("cc"),o=>o+(CCONT[o]?" · "+CCONT[o]:""))}
     ${sel("de","Mês de",ms,rotMes)}${sel("ate","até",ms,rotMes)}
     <select data-f="venc" title="Vencimento"><option value="">Vencimento: todos</option><option value="7" ${F.venc==="7"?"selected":""}>Vence nos próximos 7 dias</option><option value="30" ${F.venc==="30"?"selected":""}>Vence nos próximos 30 dias</option><option value="passou" ${F.venc==="passou"?"selected":""}>Vencimento já passou</option></select>
     <label title="Vencimento a partir de">Venc. de <input type="date" data-f="vde" value="${F.vde}"></label><label title="Vencimento até">até <input type="date" data-f="vate" value="${F.vate}"></label>
